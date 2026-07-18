@@ -131,6 +131,10 @@ html.tg-app body{ padding:0; background:var(--void); }
   .wheel-track{padding:66px 0}
   .topbar{margin-bottom:16px}
   h2{margin-bottom:4px}
+  /* На совсем невысоких экранах ужимаем ещё и боевой экран — приоритет
+     отдаём камере, а не карточке моба над ней. */
+  .mob-art{width:84px;height:84px}
+  .cam-wrap{max-height:300px}
 }
 
 h1,h2,.display{font-family:'Russo One',sans-serif;font-weight:400;letter-spacing:.5px}
@@ -265,23 +269,23 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
 .nav button.on{color:var(--sys);border-color:var(--sys-dim);box-shadow:0 0 12px rgba(76,201,255,.15)}
 
 /* ---- рейд ---- */
-.mob-stage{display:flex;flex-direction:column;align-items:center;margin:14px 0 6px}
-.mob-queue{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:4px}
-.qmob{width:38px;height:38px;border-radius:10px;border:1px solid var(--line);background:var(--panel);display:flex;align-items:center;justify-content:center;overflow:hidden;opacity:.9}
-.qmob svg{width:30px;height:30px}
+.mob-stage{display:flex;flex-direction:column;align-items:center;margin:8px 0 4px}
+.mob-queue{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-top:2px}
+.qmob{width:26px;height:26px;border-radius:7px;border:1px solid var(--line);background:var(--panel);display:flex;align-items:center;justify-content:center;overflow:hidden;opacity:.9}
+.qmob svg{width:20px;height:20px}
 .qmob.dead{opacity:.25;filter:grayscale(1)}
 .qmob.cur{border-color:var(--gold);box-shadow:0 0 10px rgba(245,194,66,.5)}
-.qmob.boss{width:44px;height:44px;border-color:var(--danger)}
-.qmob.boss svg{width:36px;height:36px}
+.qmob.boss{width:32px;height:32px;border-color:var(--danger)}
+.qmob.boss svg{width:24px;height:24px}
 .qmob.boss.gold{border-color:var(--gold)}
 .lockbadge{position:absolute;bottom:-4px;right:-4px;font-size:16px;background:var(--panel-solid);border:1px solid var(--line);border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center}
-.mob-art{width:190px;height:190px;display:flex;align-items:center;justify-content:center;filter:drop-shadow(0 0 26px rgba(139,92,246,.4))}
+.mob-art{width:104px;height:104px;display:flex;align-items:center;justify-content:center;filter:drop-shadow(0 0 26px rgba(139,92,246,.4))}
 .mob-art.hit{animation:shake .4s}
 @keyframes shake{0%,100%{transform:none}20%{transform:translateX(-9px)}40%{transform:translateX(8px)}60%{transform:translateX(-6px)}80%{transform:translateX(4px)}}
-.mob-name{font-family:'Russo One';font-size:20px;margin-top:4px}
-.hpbar{width:100%;height:16px;border-radius:8px;border:1px solid var(--line);background:#141A33;margin-top:12px;overflow:hidden}
-.hpbar i{display:block;height:100%;background:linear-gradient(90deg,#FF3B5C,#FF7A5C);transition:width .5s ease;border-radius:8px}
-.hp-num{font-family:'JetBrains Mono';font-size:12px;color:var(--muted);margin-top:6px;text-align:right}
+.mob-name{font-family:'Russo One';font-size:16px;margin-top:2px}
+.hpbar{width:100%;height:10px;border-radius:6px;border:1px solid var(--line);background:#141A33;margin-top:6px;overflow:hidden}
+.hpbar i{display:block;height:100%;background:linear-gradient(90deg,#FF3B5C,#FF7A5C);transition:width .5s ease;border-radius:6px}
+.hp-num{font-family:'JetBrains Mono';font-size:11px;color:var(--muted);margin-top:3px;text-align:right}
 /* HP игрока — зелёная полоса, отдельно от красной полосы моба (та же .hpbar,
    просто другой цвет заливки), чтобы два бара не путались между собой. */
 .hpbar.player i{background:linear-gradient(90deg,#1FAE71,#34D399)}
@@ -1378,7 +1382,7 @@ function combatTick(){
     }
   } else if(S.screen==='rest'){
     if(r.hp < r.hpMax){
-      const heal = Math.max(1, Math.round(r.hpMax*0.5/REST_SECONDS));
+      const heal = Math.max(1, Math.round(r.hpMax*0.5/(S.restTotal||REST_MIN_SECONDS)));
       r.hp = Math.min(r.hpMax, r.hp + heal);
       updatePlayerHpDOM();
     }
@@ -1481,26 +1485,26 @@ function rRaid(){
     ? `<div class="cam-fallback">⚠️ ${escapeHtml(Cam.error)}<button class="btn" onclick="manualPush()">Засчитать повторение вручную</button></div>`
     : `<video id="raidVideo" autoplay playsinline muted></video><canvas id="raidCanvas"></canvas><div class="cam-status" id="camStatus">Включаю сканер Системы…</div>`;
   h(`<div class="screen">
-    <div class="topbar"><button class="back" onclick="go('map')">‹</button>
+    <div class="topbar" style="margin-bottom:12px"><button class="back" onclick="go('map')">‹</button>
       <div style="font-family:'JetBrains Mono';font-size:12px;letter-spacing:2px;color:${g.gateColor==='red'?'var(--danger)':g.gateColor==='gold'?'var(--gold)':'var(--sys)'}">${g.stage==='exam'?'ЭКЗАМЕН':g.stage==='trial'?'ИСПЫТАНИЕ':'ВРАТА '+g.rank} · ${g.name.toUpperCase()}</div>
     </div>
-    ${(g.stage==='exam' && (EXAM_XP_MULT[g.rank]||1)>1) ? `<div class="syswin" style="margin-bottom:14px;border-color:var(--danger)"><div class="sys-tag" style="color:var(--danger)"><span class="bang" style="border-color:var(--danger)">!</span> БОНУС СИСТЕМЫ</div><div class="sub" style="font-size:13px">Экзамен даёт <b class="gold">×${EXAM_XP_MULT[g.rank]}</b> опыта за подход — System толкает тебя за предел ранга.</div></div>` : ''}
-    ${r.replay ? `<div class="syswin" style="margin-bottom:14px"><div class="sys-tag"><span class="bang">i</span> ПОВТОРНОЕ ПРОХОЖДЕНИЕ</div><div class="sub" style="font-size:13px">Эти врата уже закрыты — опыт и отжимания за этот заход не засчитываются.</div></div>` : ''}
+    ${(g.stage==='exam' && (EXAM_XP_MULT[g.rank]||1)>1) ? `<div class="syswin" style="margin-bottom:10px;border-color:var(--danger)"><div class="sys-tag" style="color:var(--danger)"><span class="bang" style="border-color:var(--danger)">!</span> БОНУС СИСТЕМЫ</div><div class="sub" style="font-size:13px">Экзамен даёт <b class="gold">×${EXAM_XP_MULT[g.rank]}</b> опыта за подход — System толкает тебя за предел ранга.</div></div>` : ''}
+    ${r.replay ? `<div class="syswin" style="margin-bottom:10px"><div class="sys-tag"><span class="bang">i</span> ПОВТОРНОЕ ПРОХОЖДЕНИЕ</div><div class="sub" style="font-size:13px">Эти врата уже закрыты — опыт и отжимания за этот заход не засчитываются.</div></div>` : ''}
     <div class="mob-queue">${queue}</div>
     <div class="mob-stage">
-      <div class="mob-art" id="mobArt">${mobVisual(m.kind)}</div>
+      <div class="mob-art" id="mobArt">${mobVisual(m.kind,96)}</div>
       <div class="mob-name">${m.isBoss?'👑 '+m.name:m.name+' '+m.n} <span class="mono" style="color:var(--muted);font-size:13px">· ${r.idx+1}/${r.mobs.length}</span></div>
       <div class="hpbar"><i id="hpFill" style="width:${pct}%"></i></div>
       <div class="hp-num" id="hpNum">HP ${m.hp} / ${m.maxHp}</div>
     </div>
-    <div style="margin-top:6px">
+    <div style="margin-top:4px">
       <div class="hpbar player"><i id="playerHpFill" style="width:${Math.max(0,r.hp/r.hpMax*100)}%"></i></div>
       <div class="hp-num player" id="playerHpNum">Твоё HP ${r.hp} / ${r.hpMax}</div>
     </div>
     <div class="cam-wrap" id="camWrap">${camInner}
       ${(!r.started && !Cam.error) ? `<div class="raid-countdown" id="raidCountdown">${r.countdown}</div><div class="raid-countdown-sub">Поставь телефон и приготовься</div>` : ''}
     </div>
-    <div class="sub" style="text-align:center;margin-top:8px">Держи телефон так, чтобы Система видела твои плечи и локти — отжимания считаются автоматически.</div>
+    <div class="sub" style="text-align:center;margin-top:8px;font-size:13px">Держи телефон так, чтобы Система видела твои плечи и локти — отжимания считаются автоматически. Видео с камеры не покидает телефон — распознавание идёт прямо на устройстве.</div>
     ${Cam.error ? '' : `<button class="btn ghost" style="margin-top:10px;font-size:13px" onclick="manualPush()" ${!r.started?'disabled':''}>${r.started?'Не считает? Засчитать вручную':'Подожди отсчёт…'}</button>`}
     <div class="bottom">
       <button class="btn ghost" onclick="retreatRaid()">Отступить из врат</button>
@@ -1553,11 +1557,22 @@ function registerPush(){
     setTimeout(()=>{
       r.idx++;
       if(r.idx >= r.mobs.length){ winRaid(); }
-      else { S.restLeft = REST_SECONDS; go('rest'); tickRest(); }
+      else {
+        const dur = restSecondsFor(m);
+        S.restLeft = dur; S.restTotal = dur;
+        go('rest'); tickRest();
+      }
     }, 500);
   }
 }
-const REST_SECONDS = 40;
+/* Отдых между подходами масштабируется от сложности только что побеждённого
+   моба — чем больше отжиманий он потребовал, тем длиннее перерыв, с нижней
+   границей REST_MIN_SECONDS. Линейный рост от maxHp — та же "шкала силы",
+   что уже используется для урона моба (mobDps). */
+const REST_MIN_SECONDS = 15;
+function restSecondsFor(m){
+  return Math.max(REST_MIN_SECONDS, Math.round(REST_MIN_SECONDS + m.maxHp*0.5));
+}
 const REST_RING = { size:150, stroke:10 };
 function restRingCircumference(){ return 2*Math.PI*((REST_RING.size-REST_RING.stroke)/2); }
 function restRingSVG(pct){
@@ -1572,7 +1587,7 @@ function restRingSVG(pct){
 }
 function rRest(){
   const r=S.raid, next=r.mobs[r.idx];
-  const pct = Math.max(0, Math.min(100, S.restLeft/REST_SECONDS*100));
+  const pct = Math.max(0, Math.min(100, S.restLeft/(S.restTotal||REST_MIN_SECONDS)*100));
   h(`<div class="screen" style="justify-content:center;text-align:center">
     <div class="syswin"><div class="sys-tag"><span class="bang">!</span> ПЕРЕЗАРЯДКА МАНЫ</div>
       <div class="sub" style="font-size:14px">Моб повержен. На очереди <b class="cy">${next.isBoss?'👑 '+next.name:next.name+' '+next.n}</b>: <b class="gold">${next.maxHp} отжиманий</b>.</div>
@@ -1599,7 +1614,7 @@ function tickRest(){
     const el=document.getElementById('restT');
     if(el) el.textContent=S.restLeft;
     const fg=document.getElementById('restRingFg');
-    if(fg){ const pct=Math.max(0, Math.min(100, S.restLeft/REST_SECONDS*100)); fg.style.strokeDashoffset = c*(1-pct/100); }
+    if(fg){ const pct=Math.max(0, Math.min(100, S.restLeft/(S.restTotal||REST_MIN_SECONDS)*100)); fg.style.strokeDashoffset = c*(1-pct/100); }
     if(S.restLeft<=0 || S.screen!=='rest'){ clearInterval(S._t); if(S.screen==='rest') go('raid'); }
   },1000);
 }
@@ -1756,6 +1771,12 @@ function rSettings(){
     <div class="sub" style="margin-top:22px;font-size:12px;letter-spacing:1px;text-transform:uppercase">Дней тренировок в неделю</div>
     <div class="chips" style="margin-top:10px">${DAYS_OPTS.map(d=>`
       <button class="chip ${a.days===d?'sel':''}" onclick="setAnsAndRender('days',${d},this)">${d}</button>`).join('')}</div>
+
+    <div class="sub" style="margin-top:22px;font-size:12px;letter-spacing:1px;text-transform:uppercase">Приватность</div>
+    <div class="syswin" style="margin-top:10px">
+      <div class="sys-tag"><span class="bang">i</span> КАМЕРА</div>
+      <div class="sub" style="font-size:13px">Видео с камеры никогда не покидает телефон. Распознавание позы (счёт отжиманий) считается прямо на устройстве, в браузере — на сервер не передаётся ни один кадр.</div>
+    </div>
 
     <div class="sub" style="margin-top:22px;font-size:12px;letter-spacing:1px;text-transform:uppercase">Данные</div>
     <div class="opts" style="margin-top:10px">
