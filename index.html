@@ -370,6 +370,33 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
   box-shadow:0 0 22px rgba(139,92,246,.45), inset 0 0 16px rgba(0,0,0,.5);
 }
 .mob-art.hit{animation:shake .4s}
+/* Портрет побеждённого моба на экране победы. Подача намеренно та же, что у
+   .mob-art в бою: круглая рамка, чистый чёрный фон, обрезка по кругу. Раньше
+   картинка висела прямоугольником со скруглением и серо-зелёным фильтром — на
+   тёмном фоне экрана это читалось как небрежно вырезанный кусок арта.
+   Цвет рамки — зелёный (--ok), а не фиолетовый как в бою: моб уже повержен,
+   и это визуально отделяет "победу" от "боя". */
+.victory-mob{
+  width:150px;height:150px;border-radius:50%;border:3px solid var(--ok);
+  background:#000;
+  display:flex;align-items:center;justify-content:center;overflow:hidden;
+  box-shadow:0 0 26px rgba(52,211,153,.35), inset 0 0 18px rgba(0,0,0,.6);
+}
+/* mobVisual() отдаёт картинку со своим скруглением 16px — внутри круглой
+   рамки оно не нужно и мешает, обрезку делает сам контейнер. */
+.victory-mob img{width:100%;height:100%;object-fit:cover;border-radius:0}
+/* Карточка с информацией о последнем побеждённом мобе. Раньше эти данные
+   жили только в бестиарии, и человек закрывал врата, не узнав, кого победил. */
+.victory-mob-info{
+  width:100%;border:1px solid var(--line);background:var(--panel);
+  border-radius:14px;padding:12px 14px;text-align:left;
+}
+.victory-mob-info .vm-tag{
+  font-family:'JetBrains Mono';font-size:10px;letter-spacing:1.5px;
+  text-transform:uppercase;color:var(--muted);
+}
+.victory-mob-info .vm-name{font-family:'Russo One';font-size:16px;margin-top:5px}
+.victory-mob-info .vm-lore{font-size:12.5px;color:var(--muted);line-height:1.45;margin-top:5px}
 @keyframes shake{0%,100%{transform:none}20%{transform:translateX(-9px)}40%{transform:translateX(8px)}60%{transform:translateX(-6px)}80%{transform:translateX(4px)}}
 .mob-name{
   font-family:'Russo One';font-size:14px;margin-top:6px;padding:5px 14px;
@@ -606,6 +633,10 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
 }
 .raid-side-btn.retreat{color:var(--danger);border-color:rgba(255,59,92,.4)}
 .raid-side-btn.manual{color:var(--gold);border-color:rgba(245,194,66,.4);font-size:26px;font-family:'Russo One'}
+/* Откат между ручными нажатиями (см. MANUAL_PUSH_COOLDOWN_MS). pointer-events
+   отключаем не ради красоты: без этого нажатие доходит до обработчика, тихо
+   отбрасывается по таймеру, и человек не понимает, почему счёт не растёт. */
+.raid-side-btn.manual.cooling{opacity:.3;pointer-events:none;transition:opacity .15s ease}
 /* Счётчик "пульсирует" на каждый засчитанный повтор — короткий scale-подскок,
    класс добавляется/снимается в updateRepCounterDOM() тем же приёмом, что уже
    используется у .mob-art.hit (снять → reflow → добавить, чтобы анимация
@@ -3546,7 +3577,34 @@ function updateRaidDOM(){
   const art=document.getElementById('mobArt');
   if(art){ art.classList.remove('hit'); void art.offsetWidth; art.classList.add('hit'); }
 }
-function manualPush(){ registerPush(); }
+/* Кнопка «+» — ручной зачёт повтора, когда камера недоступна. Между
+   нажатиями обязательная пауза: без неё повторы настукиваются пальцем
+   быстрее, чем их физически можно сделать телом, и весь счёт теряет смысл.
+   1.5 секунды — нижняя граница названного диапазона, взята намеренно: живой
+   темп отжиманий это примерно один повтор в 1.5–2.5 секунды, и более
+   строгий порог начал бы резать честные повторения у тех, кто работает
+   быстро. Камерный счёт сюда не заходит, у него своя защита от дребезга
+   (Cam.lastRepAt, 450 мс) — там частоту ограничивает сама физика движения. */
+const MANUAL_PUSH_COOLDOWN_MS = 1500;
+let manualPushLastAt = 0;
+function manualPush(){
+  const now = performance.now();
+  if(now - manualPushLastAt < MANUAL_PUSH_COOLDOWN_MS) return;
+  manualPushLastAt = now;
+  markManualBtnCooling();
+  registerPush();
+}
+/* Гасим кнопку на время паузы. Без этого нажатие просто молча не срабатывает,
+   и человек решает, что приложение зависло, — а так видно, что идёт откат. */
+function markManualBtnCooling(){
+  const btn = document.querySelector('.raid-side-btn.manual');
+  if(!btn) return;
+  btn.classList.add('cooling');
+  setTimeout(()=>{
+    const el = document.querySelector('.raid-side-btn.manual');
+    if(el) el.classList.remove('cooling');
+  }, MANUAL_PUSH_COOLDOWN_MS);
+}
 /* Счётчик отжиманий за текущий заход во врата (сумма по всем мобам, включая
    уже убитых) — золотой бейдж снизу слева поверх камеры, живёт и на рейде,
    и на отдыхе (камера/бейдж не пересоздаются между ними, см. rRest()). */
@@ -3636,7 +3694,16 @@ function combatTick(){
       // Пауза урона, если детектор прямо сейчас не видит позу (см.
       // NO_POSE_DAMAGE_PAUSE_MS выше) — без этого лаг модели/потеря кадра
       // молча съедала бы HP игрока, хотя это не его ошибка в технике.
-      const poseLost = !Cam._lastPoseAt || (performance.now() - Cam._lastPoseAt > NO_POSE_DAMAGE_PAUSE_MS);
+      //
+      // ВАЖНО: пауза имеет смысл ТОЛЬКО когда камера реально работает и на
+      // миг потеряла позу. Если камеры нет вовсе — не дали доступ, устройство
+      // не потянуло, человек считает повторы кнопкой «+» — то Cam._lastPoseAt
+      // не выставляется никогда, условие оказывалось истинным всегда, и урон
+      // игроку не шёл совсем. То есть ручной режим давал бессмертие: моба
+      // бьёшь, а он в ответ не может. Проверяем состояние самой камеры.
+      const camWorking = (Cam.running || Cam.initializing) && !Cam.error;
+      const poseLost = camWorking
+        && (!Cam._lastPoseAt || (performance.now() - Cam._lastPoseAt > NO_POSE_DAMAGE_PAUSE_MS));
       if(!poseLost){
         r.hp = Math.max(0, r.hp - mobDps(m));
         updatePlayerHpDOM();
@@ -4180,6 +4247,26 @@ function titleUnlockHTML(){
     </div>`;
   }).join('');
 }
+/* Кто именно был повержен последним — имя и описание из бестиария, прямо на
+   экране победы. До этого информация о мобе жила только в бестиарии, и врата
+   закрывались без единого слова о том, кого игрок только что одолел.
+   Показываем последнего моба волны (у врат их несколько) — он же изображён на
+   портрете выше, так что подпись и картинка описывают одно и то же существо.
+   Собственное имя моба может отличаться от канонического (см. дополнительные
+   боссы Испытаний), поэтому берём его с приоритетом над названием из
+   бестиария, а описание — всегда из бестиария. */
+function lastMobInfoHTML(mob){
+  if(!mob) return '';
+  const b = BESTIARY[mob.kind];
+  const name = mob.name || (b && b.name);
+  if(!name) return '';
+  const lore = b && b.lore;
+  return `<div class="victory-mob-info">
+    <div class="vm-tag">Последний повержен</div>
+    <div class="vm-name">${escapeHtml(name)}</div>
+    ${lore ? `<div class="vm-lore">${escapeHtml(lore)}</div>` : ''}
+  </div>`;
+}
 function rVictory(){
   const g=S.raid.gate;
   const total = S.raid.mobs.reduce((a,m)=>a+m.maxHp,0);
@@ -4188,8 +4275,9 @@ function rVictory(){
     <div class="syswin" style="width:100%"><div class="sys-tag"><span class="bang">!</span> ВРАТА ЗАКРЫТЫ</div>
       <div style="font-size:15px">Все монстры (<b class="gold">${S.raid.mobs.length}</b>) повержены. Угроза устранена.</div>
     </div>
-    <div style="width:150px;filter:grayscale(.3) drop-shadow(0 0 20px rgba(52,211,153,.4))">${mobVisual(lastMob.kind,150,lastMob.name)}</div>
+    <div class="victory-mob">${mobVisual(lastMob.kind,150,lastMob.name)}</div>
     <h2 style="font-size:24px">ПОБЕДА</h2>
+    ${lastMobInfoHTML(lastMob)}
     ${S.justRanked ? `<div class="syswin" style="width:100%;border-color:var(--gold);box-shadow:0 0 30px rgba(245,194,66,.25)">
       <div class="sys-tag" style="color:var(--gold)"><span class="bang" style="border-color:var(--gold)">!</span> РАНГ ПОВЫШЕН</div>
       <div style="font-size:16px">Охотник переведён в ранг <b class="gold" style="font-size:20px">${S.justRanked}</b>.</div>
