@@ -2676,7 +2676,14 @@ function hAnimated(html, direction){
   }, 340);
 }
 
-function render(){
+/* opts.keepScroll — перерисовка «на месте», без прыжка наверх. Нужна там, где
+   человек что-то переключает внутри длинного списка: выбор титула на экране
+   титулов происходит внизу страницы, и сброс скролла отбрасывал его к началу,
+   выглядя как потеря места. По умолчанию поведение прежнее — смена экрана
+   должна начинаться сверху. */
+function render(opts){
+  const keepScroll = !!(opts && opts.keepScroll);
+  const scrollY = keepScroll ? (window.scrollY || window.pageYOffset || 0) : 0;
   const phoneEl = document.getElementById('phone');
   // Слайд-переход между шагами квиза сохраняет текущую позицию скролла (double-buffer
   // на месте) — принудительный scrollTo(0,0) в этом случае только даёт лишний рывок.
@@ -2690,7 +2697,8 @@ function render(){
   updateTgBackButton();
   updateSwipeLock();
   renderQuizBottom(); // на не-квиз экранах прячет persistent-кнопку "Далее" (см. выше)
-  if(!isSlideTransition) window.scrollTo(0,0);
+  if(keepScroll) window.scrollTo(0, scrollY);
+  else if(!isSlideTransition) window.scrollTo(0,0);
 }
 
 /* Статичная иллюстрация "как встать перед камерой" для онбординга — не
@@ -4876,7 +4884,19 @@ function effectiveSelectedTitleId(){
 function selectTitle(id){
   S.selectedTitle = (S.selectedTitle===id) ? null : id; // повторный тап снимает титул
   saveState();
-  render();
+  /* Отправляем выбор на сервер сразу. Без этого титул попадал в таблицу
+     лидеров только после следующего закрытия врат — человек выбирал его,
+     шёл смотреть рейтинг и не находил там ничего.
+     Но только если за сегодня уже есть результат. Причина осторожности:
+     upsertScore на сервере перезаписывает счётчики дня целиком, а локальный
+     день мог смениться раньше серверного (часовые пояса). Отправка нулей в
+     такой момент затёрла бы настоящий результат. Если сегодня пусто, игрока
+     в дневной таблице всё равно нет, и титулу негде показаться — он уедет
+     вместе с первым же закрытым проходом. */
+  const todayReps = (S.pushupsToday|0) + (S.squatsToday|0) + (S.situpsToday|0);
+  if(todayReps > 0) sendScore();
+  // Перерисовка без прыжка наверх: титулы выбирают в конце длинного списка.
+  render({ keepScroll:true });
 }
 function setTitlesTab(tab){
   S.titlesTab = tab;
