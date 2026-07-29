@@ -905,6 +905,9 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
 /* ============ СОСТОЯНИЕ ============ */
 const S = {
   screen: 'splash',
+  // Идёт первое чтение облачного сохранения, локальной копии нет. Пока true —
+  // заставка не пускает в анкету (см. boot()/rSplash()).
+  restoring: false,
   step: 0,
   ans: { name:'', exp:null, goal:null, age:25, max:null, days:null, time:null },
   rank: 'E',
@@ -1407,7 +1410,19 @@ function saveState(){
   // Telegram; localStorage выше остаётся быстрым локальным кэшем на случай,
   // если CloudStorage недоступен или это вообще не Telegram. Лимит Bot API —
   // 4096 символов на значение, при переполнении просто не шлём в облако.
-  if(TG && TG.CloudStorage && payload.length < 4000){
+  /* ЗАПИСЬ В ОБЛАКО РАЗРЕШЕНА ТОЛЬКО ПОСЛЕ ТОГО, КАК МЫ ЕГО ПРОЧИТАЛИ.
+     Это защита от необратимой потери прогресса, а не перестраховка.
+     Что происходило раньше: localStorage на iPhone может быть вычищен системой
+     сам по себе (WKWebView удаляет хранилище сайтов, к которым давно не
+     обращались) — человек ничего не удалял и не переустанавливал. Приложение
+     открывалось «чистым», показывало заставку, и первое же касание вызывало
+     go() → saveState() → запись пустого состояния в облако. Резервная копия
+     уничтожалась за секунду до того, как её успевали прочитать. Прогресс
+     терялся окончательно, причём нашими собственными руками.
+     Теперь до ответа облака (или до исчерпания попыток) пишем только локально.
+     Худшее, что может случиться при сбое чтения, — прогресс этой сессии не
+     попадёт в облако. Это несравнимо лучше, чем стереть уже накопленное. */
+  if(TG && TG.CloudStorage && payload.length < 4000 && cloudState !== 'pending' && cloudState !== 'failed'){
     try{ TG.CloudStorage.setItem(SAVE_KEY, payload, ()=>{}); }catch(e){}
   }
 }
@@ -1460,19 +1475,59 @@ function loadState(){
    приложение открывается мгновенно, не дожидаясь round-trip к серверам
    Telegram. Если там лежит более свежий профиль (играли с другого устройства),
    тихо подменяем состояние и перерисовываем экран. */
-function syncFromCloud(){
-  if(!TG || !TG.CloudStorage) return;
+/* Состояние облачного хранилища на эту сессию:
+     'pending'     — ещё не читали, писать НЕЛЬЗЯ (см. saveState);
+     'ready'       — прочитали успешно, писать можно;
+     'failed'      — не смогли прочитать даже с повторами, писать НЕЛЬЗЯ;
+     'unavailable' — облака нет вовсе (старый клиент, не Telegram) — писать
+                     некуда, но и терять нечего, поэтому не блокируем.
+   Разница между 'failed' и 'unavailable' принципиальна: в первом случае
+   резервная копия может существовать, и затирать её нельзя; во втором её
+   заведомо нет. */
+let cloudState = 'pending';
+const CLOUD_READ_RETRIES = 3;
+// Сколько максимум держим заставку в ожидании облака. 5 секунд — заметно
+// дольше обычного ответа (доли секунды) и заведомо короче терпения человека.
+const CLOUD_RESTORE_MAX_WAIT_MS = 5000;
+function syncFromCloud(attempt){
+  attempt = attempt || 1;
+  if(!TG || !TG.CloudStorage){ cloudState = 'unavailable'; finishCloudRestore(); return; }
   try{
     TG.CloudStorage.getItem(SAVE_KEY, (err, value)=>{
-      if(err || !value) return;
-      const localRaw = (function(){ try{ return localStorage.getItem(SAVE_KEY); }catch(e){ return null; } })();
-      if(value === localRaw) return; // уже синхронизировано — лишний рендер не нужен
-      if(applyStateFromRaw(value)){
-        try{ localStorage.setItem(SAVE_KEY, value); }catch(e){}
-        if(S.onboarded && S.screen!=='raid' && S.screen!=='rest'){ S.screen='map'; render(); }
+      if(err){
+        // Ошибка чтения — это НЕ «данных нет». Раньше мы их путали: молча
+        // выходили, и дальше пустое состояние затирало облако. Пробуем ещё.
+        if(attempt < CLOUD_READ_RETRIES){
+          setTimeout(()=>syncFromCloud(attempt+1), 700*attempt);
+          return;
+        }
+        cloudState = 'failed';
+        finishCloudRestore();
+        return;
       }
+      cloudState = 'ready';
+      if(value){
+        const localRaw = (function(){ try{ return localStorage.getItem(SAVE_KEY); }catch(e){ return null; } })();
+        if(value !== localRaw && applyStateFromRaw(value)){
+          try{ localStorage.setItem(SAVE_KEY, value); }catch(e){}
+          if(S.onboarded && S.screen!=='raid' && S.screen!=='rest'){ S.screen='map'; }
+        }
+      }
+      finishCloudRestore();
     });
-  }catch(e){}
+  }catch(e){
+    cloudState = 'failed';
+    finishCloudRestore();
+  }
+}
+/* Пока идёт первое чтение облака, а локального сохранения нет, приложение не
+   пускает в анкету: иначе человек успевает пройти её поверх ещё не прочитанной
+   резервной копии. Как только облако ответило (или попытки исчерпаны) — либо
+   показываем восстановленный прогресс, либо честно начинаем заново. */
+function finishCloudRestore(){
+  if(!S.restoring) return;
+  S.restoring = false;
+  render();
 }
 
 const QUIZ = [
@@ -2762,7 +2817,9 @@ function rSplash(){
       <div style="font-size:15px;line-height:1.5">Обнаружен спящий потенциал.<br>Ты был выбран. Ответь на несколько вопросов, чтобы завершить <b class="cy">пробуждение</b>.</div>
     </div>
     <div class="bottom" style="width:100%">
-      <button class="btn" onclick="S.step=0;go('quiz')">Начать пробуждение</button>
+      ${S.restoring
+        ? `<button class="btn" disabled style="opacity:.5">Ищу твой прогресс…</button>`
+        : `<button class="btn" onclick="S.step=0;go('quiz')">Начать пробуждение</button>`}
     </div>
   </div>`);
 }
@@ -5200,6 +5257,17 @@ function boot(){
   ensureDay();
   if(hasProfile) S.screen = 'map'; // профиль уже есть — сразу к карте, минуя онбординг
   tgInit();
+  /* Локального сохранения нет — но это ещё не значит, что человек новый.
+     На iPhone система может вычистить хранилище сама, и тогда единственная
+     копия прогресса лежит в облаке Telegram. Придерживаем заставку, пока не
+     узнаем, есть ли она: без этого человек уходит в анкету и проходит её
+     поверх собственного прогресса.
+     Ждём недолго и с потолком по времени — приложение не должно зависнуть
+     из-за молчащего облака. */
+  if(!hasProfile && TG && TG.CloudStorage){
+    S.restoring = true;
+    setTimeout(()=>{ finishCloudRestore(); }, CLOUD_RESTORE_MAX_WAIT_MS);
+  }
   render();
   syncFromCloud();
   if(hasProfile) syncReminder(); // на случай если прошлая отправка не долетела
