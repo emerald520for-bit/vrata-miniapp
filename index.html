@@ -2961,7 +2961,7 @@ function rMap(){
     // Заблокированные врата тоже кликабельны — но вместо боя показывают тултип
     // (или заглушку подписки), почему нельзя войти, а не молчат.
     const click = mystery ? `onclick="showToast('Эти врата откроются позже')"`
-      : seqLocked ? `onclick="showToast('Сначала закрой предыдущие врата')"`
+      : seqLocked ? `onclick="showGatePreview('${track}',${g.id})"`
       : paywalled ? `onclick="showGatePreview('${track}',${g.id})"`
       : `onclick="startRaid('${track}',${g.id})"`;
     let frame, rankLabel;
@@ -4676,6 +4676,12 @@ function rGatePreview(){
   // карту, а не показываем пустой экран.
   if(!g){ go('map'); return; }
   const done = doneGatesForTrack(track);
+  // Чем именно закрыты врата. Порядок тот же, что на карте (см. rMap):
+  // последовательный замок важнее подписки — предлагать оплату тому, кто и с
+  // подпиской не смог бы войти, было бы враньём. Значок на портрете и нижний
+  // блок экрана оба зависят от этого признака.
+  const gi = GATES.findIndex(x=>x.id===g.id);
+  const seqLocked = gi > 0 && !done.includes(GATES[gi-1].id);
   // Врата ранга S — заглушка будущего контента, пройти их нельзя. В общем
   // счётчике им не место: иначе знаменатель обещает на одни врата больше,
   // чем реально существует.
@@ -4704,7 +4710,7 @@ function rGatePreview(){
       <div style="width:34px"></div>
     </div>
 
-    <div class="gp-hero">${gateArt(g,150)}<div class="gp-hero-lock">⚡</div></div>
+    <div class="gp-hero">${gateArt(g,150)}<div class="gp-hero-lock">${seqLocked ? icon('lock',34,'🔒') : '⚡'}</div></div>
     <h2 class="gp-title">${escapeHtml(g.name)}</h2>
     <div class="gp-meta">${mobs.length} ${pluralRuClient(mobs.length,['монстр','монстра','монстров'])} · ≈ ${totalReps} ${pluralRuClient(totalReps,['повторение','повторения','повторений'])} · ${exLbl.verb}</div>
 
@@ -4721,15 +4727,33 @@ function rGatePreview(){
       <div class="gp-prog-sub">${gatePreviewProgressText(doneReal.length, realGates.length)}</div>
     </div>
 
-    <div class="gp-offer">
-      ${paywallEmblemHTML()}
-      <div class="sys-tag" style="justify-content:center"><span class="bang">!</span> КОНТРАКТ ОХОТНИКА</div>
-      <div class="gp-offer-txt">${SUBSCRIPTION_PRICE_RUB} ₽ — доступ на 30 дней, без автопродления. Оплата на защищённой странице Prodamus, картой или через СБП.</div>
-      <button class="btn" style="margin:0;width:100%" onclick="showPaywallModal()">Оформить за ${SUBSCRIPTION_PRICE_RUB} ₽</button>
-      <button class="gp-btn2" onclick="go('map')">Вернуться к карте</button>
-      <div class="sub" style="margin-top:10px;font-size:11px"><a href="oferta.html" target="_blank" rel="noopener" style="color:var(--muted)">Оферта</a> · <a href="privacy.html" target="_blank" rel="noopener" style="color:var(--muted)">Политика конфиденциальности</a></div>
-    </div>
+    ${gatePreviewFooterHTML(g, GATES, gi, seqLocked)}
   </div>`);
+}
+/* Нижний блок экрана зависит от того, ЧЕМ именно закрыты врата. Верхняя часть
+   (изображение, состав, объём работы) одинакова всегда: вопрос «что там
+   дальше» есть у каждого, а не только у того, кому продают подписку.
+   Различается только причина и, соответственно, действие.
+   Порядок проверок повторяет порядок в rMap(): последовательный замок
+   важнее подписки — предлагать оплату тому, кто всё равно не может войти,
+   было бы враньём. */
+function gatePreviewFooterHTML(g, GATES, gi, seqLocked){
+  if(seqLocked){
+    const prev = GATES[gi-1];
+    return `<div class="gp-offer" style="border-color:var(--line);box-shadow:none">
+      <div class="sys-tag" style="justify-content:center"><span class="bang">!</span> ПУТЬ ЗАКРЫТ</div>
+      <div class="gp-offer-txt">Сначала закрой врата «<b style="color:var(--text)">${escapeHtml(prev.name)}</b>».</div>
+      <button class="btn" style="margin:0;width:100%" onclick="go('map')">Вернуться к карте</button>
+    </div>`;
+  }
+  return `<div class="gp-offer">
+    ${paywallEmblemHTML()}
+    <div class="sys-tag" style="justify-content:center"><span class="bang">!</span> КОНТРАКТ ОХОТНИКА</div>
+    <div class="gp-offer-txt">${SUBSCRIPTION_PRICE_RUB} ₽ — доступ на 30 дней, без автопродления. Оплата на защищённой странице Prodamus, картой или через СБП.</div>
+    <button class="btn" style="margin:0;width:100%" onclick="showPaywallModal()">Оформить за ${SUBSCRIPTION_PRICE_RUB} ₽</button>
+    <button class="gp-btn2" onclick="go('map')">Вернуться к карте</button>
+    <div class="sub" style="margin-top:10px;font-size:11px"><a href="oferta.html" target="_blank" rel="noopener" style="color:var(--muted)">Оферта</a> · <a href="privacy.html" target="_blank" rel="noopener" style="color:var(--muted)">Политика конфиденциальности</a></div>
+  </div>`;
 }
 /* Строка под полосой прогресса. Смысл её один: показать, что пройденное —
    это малая часть пути. Соотношение «7 из 74» продаёт лучше любого текста,
