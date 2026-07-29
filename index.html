@@ -724,6 +724,7 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
 /* Строка стала длиннее (см. camDiagText) — разрешаем перенос и поднимаем
    контраст: её основное назначение — попасть на скриншот с чужого телефона
    и остаться читаемой, а при opacity .4 текст на фото уже почти не виден. */
+.raid-calib-diag.hidden{display:none}
 .raid-calib-diag{
   margin-top:6px;font-size:10px;letter-spacing:.03em;opacity:.55;
   font-variant-numeric:tabular-nums;line-height:1.5;text-align:center;
@@ -961,6 +962,14 @@ const S = {
   // это просто трофейная полка. Специально без подсказки условия получения
   // в интерфейсе (см. rTitlesAchievementsTab()) — сюрприз, а не чек-лист.
   achievements: [],
+  /* Этому устройству нужен запасной вычислитель (WASM): его видеочип считает
+     неверно, проверено на практике при прошлом запуске (см. maybeSwitchToWasm).
+     Храним вместе с прогрессом, чтобы не повторять проверку каждый раз: без
+     этого первые шесть секунд каждого захода во врата распознавание заведомо
+     не работает, и человек снова видит поломку, которую мы уже нашли.
+     Значение привязано к устройству, а не к игроку — но и сохранение у нас
+     локальное, так что при переезде на другой телефон оно просто перепроверится. */
+  needWasm: false,
   everDied: false, // флаг для ачивки "Восставший из пепла" (см. playerDied()/startRaid())
   // Подписка "Контракт Охотника" — статус приходит с сервера (/api/me,
   // см. checkSubscription() ниже), кэшируется в localStorage вместе с
@@ -1403,7 +1412,7 @@ function saveState(){
     settings:S.settings,
     lastWinDate:S.lastWinDate, todayDate:S.todayDate, onboarded:S.onboarded,
     titles:S.titles, bestiary:S.bestiary, selectedTitle:S.selectedTitle, contractSeen:S.contractSeen,
-    achievements:S.achievements, everDied:S.everDied, sub:S.sub,
+    achievements:S.achievements, everDied:S.everDied, sub:S.sub, needWasm:S.needWasm,
   });
   try{ localStorage.setItem(SAVE_KEY, payload); }catch(e){ /* приватный режим и т.п. — просто не сохраняем локально */ }
   // CloudStorage синхронизирует прогресс между устройствами одного аккаунта
@@ -1458,6 +1467,7 @@ function applyStateFromRaw(raw){
     S.bestiary = data.bestiary || {};
     S.selectedTitle = data.selectedTitle || null;
     S.contractSeen = data.contractSeen || [];
+    S.needWasm = !!data.needWasm;
     S.achievements = data.achievements || [];
     S.everDied = !!data.everDied;
     if(data.sub && typeof data.sub==='object'){
@@ -3196,7 +3206,25 @@ function rRank(){
 const POSE_LIBS = {
   tf: 'https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.20.0/dist/tf.min.js',
   pd: 'https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection@2.1.3/dist/pose-detection.min.js',
+  // Запасной вычислитель — на процессоре. Скачивается ТОЛЬКО тем устройствам,
+  // у которых видеочип считает неверно (см. maybeSwitchToWasm). Версия обязана
+  // совпадать с версией tfjs выше, иначе бэкенд не зарегистрируется.
+  wasm: 'https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-wasm@4.20.0/dist/tf-backend-wasm.min.js',
+  wasmBinaries: 'https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-wasm@4.20.0/dist/',
 };
+/* Ниже какой уверенности считаем, что видеочип считает неверно.
+   Здоровое устройство на отчётливо видимом человеке даёт максимум 0.85–0.95.
+   На realme 10 (Mali-G57) потолок оказался 0.30–0.36 при любом ракурсе — и
+   далеко, и близко, — то есть предел ставит не кадр, а само железо: часть
+   драйверов Mali неточно обсчитывает упакованные шейдеры, которыми TF.js
+   ускоряет вычисления. Форма скелета выходит примерно верной, а значения
+   смазанными — ровно то, что наблюдали.
+   0.5 — заведомо ниже нормы и заведомо выше наблюдавшегося потолка. */
+const POSE_BAD_CONFIDENCE = 0.5;
+// Сколько ждать, прежде чем признать вычислитель негодным. Достаточно, чтобы
+// человек успел войти в кадр и модель прогрелась, но не настолько долго,
+// чтобы он бросил попытки.
+const POSE_WASM_AFTER_MS = 6000;
 const Cam = {
   stream:null, detector:null, videoEl:null, canvasEl:null,
   running:false, initializing:false, error:null,
@@ -3243,6 +3271,13 @@ const Cam = {
   // Точность вычислений и видеочип — см. startCamera(). Главные подозреваемые
   // в истории «на Android скелет неполный»: 16-битные текстуры режут точность.
   f32:null, f32Capable:null, gpu:'',
+  // Лучшая уверенность за весь сеанс и признак «уже пробовали WASM» —
+  // на этом строится автопереход (см. maybeSwitchToWasm).
+  bestEver:null, wasmTried:false, _backendSince:0, switching:false,
+  // Показывать ли техническую строку на калибровке. По умолчанию скрыта:
+  // обычному игроку она ничего не говорит, а место занимает. Включается
+  // долгим нажатием на шкалу калибровки — см. calibOverlayHTML().
+  diagVisible:false,
   // Момент последнего применения EMA к точкам скелета — нужен, чтобы считать
   // альфу от реально прошедшего времени, а не от номера кадра (см. drawSkeleton).
   _lastSmoothAt:0,
@@ -3338,6 +3373,58 @@ function sampleInputBrightness(w, h){
 /* Название видеочипа. Нужно, чтобы отличать устройства друг от друга в
    жалобах: «Mali-G57» и «Adreno 610» ведут себя по-разному, и без этой строки
    каждый разбор начинается с догадок о железе. */
+/* Переход на вычисления процессором, если видеочип считает неверно.
+   Проверка идёт по максимальной уверенности за кадр: если она долго не
+   поднимается выше POSE_BAD_CONFIDENCE, значит модель работает, человека
+   находит, но числа приходят смазанные — это не вопрос кадра, света или
+   ракурса, это неисправность вычислителя.
+   Переключаемся один раз за сеанс и молча: человеку незачем знать про
+   шейдеры, ему нужно, чтобы скелет появился. */
+async function maybeSwitchToWasm(){
+  if(Cam.wasmTried || !Cam.running) return;
+  if(!Cam._backendSince) Cam._backendSince = performance.now();
+  if(performance.now() - Cam._backendSince < POSE_WASM_AFTER_MS) return;
+  // Ни одного уверенного кадра за всё время наблюдения.
+  if(Cam.bestEver == null || Cam.bestEver >= POSE_BAD_CONFIDENCE) return;
+  Cam.wasmTried = true;
+  /* Пока идёт замена вычислителя, цикл распознавания обязан молчать: смена
+     бэкенда рушит контекст, на котором создан текущий детектор, и обращение
+     к нему в этот момент кончится ошибкой или мусором на выходе. */
+  Cam.switching = true;
+  console.warn('поза: видеочип даёт заниженную уверенность (макс', Cam.bestEver, ') — перехожу на WASM');
+  try{
+    setCamStatus('Перенастраиваю распознавание…');
+    await loadScriptOnce(POSE_LIBS.wasm);
+    // Без явного пути бэкенд ищет .wasm рядом со страницей, где его нет.
+    if(window.tf && tf.wasm && tf.wasm.setWasmPaths) tf.wasm.setWasmPaths(POSE_LIBS.wasmBinaries);
+    const ok = await tf.setBackend('wasm');
+    if(!ok) throw new Error('бэкенд wasm не зарегистрировался');
+    await tf.ready();
+    // Детектор привязан к бэкенду, на котором создан, — пересоздаём.
+    const old = Cam.detector;
+    Cam.detector = await poseDetection.createDetector(poseDetection.SupportedModels.MoveNet, {
+      modelType: poseDetection.movenet.modelType.SINGLEPOSE_LIGHTNING,
+      enableSmoothing: false,
+    });
+    try{ if(old && old.dispose) old.dispose(); }catch(e){}
+    Cam.backend = (tf.getBackend && tf.getBackend()) || 'wasm';
+    Cam.f32 = null; // на процессоре точность всегда полная, показывать нечего
+    // Запоминаем вывод: со следующего запуска стартуем сразу отсюда и не
+    // тратим первые секунды на заведомо нерабочий видеочип.
+    S.needWasm = true;
+    saveState();
+    // Счётчики начинаем заново — старые относятся к другому вычислителю.
+    Cam.bestEver = null; Cam.poseFps = 0; Cam._fpsCount = 0; Cam._fpsAt = 0;
+    setCamStatus('Готово — можно начинать!');
+  }catch(e){
+    console.error('поза: перейти на WASM не удалось', e);
+    // Остаёмся на прежнем вычислителе: пусть неточно, но хоть что-то.
+    Cam.backend = (window.tf && tf.getBackend && tf.getBackend()) || Cam.backend;
+  }finally{
+    Cam.switching = false;
+    Cam._busy = false; // цикл мог остановиться на середине — отпускаем
+  }
+}
 function gpuRendererName(){
   try{
     const c = document.createElement('canvas');
@@ -3480,10 +3567,31 @@ async function startCamera(){
         tf.env().set('WEBGL_RENDER_FLOAT32_ENABLED', true);
       }
     }catch(e){ Cam.f32Capable = null; }
-    try{ await tf.setBackend('webgl'); }catch(e){ console.warn('поза: WebGL недоступен, откат на бэкенд по умолчанию', e); }
+    /* Если в прошлый раз выяснилось, что видеочип этого устройства считает
+       неверно, — не повторяем проверку, а сразу поднимаем вычисления на
+       процессоре. Иначе каждый заход во врата начинался бы с шести секунд
+       заведомо сломанного распознавания. */
+    let startedOnWasm = false;
+    if(S.needWasm){
+      try{
+        await loadScriptOnce(POSE_LIBS.wasm);
+        if(window.tf && tf.wasm && tf.wasm.setWasmPaths) tf.wasm.setWasmPaths(POSE_LIBS.wasmBinaries);
+        startedOnWasm = await tf.setBackend('wasm');
+      }catch(e){
+        console.warn('поза: не удалось стартовать на WASM, пробую видеочип', e);
+        startedOnWasm = false;
+      }
+    }
+    if(!startedOnWasm){
+      try{ await tf.setBackend('webgl'); }catch(e){ console.warn('поза: WebGL недоступен, откат на бэкенд по умолчанию', e); }
+    }
+    // Повторно проверять негодный видеочип незачем — решение уже принято.
+    Cam.wasmTried = startedOnWasm;
     await tf.ready();
     Cam.backend = (tf.getBackend && tf.getBackend()) || '?';
-    try{ Cam.f32 = !!tf.env().getBool('WEBGL_RENDER_FLOAT32_ENABLED'); }catch(e){ Cam.f32 = null; }
+    // На процессоре точность всегда полная — показывать «f32» там нечего.
+    if(startedOnWasm) Cam.f32 = null;
+    else { try{ Cam.f32 = !!tf.env().getBool('WEBGL_RENDER_FLOAT32_ENABLED'); }catch(e){ Cam.f32 = null; } }
     Cam.gpu = gpuRendererName();
     console.log('поза: бэкенд =', Cam.backend, '| float32 =', Cam.f32, '| GPU =', Cam.gpu);
     // enableSmoothing по умолчанию ВКЛЮЧЁН — внутри MoveNet работает свой
@@ -3498,6 +3606,7 @@ async function startCamera(){
     });
     Cam.running = true;
     Cam.error = null;
+    Cam._backendSince = performance.now();
     trackEvent('cam_ok', Cam.backend || '');
     const readyEx = currentExercise();
     setCamStatus(readyEx==='squat' ? 'Готово — начинай приседать!' : readyEx==='situp' ? 'Готово — начинай поднимать корпус!' : 'Готово — начинай отжиматься!');
@@ -3873,7 +3982,7 @@ function camLoop(){
   // скачками, даже если сама модель успевает отработать заметно реже, чем
   // обновляется экран.
   if(Cam.lastKeypoints){ try{ drawSkeleton(Cam.lastKeypoints, Cam.lastExercise); }catch(e){} }
-  if(Cam.videoEl.readyState < 2 || Cam._busy) return;
+  if(Cam.videoEl.readyState < 2 || Cam._busy || Cam.switching) return;
   // Модели отдаём уменьшенную копию кадра, а не сам видеоэлемент — см.
   // poseInputSource(). Коэффициенты запоминаем здесь же, чтобы вернуть
   // координаты точек в масштаб видео сразу, как придёт ответ.
@@ -3973,6 +4082,10 @@ function camLoop(){
     // (максимум 0.8+, а порог проходят единицы). Лечится это по-разному:
     // первое — вопрос кадра и света, второе — вопрос ракурса.
     Cam.lastPtsBest = best;
+    if(Cam.bestEver == null || best > Cam.bestEver) Cam.bestEver = best;
+    // Решение о смене вычислителя принимается здесь же, по накопленному
+    // максимуму: если он долго остаётся низким — железо считает неверно.
+    maybeSwitchToWasm();
     // Скорости считаем по сырым измерениям и ровно один раз на ответ детектора
     // — отсюда берётся предсказание в drawSkeleton().
     updatePoseVelocity(pose.keypoints);
@@ -4402,8 +4515,8 @@ function calibOverlayHTML(r){
   return `<div class="raid-calib" id="raidCalib" data-state="${r.calibState}">
     <div class="raid-calib-label" id="raidCalibLabel">${calibLabelFor(r.calibState)}</div>
     <div class="raid-calib-countdown" id="raidCalibCountdown">${r.calibState==='countdown' ? (r.countdownVal||'') : ''}</div>
-    <div class="raid-calib-bar"><i id="raidCalibFill" style="width:${r.calibPct||0}%"></i></div>
-    <div class="raid-calib-diag" id="raidCalibDiag">${escapeHtml(camDiagText())}</div>
+    <div class="raid-calib-bar" onpointerdown="startDiagHold()" onpointerup="cancelDiagHold()" onpointercancel="cancelDiagHold()" onpointerleave="cancelDiagHold()"><i id="raidCalibFill" style="width:${r.calibPct||0}%"></i></div>
+    <div class="raid-calib-diag ${Cam.diagVisible?'':'hidden'}" id="raidCalibDiag">${Cam.diagVisible ? escapeHtml(camDiagText()) : ''}</div>
     <div class="raid-calib-sub">${jointsHint}</div>
     <div class="raid-calib-distance">${distanceHint}</div>
     <div class="raid-calib-distance">Работай в спокойном темпе — так ${exName} считаются точнее</div>
@@ -4429,7 +4542,9 @@ function updateCalibOverlayDOM(r){
   // Нагрузка на модель от позы не зависит, так что цифра, снятая на
   // калибровке, честно отражает и то, что будет во время упражнения.
   const diagEl = document.getElementById('raidCalibDiag');
-  if(diagEl) diagEl.textContent = camDiagText();
+  // Пересобираем текст только пока строка открыта: незачем считать её на
+  // каждый кадр калибровки у всех пользователей.
+  if(diagEl && Cam.diagVisible) diagEl.textContent = camDiagText();
 }
 /* Сводка состояния распознавания одной строкой. Нужна не для игрока, а для
    разбора жалоб с чужих телефонов: человек присылает один скриншот экрана
@@ -4437,6 +4552,28 @@ function updateCalibOverlayDOM(r){
    не загрузились библиотеки, не поднялся WebGL, не пошло видео, или видео
    идёт, но модель не находит в кадре человека. Без этого каждый такой
    случай приходится разбирать вслепую. */
+/* Техническая строка нужна только при разборе жалоб, и показывать её всем
+   незачем — обычному игроку она ничего не сообщает. Открывается долгим
+   нажатием на шкалу калибровки: жест неочевидный, случайно не сработает, а
+   объяснить его человеку по переписке — одна фраза.
+   Повторное долгое нажатие прячет обратно. */
+const DIAG_HOLD_MS = 1200;
+let diagHoldT = null;
+function startDiagHold(){
+  cancelDiagHold();
+  diagHoldT = setTimeout(()=>{
+    diagHoldT = null;
+    Cam.diagVisible = !Cam.diagVisible;
+    if(S.settings.vibration) hapticImpact('medium');
+    const r = S.raid;
+    if(r) updateCalibOverlayDOM(r);
+    const el = document.getElementById('raidCalibDiag');
+    if(el) el.classList.toggle('hidden', !Cam.diagVisible);
+  }, DIAG_HOLD_MS);
+}
+function cancelDiagHold(){
+  if(diagHoldT){ clearTimeout(diagHoldT); diagHoldT = null; }
+}
 function camDiagText(){
   const parts = [];
   if(!Cam.libsOk) parts.push('модуль: не загружен');
