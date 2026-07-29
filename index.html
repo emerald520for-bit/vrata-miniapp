@@ -1022,6 +1022,22 @@ function syncReminder(){
 // напоминаний, чтобы учитывать всех уникальных пользователей, а не только
 // тех, кто писал /start боту.
 const TRACK_API_URL = 'https://vrata-bot.emerald520for.workers.dev/api/track';
+/* Событие воронки. Отправляется «в никуда»: ответ не ждём и ошибки гасим —
+   аналитика не должна ни тормозить приложение, ни ломать его при отсутствии
+   сети. Список названий закрыт на сервере, неизвестные там отбрасываются.
+   Зачем это вообще: до сих пор про путь пользователя было известно только
+   «зашёл» и «оплатил», а всё между — вслепую. */
+const EVENT_API_URL = 'https://vrata-bot.emerald520for.workers.dev/api/event';
+function trackEvent(event, detail){
+  if(!TG || !TG.initData || !TG.initDataUnsafe || !TG.initDataUnsafe.user) return;
+  try{
+    fetch(EVENT_API_URL, {
+      method:'POST',
+      headers:{'Content-Type':'application/json', 'X-Init-Data':TG.initData},
+      body: JSON.stringify({ event, detail: detail || '' }),
+    }).catch(()=>{});
+  }catch(e){}
+}
 function trackOpen(){
   if(!TG || !TG.initData || !TG.initDataUnsafe || !TG.initDataUnsafe.user) return;
   try{
@@ -2557,6 +2573,10 @@ function wirePaywallStage(){
   if(payBtn) payBtn.onclick = ()=>{
     const url = paymentUrlForCurrentUser();
     if(!url){ showToast('Открой мини-апп внутри Telegram, чтобы оформить подписку'); return; }
+    // Именно здесь человек уходит на страницу оплаты — это и есть последний
+    // шаг воронки, который мы контролируем. Всё, что дальше, знает только
+    // Prodamus (и вебхук, пишущий 'sub_active').
+    trackEvent('paywall_click');
     openExternalLink(url);
     renderPaywallStage('checking');
     paywallPollDeadline = Date.now() + 3*60000; // 3 минуты автополлинга после оплаты
@@ -2571,6 +2591,7 @@ function wirePaywallStage(){
   if(doneBtn) doneBtn.onclick = ()=>{ closePaywallModal(); render(); };
 }
 function showPaywallModal(){
+  trackEvent('paywall_view');
   if(paywallWrap) return; // уже открыта
   modalOpenCount++;
   paywallWrap = document.createElement('div');
@@ -2825,7 +2846,7 @@ root.addEventListener('click', (e)=>{
 });
 function nextStep(){
   if(S.step < QUIZ.length-1){ S._navDir=1; S.step++; render(); }
-  else { S.rank = 'E'; S.onboarded = true; go('reveal'); }
+  else { S.rank = 'E'; S.onboarded = true; trackEvent('onboarded'); go('reveal'); }
 }
 
 /* ---- 3. Ранг ---- */
@@ -3380,6 +3401,7 @@ async function startCamera(){
     });
     Cam.running = true;
     Cam.error = null;
+    trackEvent('cam_ok', Cam.backend || '');
     const readyEx = currentExercise();
     setCamStatus(readyEx==='squat' ? 'Готово — начинай приседать!' : readyEx==='situp' ? 'Готово — начинай поднимать корпус!' : 'Готово — начинай отжиматься!');
     camLoop();
@@ -3395,6 +3417,7 @@ async function startCamera(){
         : inTelegram
           ? 'Эта версия Telegram не даёт доступ к камере внутри мини-приложения. Обнови Telegram до последней версии — если не поможет, считай подходы вручную.'
           : 'Не удалось запустить камеру или распознавание позы (нужен интернет и разрешённый доступ к камере).';
+    trackEvent('cam_fail', (err && err.name) || 'unknown');
     showCamError(msg);
   }finally{
     Cam.initializing = false;
@@ -4072,6 +4095,7 @@ function playerDied(){
   stopCombatTick();
   stopRaidCountdown();
   const r = S.raid;
+  trackEvent('gate_lose', 'death');
   // Смерть откатывает опыт и уровень захода — как и при ручном отступлении.
   // Отжимания/приседания, сделанные до этого момента, остаются в статистике
   // (см. комментарий у snapshot в startRaid()) — они реальные и честные
@@ -4106,6 +4130,7 @@ function startRaid(track, id){
     showPaywallModal();
     return;
   }
+  trackEvent('raid_start', g.rank + '/' + g.stage);
   const mobs = g.mobs.map((m,i)=>({ ...m, n:i+1, hp:m.maxHp }));
   // Повторное прохождение уже закрытых врат не даёт наград — иначе можно фармить
   // опыт бесконечно, просто переигрывая пройденный контент.
@@ -4351,6 +4376,7 @@ function retreatRaid(){
     }
     // "Разумное отступление" — отступление не проходит через экран победы,
     // поэтому новое достижение (если есть) объявляем через showToast().
+    trackEvent('gate_lose', 'retreat');
     const wasNewRetreat = !S.achievements.includes('first_retreat');
     unlockAchievement('first_retreat');
     S.raid = null;
@@ -4446,6 +4472,9 @@ function registerPush(){
   if(!r.started) return; // идёт отсчёт перед боем — повторы ещё не считаются
   const m=r.mobs[r.idx]; if(!m || m.hp<=0) return;
   m.hp = Math.max(0, m.hp-1);
+  // Первый засчитанный повтор захода — самый важный шаг воронки: он
+  // отделяет «вошёл во врата» от «распознавание реально сработало».
+  if(!r.reps) trackEvent('rep_first', Cam.running ? 'cam' : 'manual');
   r.reps = (r.reps||0) + 1; // счётчик за весь заход — растёт независимо от replay/наград
   updateRepCounterDOM();
   if(!r.replay){
@@ -4568,6 +4597,7 @@ function tickRest(){
 function winRaid(){
   stopCombatTick();
   const g=S.raid.gate;
+  trackEvent('gate_win', g.rank + '/' + g.stage);
   const track = S.raid.track;
   const wasReplay = S.raid.replay;
   // Первые в жизни закрытые врата — считаем по ОБОИМ направлениям сразу, а не
