@@ -515,24 +515,25 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
   background:rgba(4,6,16,.55);backdrop-filter:blur(6px);color:var(--text);font-size:18px;
   display:flex;align-items:center;justify-content:center;cursor:pointer;
 }
-/* Мини-очередь — верхний правый угол, только 2 БЛИЖАЙШИХ моба впереди (не
-   вся пройденная история, как раньше в .mob-queue — для полной ленты на
-   камере во весь экран просто нет места), плюс бейдж "+N" на тех, кто ещё
-   дальше в очереди. */
-.raid-mini-queue{position:absolute;top:calc(14px + env(safe-area-inset-top));right:14px;z-index:5;display:flex;gap:6px}
-.raid-mini-mob{
-  width:30px;height:30px;border-radius:9px;border:1px solid rgba(255,255,255,.25);
-  background:rgba(4,6,16,.55);backdrop-filter:blur(6px);display:flex;align-items:center;
-  justify-content:center;overflow:hidden;position:relative;
+/* Очередь волны точками. Раньше тут были аватары двух ближайших мобов и бейдж
+   "+N" — на камере во весь экран больше не помещалось, и человек не видел ни
+   сколько пройдено, ни сколько осталось. Точки занимают меньше места, чем два
+   аватара, и вмещают волну любой длины.
+   Общая подложка под всем рядом обязательна: точки мелкие и на светлом кадре
+   (комната днём) без неё теряются. */
+.raid-mini-queue{
+  position:absolute;top:calc(14px + env(safe-area-inset-top));right:14px;z-index:5;
+  display:flex;gap:5px;align-items:center;padding:6px 8px;border-radius:10px;
+  background:rgba(2,3,10,.82);border:1px solid var(--line);
 }
-.raid-mini-mob svg{width:22px;height:22px}
-.raid-mini-mob.boss{border-color:var(--danger)}
-.raid-mini-mob.boss.gold{border-color:var(--gold)}
-.raid-mini-more{
-  width:30px;height:30px;border-radius:9px;border:1px solid rgba(255,255,255,.25);
-  background:rgba(4,6,16,.55);backdrop-filter:blur(6px);display:flex;align-items:center;
-  justify-content:center;font-family:'JetBrains Mono';font-size:11px;color:var(--muted);
-}
+/* Порядок правил = приоритет: сначала «босс», потом «пройден», потом
+   «текущий» — так подсветка текущего перекрывает всё, а босс-в-текущем
+   остаётся золотым (последнее правило). */
+.raid-qdot{width:7px;height:7px;border-radius:50%;background:#3A4570;flex-shrink:0}
+.raid-qdot.boss{width:9px;height:9px;background:var(--gold);opacity:.5}
+.raid-qdot.done{background:var(--muted);opacity:.35}
+.raid-qdot.now{background:var(--sys);opacity:1;box-shadow:0 0 7px rgba(76,201,255,.9)}
+.raid-qdot.now.boss{background:var(--gold);box-shadow:0 0 8px rgba(245,194,66,.95)}
 /* Верхняя панель — карточка моба + полоса HP игрока (+ баннеры экзамена/
    реплея, если есть) одним flex-столбцом. Специально НЕ через отдельные
    absolute-блоки с угаданными отступами — так высота карточки (может
@@ -602,10 +603,31 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
    от этого больше не зависит). */
 .raid-counter-row{
   position:absolute;left:0;right:0;bottom:calc(96px + env(safe-area-inset-bottom));z-index:5;
-  display:flex;align-items:flex-start;justify-content:center;gap:22px;padding:0 20px;
+  display:flex;align-items:flex-start;justify-content:center;gap:14px;padding:0 20px;
 }
 .raid-counter-row .rep-counter{position:static;width:74px;height:74px;font-size:28px}
-.raid-counter-col{display:flex;flex-direction:column;align-items:center;gap:6px}
+/* Ширина 80px приравнивает колонку счётчика к боковым — только так ряд
+   остаётся симметричным: три равные колонки центрируются относительно
+   середины экрана независимо от длины подписей под кнопками. */
+.raid-counter-col{width:80px;display:flex;flex-direction:column;align-items:center;gap:6px}
+/* Подписи под боковыми кнопками. «+» и «дверь» ничего не говорят человеку,
+   который впервые столкнулся с тем, что повторы не считаются, — а именно он
+   эту кнопку и ищет. Поэтому подпись у ручного счёта сформулирована как
+   вопрос, который человек в этот момент задаёт себе сам.
+   Подложка у текста своя: ряд лежит поверх видео, и без неё подпись пропадёт
+   на светлом кадре. */
+/* Ширина колонок ФИКСИРОВАННАЯ и одинаковая — это не косметика, а причина
+   выравнивания. Пока ширина определялась длиной текста, колонки выходили
+   разными («Отступить» 62 px, «Не считает?» 76 px), ряд смещался относительно
+   счётчика, и подписи читались как съехавшие с кнопок.
+   80 px выбрано с оглядкой на самые узкие экраны: три колонки по 80 плюс два
+   промежутка по 14 и отступы по краям дают 308 px и помещаются даже в 320. */
+.raid-side-col{width:80px;display:flex;flex-direction:column;align-items:center;gap:5px}
+.raid-side-label{
+  font-size:9.5px;line-height:1;white-space:nowrap;color:var(--text);
+  background:rgba(2,3,10,.8);border-radius:5px;padding:3px 6px;
+}
+.raid-side-label.gold{color:var(--gold)}
 /* HP игрока — раньше была узкой колонкой (132px) прямо под золотым счётчиком
    повторов и визуально сильно короче полосы HP моба сверху экрана. По просьбе
    пользователя вынесена в отдельную полноширинную строку под рядом
@@ -4674,15 +4696,17 @@ function rRaid(){
   const ex = mobExercise(m);
   const exLbl = exerciseLabel(ex);
   const gateColor = g.gateColor==='red' ? 'var(--danger)' : g.gateColor==='gold' ? 'var(--gold)' : 'var(--sys)';
-  // Мини-очередь в правом верхнем углу — только 2 БЛИЖАЙШИХ моба впереди (не
-  // вся пройденная история захода, как раньше в .mob-queue — камере на весь
-  // экран просто некуда её деть), плюс "+N" на тех, кто дальше в очереди.
-  const upcoming = r.mobs.slice(r.idx+1, r.idx+3);
-  const remainAfter = Math.max(0, r.mobs.length - r.idx - 1 - upcoming.length);
-  const miniQueue = upcoming.map(mm=>{
-    const mmLbl = exerciseLabel(mobExercise(mm));
-    return `<div class="raid-mini-mob ${mm.isBoss?'boss '+g.gateColor:''}">${mobVisual(mm.kind,22,mm.name)}<span class="qmob-ex" title="${mmLbl.name}">${mmLbl.icon}</span></div>`;
-  }).join('') + (remainAfter>0 ? `<div class="raid-mini-more">+${remainAfter}</div>` : '');
+  /* Очередь волны точками. Раньше здесь были аватары двух ближайших мобов и
+     "+N" на остальных — на полноэкранной камере больше просто не помещалось,
+     и человек не видел ни сколько пройдено, ни сколько осталось.
+     Точки решают ровно эту задачу: влезает волна любой длины, а места уходит
+     меньше, чем на два аватара. Пройденные погашены, текущий подсвечен,
+     босс крупнее и золотой — то есть по одному взгляду понятно и место в
+     волне, и что впереди ждёт босс. */
+  const queueDots = r.mobs.map((mm,i)=>{
+    const state = i < r.idx ? 'done' : (i === r.idx ? 'now' : 'next');
+    return `<span class="raid-qdot ${state}${mm.isBoss?' boss':''}"></span>`;
+  }).join('');
   const camInner = Cam.error
     ? `<div class="cam-fallback">⚠️ ${escapeHtml(Cam.error)}<div class="sub" style="margin-top:6px;font-size:12px">Используй кнопку «+» внизу — так повторение засчитывается вручную.</div></div>`
     : `<video id="raidVideo" autoplay playsinline muted></video><canvas id="raidCanvas"></canvas><div class="cam-status" id="camStatus">Включаю сканер Системы…</div>`;
@@ -4691,7 +4715,7 @@ function rRaid(){
       ${(!r.started && !Cam.error) ? calibOverlayHTML(r) : ''}
     </div>
     <button class="raid-back" onclick="go('map')">‹</button>
-    ${miniQueue ? `<div class="raid-mini-queue">${miniQueue}</div>` : ''}
+    ${queueDots ? `<div class="raid-mini-queue">${queueDots}</div>` : ''}
     <div class="raid-top-panel">
       ${(g.stage==='exam' && (EXAM_XP_MULT[g.rank]||1)>1) ? `<div class="raid-banner exam"><b>⚡ БОНУС СИСТЕМЫ</b> · Экзамен даёт ×${EXAM_XP_MULT[g.rank]} опыта за подход.</div>` : ''}
       ${r.replay ? `<div class="raid-banner replay">ℹ️ Повторное прохождение — опыт и повторения за этот заход не засчитываются.</div>` : ''}
@@ -4705,11 +4729,17 @@ function rRaid(){
       </div>
     </div>
     <div class="raid-counter-row">
-      <button class="raid-side-btn retreat" onclick="retreatRaid()" aria-label="Отступить">🚪</button>
+      <div class="raid-side-col">
+        <button class="raid-side-btn retreat" onclick="retreatRaid()" aria-label="Отступить">🚪</button>
+        <span class="raid-side-label">Отступить</span>
+      </div>
       <div class="raid-counter-col">
         ${repCounterHTML()}
       </div>
-      <button class="raid-side-btn manual" onclick="manualPush()" aria-label="Засчитать вручную">+</button>
+      <div class="raid-side-col">
+        <button class="raid-side-btn manual" onclick="manualPush()" aria-label="Засчитать вручную">+</button>
+        <span class="raid-side-label gold">Не считает?</span>
+      </div>
     </div>
     <div class="raid-player-hp-row">
       <div class="hp-strip player"><i id="playerHpFill" style="width:${Math.max(0,r.hp/r.hpMax*100)}%"></i><span id="playerHpNum">${r.hp} / ${r.hpMax}</span></div>
