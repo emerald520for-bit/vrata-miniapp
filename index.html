@@ -945,6 +945,20 @@ const S = {
   squatsTotal: 0, squatsToday: 0, squatsWeek: 0,
   // Третье направление — Врата Стойкости (подъём корпуса), см. TRACKS.core.
   situpsTotal: 0, situpsToday: 0, situpsWeek: 0,
+  /* Те же повторы, но ТОЛЬКО подтверждённые камерой — счётчики идут рядом со
+     всеми остальными и ничего в них не меняют.
+     Зачем: как только за результат начнут давать рейтинг (режим с призраком),
+     кнопка ручного счёта превратится в способ его получить — она даёт до
+     сорока нажатий в минуту, а бой длится минуту. Поэтому в соревновательных
+     режимах будут засчитываться только эти счётчики, а обычные врата и личная
+     статистика продолжают считать всё подряд, как раньше.
+     Начинаются с нуля у всех, включая тех, кто давно играет: восстановить
+     задним числом, какие из прошлых повторов были камерными, невозможно.
+     Поэтому пока нигде не показываются — цифра станет осмысленной, когда
+     наберётся история. */
+  pushupsCamTotal: 0, pushupsCamToday: 0, pushupsCamWeek: 0,
+  squatsCamTotal: 0, squatsCamToday: 0, squatsCamWeek: 0,
+  situpsCamTotal: 0, situpsCamToday: 0, situpsCamWeek: 0,
   // Какое направление сейчас открыто на карте — 'strength' (Врата Силы,
   // отжимания) или 'endurance' (Врата Выносливости, приседания), см. TRACKS.
   currentTrack: 'strength',
@@ -1227,6 +1241,9 @@ function sendScore(){
       body: JSON.stringify({
         name:S.ans.name, rank:S.rank,
         pushupsToday:S.pushupsToday, squatsToday:S.squatsToday, situpsToday:S.situpsToday,
+        // Камерные — отдельными полями. Нынешняя таблица лидеров их не
+        // использует и не меняется; они копятся для режима с призраком.
+        pushupsCamToday:S.pushupsCamToday, squatsCamToday:S.squatsCamToday, situpsCamToday:S.situpsCamToday,
         streak:S.streak, titleId:effectiveSelectedTitleId(),
       }),
     }).catch(()=>{});
@@ -1429,6 +1446,9 @@ function saveState(){
     pushupsTotal:S.pushupsTotal, pushupsToday:S.pushupsToday, pushupsWeek:S.pushupsWeek,
     squatsTotal:S.squatsTotal, squatsToday:S.squatsToday, squatsWeek:S.squatsWeek,
     situpsTotal:S.situpsTotal, situpsToday:S.situpsToday, situpsWeek:S.situpsWeek,
+    pushupsCamTotal:S.pushupsCamTotal, pushupsCamToday:S.pushupsCamToday, pushupsCamWeek:S.pushupsCamWeek,
+    squatsCamTotal:S.squatsCamTotal, squatsCamToday:S.squatsCamToday, squatsCamWeek:S.squatsCamWeek,
+    situpsCamTotal:S.situpsCamTotal, situpsCamToday:S.situpsCamToday, situpsCamWeek:S.situpsCamWeek,
     currentTrack:S.currentTrack,
     doneGates:S.doneGates, doneGatesEndurance:S.doneGatesEndurance, doneGatesCore:S.doneGatesCore,
     settings:S.settings,
@@ -1477,6 +1497,12 @@ function applyStateFromRaw(raw){
     S.situpsTotal = data.situpsTotal || 0;
     S.situpsToday = data.situpsToday || 0;
     S.situpsWeek = data.situpsWeek || 0;
+    // Камерные счётчики: у сохранений, сделанных до их появления, полей нет —
+    // читаются как нули, и это правильно. Задним числом определить, какие из
+    // прошлых повторов были камерными, невозможно.
+    S.pushupsCamTotal = data.pushupsCamTotal || 0; S.pushupsCamToday = data.pushupsCamToday || 0; S.pushupsCamWeek = data.pushupsCamWeek || 0;
+    S.squatsCamTotal = data.squatsCamTotal || 0; S.squatsCamToday = data.squatsCamToday || 0; S.squatsCamWeek = data.squatsCamWeek || 0;
+    S.situpsCamTotal = data.situpsCamTotal || 0; S.situpsCamToday = data.situpsCamToday || 0; S.situpsCamWeek = data.situpsCamWeek || 0;
     S.currentTrack = (data.currentTrack==='endurance' || data.currentTrack==='core') ? data.currentTrack : 'strength';
     S.doneGates = data.doneGates || [];
     S.doneGatesEndurance = data.doneGatesEndurance || [];
@@ -4133,7 +4159,7 @@ function camLoop(){
         Cam.armState='down';
         const now=performance.now();
         if(now - Cam.lastRepAt > 450){
-          Cam.lastRepAt = now; setCamStatus('Повтор засчитан ✔ · вниз'); registerPush();
+          Cam.lastRepAt = now; setCamStatus('Повтор засчитан ✔ · вниз'); registerPush('cam');
         }
       } else if(Cam.armState==='down' && Cam.upStreak>=REP_CONFIRM_FRAMES){
         Cam.armState='up'; setCamStatus('Вверху — опускайся вниз ↓ · '+Math.round(Cam.emaAngle)+'°');
@@ -4162,7 +4188,7 @@ function camLoop(){
           Cam.depthDisplaced = true;
           const now = performance.now();
           if(now - Cam.lastRepAt > 450){
-            Cam.lastRepAt = now; setCamStatus('Повтор засчитан ✔ · вниз'); registerPush();
+            Cam.lastRepAt = now; setCamStatus('Повтор засчитан ✔ · вниз'); registerPush('cam');
           }
         }
       } else if(Math.abs(dev) < DEPTH_RETURN){
@@ -4216,7 +4242,7 @@ function manualPush(){
   if(now - manualPushLastAt < MANUAL_PUSH_COOLDOWN_MS) return;
   manualPushLastAt = now;
   markManualBtnCooling();
-  registerPush();
+  registerPush('manual');
 }
 /* Гасим кнопку на время паузы. Без этого нажатие просто молча не срабатывает,
    и человек решает, что приложение зависло, — а так видно, что идёт откат. */
@@ -4770,7 +4796,13 @@ function ensureDay(){
   if(S.todayDate !== today){
     S.pushToday = 0;
     S.pushupsToday = 0; S.squatsToday = 0; S.situpsToday = 0;
-    if(new Date().getDay()===1){ S.pushWeek = 0; S.pushupsWeek = 0; S.squatsWeek = 0; S.situpsWeek = 0; } // понедельник — новая неделя
+    // Камерные счётчики сбрасываются вместе с обычными — иначе «за сегодня»
+    // у них означало бы разные периоды, и сравнивать их было бы нельзя.
+    S.pushupsCamToday = 0; S.squatsCamToday = 0; S.situpsCamToday = 0;
+    if(new Date().getDay()===1){
+      S.pushWeek = 0; S.pushupsWeek = 0; S.squatsWeek = 0; S.situpsWeek = 0;
+      S.pushupsCamWeek = 0; S.squatsCamWeek = 0; S.situpsCamWeek = 0;
+    } // понедельник — новая неделя
     S.todayDate = today;
   }
 }
@@ -4778,23 +4810,40 @@ function ensureDay(){
 /* Каждый распознанный камерой повтор = 1 удар по мобу (1 отжимание = 1 урон).
    XP начисляется одним куском в момент убийства моба (как и раньше), чтобы не
    ломать округлением аккуратно откалиброванный EXAM_XP_MULT по рангам. */
-function registerPush(){
+/* source — откуда пришёл повтор: 'cam' (распознан камерой) или 'manual'
+   (кнопка «+»). Параметр обязателен и передаётся явно всеми тремя вызовами:
+   значение по умолчанию тут было бы опасным — при добавлении нового источника
+   повторы молча попали бы не в ту корзину, и обнаружилось бы это только по
+   испорченному рейтингу. */
+function registerPush(source){
   const r=S.raid; if(!r) return;
   if(!r.started) return; // идёт отсчёт перед боем — повторы ещё не считаются
   const m=r.mobs[r.idx]; if(!m || m.hp<=0) return;
+  const byCam = source === 'cam';
   m.hp = Math.max(0, m.hp-1);
   // Первый засчитанный повтор захода — самый важный шаг воронки: он
   // отделяет «вошёл во врата» от «распознавание реально сработало».
-  if(!r.reps) trackEvent('rep_first', Cam.running ? 'cam' : 'manual');
+  if(!r.reps) trackEvent('rep_first', byCam ? 'cam' : 'manual');
   r.reps = (r.reps||0) + 1; // счётчик за весь заход — растёт независимо от replay/наград
+  // Отдельный счётчик захода — понадобится режиму с призраком, где в зачёт
+  // идут только камерные повторы.
+  if(byCam) r.repsCam = (r.repsCam||0) + 1;
   updateRepCounterDOM();
   if(!r.replay){
     S.totalPush++; S.pushToday++; S.pushWeek++;
     // Та же сумма, но раздельно по упражнению — см. "Прогресс повторений" в
     // профиле (rProfile()), где отжимания и приседания считаются отдельно.
-    if(mobExercise(m)==='squat'){ S.squatsTotal++; S.squatsToday++; S.squatsWeek++; }
-    else if(mobExercise(m)==='situp'){ S.situpsTotal++; S.situpsToday++; S.situpsWeek++; }
-    else { S.pushupsTotal++; S.pushupsToday++; S.pushupsWeek++; }
+    // Камерные счётчики идут парой к обычным и растут только при byCam.
+    if(mobExercise(m)==='squat'){
+      S.squatsTotal++; S.squatsToday++; S.squatsWeek++;
+      if(byCam){ S.squatsCamTotal++; S.squatsCamToday++; S.squatsCamWeek++; }
+    } else if(mobExercise(m)==='situp'){
+      S.situpsTotal++; S.situpsToday++; S.situpsWeek++;
+      if(byCam){ S.situpsCamTotal++; S.situpsCamToday++; S.situpsCamWeek++; }
+    } else {
+      S.pushupsTotal++; S.pushupsToday++; S.pushupsWeek++;
+      if(byCam){ S.pushupsCamTotal++; S.pushupsCamToday++; S.pushupsCamWeek++; }
+    }
   }
   updateRaidDOM();
   if(S.settings.vibration) hapticImpact(m.hp<=0 ? 'heavy' : 'medium');
@@ -5491,6 +5540,9 @@ function resetProgress(){
     stopCombatTick();
     stopRaidCountdown();
     S.level=1; S.xp=0; S.streak=0; S.totalPush=0; S.pushToday=0; S.pushWeek=0;
+    S.pushupsCamTotal=0; S.pushupsCamToday=0; S.pushupsCamWeek=0;
+    S.squatsCamTotal=0; S.squatsCamToday=0; S.squatsCamWeek=0;
+    S.situpsCamTotal=0; S.situpsCamToday=0; S.situpsCamWeek=0;
     S.pushupsTotal=0; S.pushupsToday=0; S.pushupsWeek=0; S.squatsTotal=0; S.squatsToday=0; S.squatsWeek=0;
     S.situpsTotal=0; S.situpsToday=0; S.situpsWeek=0;
     S.currentTrack='strength'; S.doneGates=[]; S.doneGatesEndurance=[]; S.doneGatesCore=[];
