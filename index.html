@@ -667,6 +667,15 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
 .duel-opp-tag{font-family:'JetBrains Mono';font-size:10px;letter-spacing:2px;color:#B08BE0}
 .duel-opp-name{font-family:'Russo One';font-size:17px;margin-top:5px}
 .duel-opp-sub{font-size:12.5px;color:var(--muted);margin-top:5px;line-height:1.45}
+/* Чужой соперник выделен ярче своего призрака: это событие, а не рутина. */
+.duel-opponent.rival{border-color:#B08BE0;box-shadow:0 0 18px rgba(176,139,224,.18)}
+.duel-opp-note{font-size:11px;color:var(--muted);margin-top:8px;padding-top:8px;border-top:1px solid var(--line);line-height:1.4}
+.duel-find{
+  display:block;width:100%;margin-top:10px;font-family:inherit;font-size:13.5px;
+  color:#B08BE0;background:transparent;border:1px solid rgba(176,139,224,.45);
+  border-radius:11px;padding:10px;cursor:pointer;
+}
+.duel-find:disabled{opacity:.5}
 
 /* ---- Гонка с призраком: бой ---- */
 /* Счётчики вверху и крупно: человек смотрит на экран с пола, с полутора
@@ -1025,7 +1034,7 @@ const S = {
   // Режим «Гонка с призраком»: текущий бой, кэш состояния режима с сервера и
   // результат последнего захода. Всё это живёт только в сессии и в сохранение
   // не идёт — источник правды по рейтингу и лимитам на сервере.
-  duel: null, duelState: null, duelResult: null, duelLoading: false, duelError: false,
+  duel: null, duelState: null, duelResult: null, duelLoading: false, duelError: false, duelFinding: false,
   step: 0,
   ans: { name:'', exp:null, goal:null, age:25, max:null, days:null, time:null },
   rank: 'E',
@@ -5441,6 +5450,30 @@ function loadDuelState(){
     })
     .catch(()=>{ S.duelLoading = false; S.duelError = true; render(); });
 }
+/* Запрос соперника. Лимитов не тратит: человек должен иметь возможность
+   посмотреть, кто ему достался, не рискуя попыткой. Но и перебирать нельзя —
+   назначенный соперник держится до боя, повторный запрос вернёт того же. */
+function findDuelOpponent(){
+  if(!TG || !TG.initData || S.duelFinding) return;
+  S.duelFinding = true; render();
+  fetch(DUEL_API_URL, {
+    method:'POST',
+    headers:{'Content-Type':'application/json', 'X-Init-Data':TG.initData},
+    body: JSON.stringify({ action:'find' }),
+  })
+  .then(r=>r.json())
+  .then(j=>{
+    if(j && j.state){
+      if(j.state.ghost && typeof j.state.ghost.timeline === 'string'){
+        j.state.ghost.timeline = j.state.ghost.timeline ? j.state.ghost.timeline.split(',').map(Number) : [];
+      }
+      S.duelState = j.state;
+    }
+    if(j && j.none) showToast('Пока не с кем — заходов других охотников ещё нет');
+    S.duelFinding = false; render();
+  })
+  .catch(()=>{ S.duelFinding = false; showToast('Нет связи с Системой'); render(); });
+}
 function rDuelHome(){
   const st = S.duelState;
   const loading = S.duelLoading && !st;
@@ -5483,13 +5516,19 @@ function rDuelHome(){
       ${resetTxt ? `<div class="duel-limit-note">${resetTxt}</div>` : ''}
     </div>
 
-    <div class="duel-opponent">
+    <div class="duel-opponent ${st.oppKind==='rival'?'rival':''}">
       ${st.ghost
         ? `<div class="duel-opp-tag">СОПЕРНИК</div>
-           <div class="duel-opp-name">Твой призрак</div>
-           <div class="duel-opp-sub">${st.ghost.reps} повторений · ${duelAgoText(st.ghost.createdAt)}</div>`
+           <div class="duel-opp-name">${st.oppKind==='rival' ? escapeHtml(st.ghost.name||'Охотник') : 'Твой призрак'}</div>
+           <div class="duel-opp-sub">${st.ghost.reps} ${pluralRuClient(st.ghost.reps,['повторение','повторения','повторений'])} · ${duelAgoText(st.ghost.createdAt)}</div>`
         : `<div class="duel-opp-tag">СОПЕРНИКА НЕТ</div>
            <div class="duel-opp-sub">Первый заход задаёт эталон. Дальше будешь бежать против него.</div>`}
+      ${(st.oppKind !== 'rival' && st.rivalsAvailable)
+        ? `<button class="duel-find" onclick="findDuelOpponent()" ${S.duelFinding?'disabled':''}>${S.duelFinding?'Ищу…':'Найти соперника'}</button>`
+        : ''}
+      ${st.oppKind === 'rival'
+        ? `<div class="duel-opp-note">Соперник закреплён до конца боя. Отказаться можно, но нового выдадут только завтра.</div>`
+        : ''}
     </div>
 
     <div class="bottom" style="width:100%">
@@ -5529,7 +5568,10 @@ function rDuel(){
   const camInner = Cam.error
     ? `<div class="cam-fallback">⚠️ ${escapeHtml(Cam.error)}<div class="sub" style="margin-top:6px;font-size:12px">Дуэль засчитывает только повторы, распознанные камерой.</div></div>`
     : `<video id="raidVideo" autoplay playsinline muted></video><canvas id="raidCanvas"></canvas><div class="cam-status" id="camStatus">Включаю сканер Системы…</div>`;
-  const ghostName = d.ghost ? 'ТВОЙ РЕКОРД' : 'НЕТ СОПЕРНИКА';
+  // Над счётчиком — имя того, с кем дерёшься. Чужой соперник должен быть
+  // назван: безличный «призрак» не создаёт ощущения, ради которого всё это.
+  const ghostName = !d.ghost ? 'НЕТ СОПЕРНИКА'
+    : (d.ghost.name ? escapeHtml(String(d.ghost.name).toUpperCase()).slice(0,14) : 'ТВОЙ РЕКОРД');
   h(`<div class="screen raid-fullbleed">
     <div class="cam-wrap" id="camWrap">${camInner}
       ${(d.phase !== 'fight' && !Cam.error) ? duelCalibHTML(d) : ''}
@@ -5673,7 +5715,7 @@ function finishDuel(){
     } else {
       S.duelState = j.state || S.duelState;
       S.duelResult = { ...S.duelResult, pending:false, outcome:j.outcome, delta:j.delta,
-        rating:j.rating, rated:j.rated, ghostReps:j.ghostReps };
+        rating:j.rating, rated:j.rated, ghostReps:j.ghostReps, oppName:j.oppName };
     }
     S.duel = null;
     render();
@@ -5701,7 +5743,7 @@ function rDuelResult(){
     <div class="duel-result-nums">
       <div><div class="duel-side-tag">ТЫ</div><div class="duel-result-num">${r.reps ?? 0}</div></div>
       <div class="duel-result-vs">против</div>
-      <div><div class="duel-side-tag">ПРИЗРАК</div><div class="duel-result-num ghost">${r.ghostReps ?? '—'}</div></div>
+      <div><div class="duel-side-tag">${r.oppName ? escapeHtml(String(r.oppName).toUpperCase()).slice(0,14) : 'ПРИЗРАК'}</div><div class="duel-result-num ghost">${r.ghostReps ?? '—'}</div></div>
     </div>
     ${r.pending ? `<div class="sub">Сохраняю результат…</div>` : ''}
     ${r.error ? `<div class="sub" style="color:var(--danger)">${escapeHtml(r.error)}</div>` : ''}
