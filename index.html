@@ -1126,6 +1126,8 @@ const S = {
   // Открыт ли дропдаун выбора Дня/Недели (см. rRank()/togglePeriodMenu()) —
   // чисто визуальное UI-состояние текущей сессии, в saveState() не идёт.
   rankPeriodMenuOpen: false,
+  rankTabMenuOpen: false,   // дропдаун выбора упражнения — вкладок стало 4, в ряд не влезают
+  rankChallenging: false,   // идёт запрос "вызвать на бой" из таблицы дуэлей
   rankData: null,      // {top:[...], me:{...}|null} — последний успешный ответ /api/leaderboard
   rankLoading: false,
   rankError: false,
@@ -1380,15 +1382,60 @@ function loadLeaderboard(){
 }
 function setRankTab(tab){
   S.rankPeriodMenuOpen = false; // переключение упражнения — заодно закрываем дропдаун, если был открыт
-  if(S.rankTab===tab) return;
+  S.rankTabMenuOpen = false;
+  if(S.rankTab===tab){ render(); return; } // меню закрыть надо в любом случае
   S.rankTab = tab; S.rankData = null; render(); loadLeaderboard();
 }
 // Одна кнопка-дропдаун вместо двух отдельных кнопок "День"/"Неделя" (см.
 // rRank()) — открывает/закрывает список из двух пунктов, выбор пункта сразу
 // закрывает его через setRankPeriod().
+const RANK_TABS = [
+  { id:'pushups', label:'👊 Отжимания' },
+  { id:'squats',  label:'🦵 Приседания' },
+  { id:'situps',  label:'🛡 Пресс' },
+  { id:'duel',    label:'⚔ Дуэли' },
+];
 function togglePeriodMenu(){
   S.rankPeriodMenuOpen = !S.rankPeriodMenuOpen;
+  S.rankTabMenuOpen = false;   // два открытых меню наложились бы друг на друга
   render();
+}
+function toggleRankTabMenu(){
+  S.rankTabMenuOpen = !S.rankTabMenuOpen;
+  S.rankPeriodMenuOpen = false;
+  render();
+}
+
+/* Вызов соперника прямо из таблицы дуэлей. Лимит боёв здесь не тратится — его
+   тратит сам бой, а назначенного соперника можно менять сколько угодно до
+   старта. После успеха уводим на экран дуэлей: иначе человек остался бы в
+   рейтинге и не понял, что вообще что-то произошло. */
+function challengeFromRank(runId, name){
+  if(S.rankChallenging) return;
+  if(!(TG && TG.initData)){ sysNotice('Вызов доступен только внутри Telegram.'); return; }
+  S.rankChallenging = true;
+  fetch(DUEL_API_URL, {
+    method:'POST',
+    headers:{ 'Content-Type':'application/json', 'X-Init-Data': TG.initData },
+    body: JSON.stringify({ action:'challenge', run_id: runId }),
+  })
+    .then(r=>r.json())
+    .then(d=>{
+      S.rankChallenging = false;
+      if(d && d.error){
+        // 'stale' — заход выпал из недельного окна, пока человек смотрел таблицу.
+        sysNotice(d.error==='stale' ? 'Этот заход уже устарел. Обнови таблицу.'
+               : d.error==='self'  ? 'Это твой собственный результат.'
+               : 'Не удалось назначить соперника.');
+        return;
+      }
+      // Состояние из ответа намеренно не подставляем: там дорожка призрака
+      // приходит строкой, а разбирает её loadDuelState(). Подставили бы —
+      // бой стартовал бы с нечитаемым призраком.
+      openDuelHome();
+      sysNotice('Соперник назначен: ' + (name||'охотник') + '. Начинай бой.');
+    })
+    .catch(()=>{ S.rankChallenging = false; sysNotice('Нет связи с сервером.'); });
 }
 function setRankPeriod(period){
   S.rankPeriodMenuOpen = false;
@@ -2567,6 +2614,28 @@ function escapeHtml(str){
    заднем плане приостанавливается — иначе можно было бы неожиданно умереть,
    просто читая вопрос "точно ли ты хочешь отступить". */
 let modalOpenCount = 0;
+
+/* Короткое уведомление внизу экрана. Не модалка: сообщать "соперник назначен"
+   диалогом с кнопкой ОК — значит требовать лишний тап там, где человек и так
+   всё увидит на следующем экране. Само гаснет. */
+let noticeTimer = null;
+function sysNotice(message){
+  let el = document.getElementById('sysNotice');
+  if(!el){
+    el = document.createElement('div');
+    el.id = 'sysNotice';
+    el.style.cssText = 'position:fixed;left:16px;right:16px;bottom:92px;z-index:60;padding:12px 16px;'
+      + 'background:var(--panel-solid);border:1px solid var(--line);border-radius:14px;'
+      + 'font-size:13.5px;line-height:1.45;text-align:center;box-shadow:0 12px 28px rgba(0,0,0,.45);'
+      + 'opacity:0;transition:opacity .18s ease;pointer-events:none';
+    document.body.appendChild(el);
+  }
+  el.textContent = message;
+  requestAnimationFrame(()=>{ el.style.opacity = '1'; });
+  clearTimeout(noticeTimer);
+  noticeTimer = setTimeout(()=>{ el.style.opacity = '0'; }, 2600);
+}
+
 function sysConfirm(message, onConfirm){
   modalOpenCount++;
   const wrap = document.createElement('div');
@@ -3293,6 +3362,28 @@ function titleNameById(id){
   const a = ACHIEVEMENTS_LIST.find(x=>x.id===id);
   return a ? a.name : null;
 }
+/* Строка таблицы дуэлей. Отличается от обычной тем, что по чужой строке можно
+   тапнуть и вызвать этого человека — поэтому у неё есть значок ⚔ как признак
+   кликабельности. Своя строка некликабельна: драться с собственной записью
+   бессмысленно, сервер такой вызов всё равно отклонит. */
+function lbDuelRowHTML(row, isMe){
+  const title = titleNameById(row.title_id);
+  const can = !isMe && row.run_id;
+  // Кавычки и слэши вырезаем ДО экранирования, а не после: escapeHtml
+  // превращает ' в &#39;, но парсер HTML вернёт его обратно в ' уже внутри
+  // значения onclick — и строковый литерал в JS развалится.
+  const argName = escapeHtml(String(row.name||'').replace(/['"\\]/g, ''));
+  return `<div class="lb-row ${isMe?'me':''}" ${can?`onclick="challengeFromRank(${Number(row.run_id)}, '${argName}')" style="cursor:pointer"`:''}>
+    <div class="lb-rnk">${row.rnk}</div>
+    <div class="lb-rank-badge">${escapeHtml(row.rank||'E')}</div>
+    <div class="lb-name-wrap">
+      <div class="lb-name">${escapeHtml(row.name)||'Безымянный'}</div>
+      ${title ? `<div class="lb-title">${escapeHtml(title)}</div>` : ''}
+    </div>
+    <div class="lb-score">${row.score}</div>
+    ${can ? `<div style="margin-left:8px;opacity:.5;font-size:15px">⚔</div>` : ''}
+  </div>`;
+}
 function lbRowHTML(row, isMe){
   // Титул — отдельной строкой ПОД именем, а не рядом с ним: строка лидеров
   // узкая, и в один ряд титул отбирал бы ширину у ника, обрезая оба.
@@ -3323,31 +3414,44 @@ function rRank(){
     const top = (S.rankData && S.rankData.top) || [];
     const me = S.rankData && S.rankData.me;
     const meInTop = me && top.some(r=>String(r.chat_id)===String(me.chat_id));
+    const duel = S.rankTab==='duel';
+    const rowFn = duel ? lbDuelRowHTML : lbRowHTML;
     if(!top.length){
-      body = `<div class="sub" style="text-align:center;margin-top:36px">Пока никто не закрывал врата ${S.rankPeriod==='week'?'на этой неделе':'сегодня'}. Будь первым.</div>`;
+      body = duel
+        ? `<div class="sub" style="text-align:center;margin-top:36px">За последние 7 дней никто не выходил на дуэль.<br>Проведи бой — и займёшь первое место.</div>`
+        : `<div class="sub" style="text-align:center;margin-top:36px">Пока никто не закрывал врата ${S.rankPeriod==='week'?'на этой неделе':'сегодня'}. Будь первым.</div>`;
     } else {
-      body = top.map(r=>lbRowHTML(r, String(r.chat_id)===String(chatId))).join('');
+      body = top.map(r=>rowFn(r, String(r.chat_id)===String(chatId))).join('');
       if(me && !meInTop){
-        body += `<div class="lb-divider">· · ·</div>` + lbRowHTML(me, true);
+        body += `<div class="lb-divider">· · ·</div>` + rowFn(me, true);
+      }
+      if(duel){
+        body = `<div class="sub" style="text-align:center;margin:0 0 10px;font-size:12.5px;opacity:.75">Лучшая минута за 7 дней · тапни по сопернику, чтобы вызвать его</div>` + body;
       }
     }
   }
   h(`<div class="screen">
     <div class="hdr"><h2 style="margin:0">Рейтинг</h2></div>
-    <div class="tb-tabs">
-      <button class="${S.rankTab==='pushups'?'on':''}" onclick="setRankTab('pushups')">👊 Отжимания</button>
-      <button class="${S.rankTab==='squats'?'on':''}" onclick="setRankTab('squats')">🦵 Приседания</button>
-      <button class="${S.rankTab==='situps'?'on':''}" onclick="setRankTab('situps')">🛡 Пресс</button>
-    </div>
-    <div class="rank-period-wrap" style="position:relative;margin-top:8px">
-      <button class="toggle-row" style="width:auto;display:inline-flex;align-items:center;gap:8px;padding:10px 16px" onclick="togglePeriodMenu()">
-        <span>${S.rankPeriod==='week'?'Неделя':'День'}</span>
-        <span style="opacity:.6;font-size:11px;transform:${S.rankPeriodMenuOpen?'rotate(180deg)':'none'};transition:transform .15s ease">▾</span>
-      </button>
-      ${S.rankPeriodMenuOpen ? `<div style="position:absolute;top:100%;left:0;margin-top:6px;z-index:5;background:var(--panel-solid);border:1px solid var(--line);border-radius:14px;overflow:hidden;min-width:150px;box-shadow:0 12px 28px rgba(0,0,0,.45)">
-        <button style="display:block;width:100%;text-align:left;padding:12px 16px;background:none;border:none;color:var(--text);font-size:14.5px;font-weight:700;cursor:pointer" onclick="setRankPeriod('day')">День</button>
-        <button style="display:block;width:100%;text-align:left;padding:12px 16px;background:none;border:none;border-top:1px solid var(--line);color:var(--text);font-size:14.5px;font-weight:700;cursor:pointer" onclick="setRankPeriod('week')">Неделя</button>
-      </div>` : ''}
+    <div style="display:flex;gap:8px;margin-top:4px;align-items:flex-start">
+      <div style="position:relative">
+        <button class="toggle-row" style="width:auto;display:inline-flex;align-items:center;gap:8px;padding:10px 16px" onclick="toggleRankTabMenu()">
+          <span>${RANK_TABS.find(t=>t.id===S.rankTab).label}</span>
+          <span style="opacity:.6;font-size:11px;transform:${S.rankTabMenuOpen?'rotate(180deg)':'none'};transition:transform .15s ease">▾</span>
+        </button>
+        ${S.rankTabMenuOpen ? `<div style="position:absolute;top:100%;left:0;margin-top:6px;z-index:6;background:var(--panel-solid);border:1px solid var(--line);border-radius:14px;overflow:hidden;min-width:172px;box-shadow:0 12px 28px rgba(0,0,0,.45)">
+          ${RANK_TABS.map((t,i)=>`<button style="display:block;width:100%;text-align:left;padding:12px 16px;background:none;border:none;${i?'border-top:1px solid var(--line);':''}color:var(--text);font-size:14.5px;font-weight:700;cursor:pointer" onclick="setRankTab('${t.id}')">${t.label}</button>`).join('')}
+        </div>` : ''}
+      </div>
+      ${S.rankTab==='duel' ? '' : `<div style="position:relative">
+        <button class="toggle-row" style="width:auto;display:inline-flex;align-items:center;gap:8px;padding:10px 16px" onclick="togglePeriodMenu()">
+          <span>${S.rankPeriod==='week'?'Неделя':'День'}</span>
+          <span style="opacity:.6;font-size:11px;transform:${S.rankPeriodMenuOpen?'rotate(180deg)':'none'};transition:transform .15s ease">▾</span>
+        </button>
+        ${S.rankPeriodMenuOpen ? `<div style="position:absolute;top:100%;left:0;margin-top:6px;z-index:5;background:var(--panel-solid);border:1px solid var(--line);border-radius:14px;overflow:hidden;min-width:150px;box-shadow:0 12px 28px rgba(0,0,0,.45)">
+          <button style="display:block;width:100%;text-align:left;padding:12px 16px;background:none;border:none;color:var(--text);font-size:14.5px;font-weight:700;cursor:pointer" onclick="setRankPeriod('day')">День</button>
+          <button style="display:block;width:100%;text-align:left;padding:12px 16px;background:none;border:none;border-top:1px solid var(--line);color:var(--text);font-size:14.5px;font-weight:700;cursor:pointer" onclick="setRankPeriod('week')">Неделя</button>
+        </div>` : ''}
+      </div>`}
     </div>
     <div style="margin-top:6px">${body}</div>
     <div style="flex:1"></div>
