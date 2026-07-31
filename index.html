@@ -622,6 +622,90 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
    счётчика, и подписи читались как съехавшие с кнопок.
    80 px выбрано с оглядкой на самые узкие экраны: три колонки по 80 плюс два
    промежутка по 14 и отступы по краям дают 308 px и помещаются даже в 320. */
+/* ---- Гонка с призраком: карточка на карте ---- */
+/* Фиолетовая рамка отделяет режим от врат: голубой в приложении означает
+   Систему и врата, фиолетовый нигде не занят и ложится под «призрака». */
+.duel-card{
+  margin:0 14px 10px;border:1px solid rgba(176,139,224,.45);background:rgba(20,16,34,.9);
+  border-radius:14px;padding:12px 14px;cursor:pointer;
+}
+/* Когда попытки кончились — карточка гаснет и перестаёт звать. */
+.duel-card.off{border-color:var(--line);background:var(--panel)}
+.duel-card-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.duel-card-tag{font-family:'JetBrains Mono';font-size:10px;letter-spacing:2.5px;color:#B08BE0}
+.duel-card.off .duel-card-tag{color:var(--muted)}
+.duel-card-cnt{font-family:'JetBrains Mono';font-size:10px;color:var(--muted)}
+.duel-card-main{display:flex;align-items:baseline;gap:8px;margin-bottom:12px}
+.duel-card-num{font-family:'Russo One';font-size:30px;color:var(--gold);line-height:1}
+.duel-card-cap{font-size:12px;color:var(--muted)}
+.duel-card-line{font-family:'Russo One';font-size:20px;margin-bottom:6px}
+.duel-card-sub{font-size:12.5px;color:var(--muted);line-height:1.5}
+.duel-card-btn{
+  background:linear-gradient(135deg,#6D28D9,#8B5CF6);border-radius:11px;padding:11px;
+  text-align:center;font-size:14px;color:#fff;
+}
+
+/* ---- Гонка с призраком: экран режима ---- */
+/* Рекорд — главная и самая крупная цифра экрана: именно её человек приходит
+   побить, всё остальное вторично. */
+.duel-hero{text-align:center;margin-top:18px}
+.duel-hero-num{font-family:'Russo One';font-size:64px;line-height:1;color:#B08BE0}
+.duel-hero-cap{font-size:12.5px;color:var(--muted);margin-top:6px}
+.duel-stats{display:flex;gap:10px;width:100%;margin-top:20px}
+.duel-stat{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:11px 8px;text-align:center}
+.duel-stat .v{font-family:'Russo One';font-size:20px;color:var(--text)}
+.duel-stat .k{font-size:11px;color:var(--muted);margin-top:3px}
+.duel-limits{width:100%;margin-top:14px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+.duel-limit-row{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:var(--muted);padding:3px 0}
+.duel-limit-row b{font-family:'JetBrains Mono';font-size:15px}
+.duel-limit-row b.ok{color:var(--gold)}
+/* Исчерпанный лимит показываем приглушённо, а не красным: это не ошибка
+   человека, а обычное состояние конца дня. */
+.duel-limit-row b.off{color:var(--muted);opacity:.6}
+.duel-limit-note{font-size:11.5px;color:var(--muted);margin-top:8px;padding-top:8px;border-top:1px solid var(--line)}
+.duel-opponent{width:100%;margin-top:14px;border:1px solid rgba(176,139,224,.35);background:var(--panel);border-radius:14px;padding:12px 14px;text-align:center}
+.duel-opp-tag{font-family:'JetBrains Mono';font-size:10px;letter-spacing:2px;color:#B08BE0}
+.duel-opp-name{font-family:'Russo One';font-size:17px;margin-top:5px}
+.duel-opp-sub{font-size:12.5px;color:var(--muted);margin-top:5px;line-height:1.45}
+
+/* ---- Гонка с призраком: бой ---- */
+/* Счётчики вверху и крупно: человек смотрит на экран с пола, с полутора
+   метров, между повторами. Всё, что мельче, там просто не читается. */
+.duel-top{
+  position:absolute;top:calc(52px + env(safe-area-inset-top));left:12px;right:12px;z-index:5;
+  display:flex;align-items:center;gap:10px;
+}
+.duel-side{
+  flex:1;background:rgba(2,3,10,.82);border:1px solid var(--line);border-radius:12px;
+  padding:8px 10px;text-align:center;transition:border-color .2s ease;
+}
+.duel-side.me{border-color:rgba(76,201,255,.5)}
+.duel-side.ghost{border-color:rgba(176,139,224,.5)}
+/* Кто впереди — тот и подсвечен. Считывается боковым зрением, без чтения цифр. */
+.duel-side.lead{box-shadow:0 0 16px rgba(255,255,255,.12)}
+.duel-side.me.lead{border-color:var(--sys)}
+.duel-side.ghost.lead{border-color:#B08BE0}
+.duel-side-tag{font-family:'JetBrains Mono';font-size:9px;letter-spacing:1.5px;color:var(--muted)}
+.duel-side-num{font-family:'Russo One';font-size:30px;line-height:1.15;color:var(--text)}
+.duel-side.ghost .duel-side-num{color:#B08BE0}
+.duel-side.me .duel-side-num{color:var(--sys)}
+.duel-timer{
+  flex-shrink:0;font-family:'JetBrains Mono';font-size:17px;color:var(--text);
+  background:rgba(2,3,10,.82);border:1px solid var(--line);border-radius:10px;padding:8px 9px;
+}
+/* Последние десять секунд — красным. Это единственный момент, когда цвет
+   должен тревожить. */
+.duel-timer.low{color:var(--danger);border-color:rgba(255,59,92,.5)}
+.duel-bottom{position:absolute;left:12px;right:12px;bottom:calc(22px + env(safe-area-inset-bottom));z-index:5;text-align:center}
+.duel-hint{
+  display:inline-block;font-size:12.5px;color:var(--text);
+  background:rgba(2,3,10,.8);border-radius:8px;padding:7px 12px;
+}
+.duel-result-nums{display:flex;align-items:center;justify-content:center;gap:18px;margin:10px 0}
+.duel-result-num{font-family:'Russo One';font-size:40px;color:var(--sys);line-height:1.1}
+.duel-result-num.ghost{color:#B08BE0}
+.duel-result-vs{font-size:12px;color:var(--muted)}
+
 .raid-side-col{width:80px;display:flex;flex-direction:column;align-items:center;gap:5px}
 .raid-side-label{
   font-size:9.5px;line-height:1;white-space:nowrap;color:var(--text);
@@ -931,6 +1015,10 @@ const S = {
   // Идёт первое чтение облачного сохранения, локальной копии нет. Пока true —
   // заставка не пускает в анкету (см. boot()/rSplash()).
   restoring: false,
+  // Режим «Гонка с призраком»: текущий бой, кэш состояния режима с сервера и
+  // результат последнего захода. Всё это живёт только в сессии и в сохранение
+  // не идёт — источник правды по рейтингу и лимитам на сервере.
+  duel: null, duelState: null, duelResult: null, duelLoading: false, duelError: false,
   step: 0,
   ans: { name:'', exp:null, goal:null, age:25, max:null, days:null, time:null },
   rank: 'E',
@@ -1354,12 +1442,14 @@ function tgBack(){
     case 'titles': go(S.prevScreen||'profile'); return;
     case 'instructions': go(S.prevScreen||'settings'); return;
     case 'gatePreview': go('map'); return;
+    case 'duel': abortDuel(); return;
+    case 'duelHome': go('map'); return;
     default: return; // на splash/reveal/map/rest/victory/profile своей стрелки нет — прячем и нативную
   }
 }
 function updateTgBackButton(){
   if(!TG || !TG.BackButton) return;
-  const show = ['quiz','journey','raid','settings','titles','instructions','gatePreview'].includes(S.screen);
+  const show = ['quiz','journey','raid','settings','titles','instructions','gatePreview','duel','duelHome'].includes(S.screen);
   try{ show ? TG.BackButton.show() : TG.BackButton.hide(); }catch(e){}
 }
 /* Блокировка свайпа-вниз нужна ТОЛЬКО во время подхода — иначе на экранах с
@@ -1747,6 +1837,8 @@ function mobExercise(m){
 }
 // Что нужно делать прямо сейчас в активном заходе (текущий моб в очереди).
 function currentExercise(){
+  // В дуэли упражнение всегда одно — отжимания (см. решение по режиму).
+  if(S.screen==='duel') return 'pushup';
   const r = S.raid; if(!r) return 'pushup';
   return mobExercise(r.mobs[r.idx]);
 }
@@ -2826,7 +2918,7 @@ function render(opts){
     splash: rSplash, quiz: rQuiz, reveal: rReveal, journey: rJourney,
     map: rMap, raid: rRaid, rest: rRest, victory: rVictory, profile: rProfile, settings: rSettings,
     death: rDeath, titles: rTitlesScreen, rank: rRank, instructions: rInstructions,
-    gatePreview: rGatePreview
+    gatePreview: rGatePreview, duelHome: rDuelHome, duel: rDuel, duelResult: rDuelResult
   })[S.screen]();
   updateTgBackButton();
   updateSwipeLock();
@@ -3135,6 +3227,7 @@ function rMap(){
       <div class="track-tag">${icon(TRACKS[track].iconKey,16,TRACKS[track].iconFallback)} ${TRACKS[track].label}</div>
     </div>
     <div class="map-top-spacer" id="mapTopSpacer"></div>
+    ${duelCardHTML()}
     <div class="map-wrap"><div class="map-inner" style="min-height:${70+GATES.length*115}px">
       <svg class="map-svg" viewBox="0 0 100 ${70+GATES.length*115}" preserveAspectRatio="none">
         <path d="${path}" fill="none" stroke="#2A3560" stroke-width="7" stroke-linecap="round" vector-effect="non-scaling-stroke"/>
@@ -4021,7 +4114,10 @@ const DEPTH_TRIGGER = 0.55; // насколько нужно сместитьс�
 const DEPTH_RETURN  = 0.22; // насколько нужно вернуться к базовой позе, чтобы перевзвести
 function camLoop(){
   Cam.rafId = requestAnimationFrame(camLoop);
-  if(S.screen!=='raid' || !Cam.running || !Cam.detector || !Cam.videoEl) return;
+  // Цикл распознавания обслуживает два экрана: врата и дуэль. Всё, что ниже
+  // — общее (модель, скелет, углы), различается только КУДА уходит засчитанный
+  // повтор и чья калибровка идёт до старта.
+  if((S.screen!=='raid' && S.screen!=='duel') || !Cam.running || !Cam.detector || !Cam.videoEl) return;
   // Отрисовка отвязана от частоты распознавания позы — рисуем на каждый
   // кадр экрана (~60 к/с), используя последнюю распознанную позу. EMA-
   // сглаживание внутри drawSkeleton() при этом "доезжает" до неё за
@@ -4100,7 +4196,8 @@ function camLoop(){
         Cam._noPoseSince = 0;
         console.warn('поза: в канвас приходит пустой кадр — перехожу на подачу видео напрямую');
       }
-      if(S.raid && !S.raid.started) updateCalibration(null, null);
+      if(S.screen==='duel') duelCalibration(null);
+      else if(S.raid && !S.raid.started) updateCalibration(null, null);
       else maybeShowNoPoseHint();
       return;
     }
@@ -4137,7 +4234,10 @@ function camLoop(){
     // Скорости считаем по сырым измерениям и ровно один раз на ответ детектора
     // — отсюда берётся предсказание в drawSkeleton().
     updatePoseVelocity(pose.keypoints);
-    if(S.raid && !S.raid.started){ updateCalibration(angle, depth); return; }
+    if(S.screen==='duel'){
+      // В дуэли до старта минуты идёт своя калибровка, после — только счёт.
+      if(S.duel && S.duel.phase !== 'fight'){ duelCalibration(angle); return; }
+    } else if(S.raid && !S.raid.started){ updateCalibration(angle, depth); return; }
     let tracked = false;
     const th = REP_THRESH[ex];
 
@@ -4159,7 +4259,7 @@ function camLoop(){
         Cam.armState='down';
         const now=performance.now();
         if(now - Cam.lastRepAt > 450){
-          Cam.lastRepAt = now; setCamStatus('Повтор засчитан ✔ · вниз'); registerPush('cam');
+          Cam.lastRepAt = now; setCamStatus('Повтор засчитан ✔ · вниз'); onCameraRep();
         }
       } else if(Cam.armState==='down' && Cam.upStreak>=REP_CONFIRM_FRAMES){
         Cam.armState='up'; setCamStatus('Вверху — опускайся вниз ↓ · '+Math.round(Cam.emaAngle)+'°');
@@ -4188,7 +4288,7 @@ function camLoop(){
           Cam.depthDisplaced = true;
           const now = performance.now();
           if(now - Cam.lastRepAt > 450){
-            Cam.lastRepAt = now; setCamStatus('Повтор засчитан ✔ · вниз'); registerPush('cam');
+            Cam.lastRepAt = now; setCamStatus('Повтор засчитан ✔ · вниз'); onCameraRep();
           }
         }
       } else if(Math.abs(dev) < DEPTH_RETURN){
@@ -5164,6 +5264,452 @@ function pluralRuClient(n, forms){
   return forms[2];
 }
 
+/* ============ ГОНКА С ПРИЗРАКОМ ============
+   Минута отжиманий против записи прошлого захода. Соперник не сидит сейчас с
+   телефоном — мы храним МОМЕНТЫ его повторов и воспроизводим их как тикающий
+   счётчик. Со стороны игрока это неотличимо от живого боя, но ждать никого не
+   нужно и никакой инфраструктуры реального времени не требуется.
+   В зачёт идут только повторы, распознанные камерой: за результат даётся
+   рейтинг, а кнопка ручного счёта дала бы до сорока нажатий в минуту. */
+const DUEL_SECONDS = 60;
+const DUEL_API_URL = 'https://vrata-bot.emerald520for.workers.dev/api/duel';
+// Отсчёт перед стартом минуты — время встать в упор после калибровки.
+const DUEL_COUNTDOWN_S = 3;
+
+function startDuel(rated){
+  if(!Cam.running && Cam.error){ showToast('Дуэль требует камеры'); return; }
+  S.duel = {
+    phase:'calib',            // calib -> countdown -> fight -> отправка результата
+    rated: rated !== false,
+    reps: 0,
+    timeline: [],             // моменты своих повторов, десятые доли секунды
+    ghost: (S.duelState && S.duelState.ghost) || null,
+    ghostReps: 0,
+    ghostPtr: 0,              // указатель по дорожке призрака, чтобы не искать заново
+    calibState:'searching', calibPct:0, stableSince:null, calibStart:null,
+    countdownVal: DUEL_COUNTDOWN_S,
+    startedAt: 0,
+  };
+  go('duel');
+}
+
+/* Калибровка перед минутой. Отдельная от врат и намеренно проще: там нужно
+   поймать сложные ракурсы трёх упражнений, здесь всегда отжимания.
+   Главное — минута НЕ начинается, пока Система не увидела человека: иначе
+   первые секунды съедаются постановкой телефона, а они самые дорогие. */
+function duelCalibration(angle){
+  const d = S.duel;
+  if(!d || d.phase !== 'calib') return;
+  const now = performance.now();
+  if(d.calibStart == null) d.calibStart = now;
+  if(angle != null){
+    if(d.stableSince == null) d.stableSince = now;
+    const held = now - d.stableSince;
+    d.calibPct = Math.min(100, Math.round(held / CALIB_STABLE_MS * 100));
+    d.calibState = held >= CALIB_STABLE_MS ? 'ready' : 'holding';
+  } else {
+    d.stableSince = null; d.calibPct = 0; d.calibState = 'searching';
+  }
+  updateDuelCalibDOM();
+  if(d.calibState === 'ready') startDuelCountdown();
+}
+function startDuelCountdown(){
+  const d = S.duel; if(!d || d.phase !== 'calib') return;
+  d.phase = 'countdown';
+  d.countdownVal = DUEL_COUNTDOWN_S;
+  d.calibState = 'countdown';
+  updateDuelCalibDOM();
+  clearInterval(S._duelCountT);
+  S._duelCountT = setInterval(()=>{
+    const dd = S.duel;
+    if(!dd || dd.phase !== 'countdown'){ clearInterval(S._duelCountT); return; }
+    dd.countdownVal--;
+    if(dd.countdownVal <= 0){ clearInterval(S._duelCountT); beginDuelFight(); }
+    else updateDuelCalibDOM();
+  }, 1000);
+}
+function beginDuelFight(){
+  const d = S.duel; if(!d) return;
+  d.phase = 'fight';
+  d.startedAt = performance.now();
+  if(S.settings.vibration) hapticImpact('heavy');
+  render();
+  clearInterval(S._duelTickT);
+  // 100 мс — счётчик призрака должен тикать плавно, а не рывками раз в секунду.
+  S._duelTickT = setInterval(duelTick, 100);
+}
+/* Ход времени: двигаем таймер и счётчик призрака. Призрак «догоняется»
+   указателем — на каждом тике проверяем только новые моменты, а не всю
+   дорожку заново. */
+function duelTick(){
+  const d = S.duel;
+  if(!d || d.phase !== 'fight'){ clearInterval(S._duelTickT); return; }
+  const elapsedDs = Math.floor((performance.now() - d.startedAt) / 100);
+  if(d.ghost && d.ghost.timeline){
+    while(d.ghostPtr < d.ghost.timeline.length && d.ghost.timeline[d.ghostPtr] <= elapsedDs){
+      d.ghostPtr++; d.ghostReps++;
+    }
+  }
+  updateDuelDOM(elapsedDs);
+  if(elapsedDs >= DUEL_SECONDS * 10){ clearInterval(S._duelTickT); finishDuel(); }
+}
+/* Засчитанный камерой повтор. Во время дуэли уходит сюда, в остальных
+   случаях — в обычный счётчик врат (см. camLoop). */
+function onCameraRep(){
+  if(S.screen === 'duel'){
+    const d = S.duel;
+    if(!d || d.phase !== 'fight') return;   // до старта и после финиша не считаем
+    const ds = Math.floor((performance.now() - d.startedAt) / 100);
+    if(ds > DUEL_SECONDS * 10) return;
+    d.reps++;
+    d.timeline.push(ds);
+    if(S.settings.vibration) hapticImpact('medium');
+    updateDuelDOM(ds);
+    return;
+  }
+  registerPush('cam');
+}
+/* Карточка режима на карте врат. Три состояния, и активна только первая:
+   когда дуэли кончились, карточка гаснет и перестаёт звать — это честнее, чем
+   яркая кнопка, которая ни к чему не ведёт.
+   Данные берём из кэша: запрашивать состояние при каждой отрисовке карты
+   незачем, а свежие цифры человек увидит, зайдя внутрь. Если кэша ещё нет —
+   показываем нейтральный вид, без цифр. */
+function duelCardHTML(){
+  const st = S.duelState;
+  const ratedLeft = st ? st.ratedLeft : null;
+  const trainLeft = st ? st.trainLeft : null;
+  const hasRated = ratedLeft === null || ratedLeft > 0;
+  const hasTrain = trainLeft === null || trainLeft !== 0;
+  const spent = st && !hasRated && !hasTrain;
+
+  if(spent){
+    return `<div class="duel-card off" onclick="openDuelHome()">
+      <div class="duel-card-top">
+        <span class="duel-card-tag">ГОНКА С ПРИЗРАКОМ</span>
+        <span class="duel-card-cnt">${st.resetAt ? duelResetText(st.resetAt).toLowerCase() : ''}</span>
+      </div>
+      <div class="duel-card-line">Сегодня — всё</div>
+      ${!isSubActive() ? `<div class="duel-card-sub">По «Контракту Охотника» — 6 рейтинговых в день и тренировочные без ограничения.</div>` : ''}
+    </div>`;
+  }
+  if(st && !hasRated){
+    return `<div class="duel-card off" onclick="openDuelHome()">
+      <div class="duel-card-top">
+        <span class="duel-card-tag">ГОНКА С ПРИЗРАКОМ</span>
+        <span class="duel-card-cnt">0 / ${st.ratedMax||3}</span>
+      </div>
+      <div class="duel-card-sub">Рейтинговые на сегодня закончились. Остались тренировочные — результат сохранится, рейтинг не изменится.</div>
+    </div>`;
+  }
+  return `<div class="duel-card" onclick="openDuelHome()">
+    <div class="duel-card-top">
+      <span class="duel-card-tag">ГОНКА С ПРИЗРАКОМ</span>
+      ${st ? `<span class="duel-card-cnt">${st.ratedLeft} / ${st.ratedMax||3}</span>` : ''}
+    </div>
+    <div class="duel-card-main">
+      <span class="duel-card-num">${st && st.best7 ? st.best7 : '—'}</span>
+      <span class="duel-card-cap">${st && st.best7 ? 'твой рекорд за минуту' : 'минута отжиманий против записи'}</span>
+    </div>
+    <div class="duel-card-btn">${st && st.best7 ? 'Побить рекорд' : 'Начать'}</div>
+  </div>`;
+}
+/* Экран режима. Открывается с карточки на карте и держит всё, что относится
+   к дуэлям: рекорд, рейтинг, остаток попыток и запуск боя.
+   Состояние приходит с сервера — там источник правды по лимитам и рейтингу.
+   Пока запрос идёт, показываем последнее известное, чтобы экран не мигал
+   пустотой при каждом заходе. */
+function loadDuelState(){
+  if(!TG || !TG.initData){ S.duelLoading = false; render(); return; }
+  S.duelLoading = true;
+  fetch(DUEL_API_URL, { headers:{ 'X-Init-Data':TG.initData } })
+    .then(r=>{ if(!r.ok) throw new Error('bad'); return r.json(); })
+    .then(st=>{
+      // Дорожку призрака сервер отдаёт строкой — разбираем один раз здесь,
+      // чтобы в бою не парсить её на каждом тике.
+      if(st.ghost && typeof st.ghost.timeline === 'string'){
+        st.ghost.timeline = st.ghost.timeline ? st.ghost.timeline.split(',').map(Number) : [];
+      }
+      S.duelState = st; S.duelLoading = false; S.duelError = false; render();
+    })
+    .catch(()=>{ S.duelLoading = false; S.duelError = true; render(); });
+}
+function rDuelHome(){
+  const st = S.duelState;
+  const loading = S.duelLoading && !st;
+  const ratedLeft = st ? st.ratedLeft : 0;
+  const trainLeft = st ? st.trainLeft : 0;         // -1 означает «без ограничения»
+  const canRated = ratedLeft > 0;
+  const canTrain = trainLeft !== 0;
+  const resetTxt = st && st.resetAt ? duelResetText(st.resetAt) : '';
+  h(`<div class="screen">
+    <div class="hdr" style="width:100%">
+      <button class="icon-btn" onclick="go('map')" aria-label="Назад">‹</button>
+      <div class="gp-toptag" style="color:#B08BE0">ГОНКА С ПРИЗРАКОМ</div>
+      <div style="width:34px"></div>
+    </div>
+
+    ${loading ? `<div class="sub" style="margin-top:40px">Загружаю…</div>` : ''}
+    ${(!loading && S.duelError && !st) ? `<div class="sub" style="margin-top:40px">Нет связи с Системой. Потяни вниз или зайди позже.</div>` : ''}
+
+    ${st ? `
+    <div class="duel-hero">
+      <div class="duel-hero-num">${st.best7 || '—'}</div>
+      <div class="duel-hero-cap">лучшая минута за 7 дней</div>
+    </div>
+
+    <div class="duel-stats">
+      <div class="duel-stat"><div class="v">${st.rating}</div><div class="k">рейтинг</div></div>
+      <div class="duel-stat"><div class="v">${st.wins}</div><div class="k">побед</div></div>
+      <div class="duel-stat"><div class="v">${st.losses}</div><div class="k">поражений</div></div>
+    </div>
+
+    <div class="duel-limits">
+      <div class="duel-limit-row">
+        <span>Рейтинговых дуэлей</span>
+        <b class="${canRated?'ok':'off'}">${ratedLeft}</b>
+      </div>
+      <div class="duel-limit-row">
+        <span>Тренировочных</span>
+        <b class="${canTrain?'ok':'off'}">${trainLeft < 0 ? '∞' : trainLeft}</b>
+      </div>
+      ${resetTxt ? `<div class="duel-limit-note">${resetTxt}</div>` : ''}
+    </div>
+
+    <div class="duel-opponent">
+      ${st.ghost
+        ? `<div class="duel-opp-tag">СОПЕРНИК</div>
+           <div class="duel-opp-name">Твой призрак</div>
+           <div class="duel-opp-sub">${st.ghost.reps} повторений · ${duelAgoText(st.ghost.createdAt)}</div>`
+        : `<div class="duel-opp-tag">СОПЕРНИКА НЕТ</div>
+           <div class="duel-opp-sub">Первый заход задаёт эталон. Дальше будешь бежать против него.</div>`}
+    </div>
+
+    <div class="bottom" style="width:100%">
+      ${canRated
+        ? `<button class="btn" onclick="startDuel(true)">Начать дуэль</button>`
+        : canTrain
+          ? `<button class="btn ghost" onclick="startDuel(false)">Тренировочный заход</button>`
+          : `<button class="btn" disabled style="opacity:.45">На сегодня всё</button>`}
+      ${(canRated && canTrain) ? `<button class="gp-btn2" onclick="startDuel(false)">Тренировочный заход</button>` : ''}
+      ${(!canRated && !canTrain && !isSubActive()) ? `<div class="sub" style="margin-top:10px;font-size:12px">По «Контракту Охотника» — 6 рейтинговых в день и тренировочные без ограничения.</div>` : ''}
+    </div>` : ''}
+  </div>`);
+}
+/* «Обновится в 08:00» — время берём из строки, которую посчитал сервер по
+   выбранному человеком времени напоминания. Показываем в его часовом поясе. */
+function duelResetText(iso){
+  const ms = Date.parse(iso);
+  if(!Number.isFinite(ms)) return '';
+  const d = new Date(ms);
+  const hh = String(d.getHours()).padStart(2,'0');
+  const mm = String(d.getMinutes()).padStart(2,'0');
+  return `Обновится в ${hh}:${mm}`;
+}
+function duelAgoText(iso){
+  const ms = Date.parse(iso);
+  if(!Number.isFinite(ms)) return '';
+  const h = Math.floor((Date.now() - ms) / 3600000);
+  if(h < 1) return 'меньше часа назад';
+  if(h < 24) return h + ' ' + pluralRuClient(h, ['час','часа','часов']) + ' назад';
+  const d = Math.floor(h / 24);
+  return d + ' ' + pluralRuClient(d, ['день','дня','дней']) + ' назад';
+}
+
+function rDuel(){
+  const d = S.duel;
+  if(!d){ go('map'); return; }
+  const camInner = Cam.error
+    ? `<div class="cam-fallback">⚠️ ${escapeHtml(Cam.error)}<div class="sub" style="margin-top:6px;font-size:12px">Дуэль засчитывает только повторы, распознанные камерой.</div></div>`
+    : `<video id="raidVideo" autoplay playsinline muted></video><canvas id="raidCanvas"></canvas><div class="cam-status" id="camStatus">Включаю сканер Системы…</div>`;
+  const ghostName = d.ghost ? 'ТВОЙ РЕКОРД' : 'НЕТ СОПЕРНИКА';
+  h(`<div class="screen raid-fullbleed">
+    <div class="cam-wrap" id="camWrap">${camInner}
+      ${(d.phase !== 'fight' && !Cam.error) ? duelCalibHTML(d) : ''}
+    </div>
+    <button class="raid-back" onclick="abortDuel()">‹</button>
+
+    <div class="duel-top">
+      <div class="duel-side me">
+        <div class="duel-side-tag">ТЫ</div>
+        <div class="duel-side-num" id="duelMyReps">${d.reps}</div>
+      </div>
+      <div class="duel-timer" id="duelTimer">0:${String(DUEL_SECONDS).padStart(2,'0')}</div>
+      <div class="duel-side ghost">
+        <div class="duel-side-tag">${ghostName}</div>
+        <div class="duel-side-num" id="duelGhostReps">${d.ghost ? d.ghostReps : '—'}</div>
+      </div>
+    </div>
+
+    <div class="duel-bottom">
+      <div class="duel-hint" id="duelHint">${d.phase==='fight' ? 'Отжимайся!' : 'Встань в упор — минута начнётся, когда Система тебя увидит'}</div>
+    </div>
+  </div>`);
+  attachCamRefs();
+  if(!Cam.running && !Cam.error) startCamera();
+}
+/* Оверлей калибровки и отсчёта. Проще, чем во вратах: там подсказки под три
+   упражнения и разные ракурсы, здесь всегда отжимания. */
+function duelCalibHTML(d){
+  return `<div class="raid-calib" id="duelCalib" data-state="${d.calibState}">
+    <div class="raid-calib-label" id="duelCalibLabel">${calibLabelFor(d.calibState)}</div>
+    <div class="raid-calib-countdown" id="duelCalibCount">${d.phase==='countdown' ? d.countdownVal : ''}</div>
+    <div class="raid-calib-bar"><i id="duelCalibFill" style="width:${d.calibPct||0}%"></i></div>
+    <div class="raid-calib-sub">Положи телефон на пол экраном на себя, на уровне груди</div>
+    <div class="raid-calib-distance">В дуэли считает только камера — кнопки ручного счёта здесь нет</div>
+  </div>`;
+}
+/* Точечное обновление вместо полной перерисовки: во время минуты экран
+   меняется десять раз в секунду, а перерисовка пересоздала бы видео и канвас
+   камеры — распознавание бы срывалось. Та же причина, что у updateRaidDOM. */
+function updateDuelCalibDOM(){
+  const d = S.duel; if(!d) return;
+  const wrap = document.getElementById('duelCalib');
+  if(wrap) wrap.dataset.state = d.calibState;
+  const lab = document.getElementById('duelCalibLabel');
+  if(lab) lab.textContent = calibLabelFor(d.calibState);
+  const cnt = document.getElementById('duelCalibCount');
+  if(cnt) cnt.textContent = d.phase==='countdown' ? String(d.countdownVal) : '';
+  const fill = document.getElementById('duelCalibFill');
+  if(fill) fill.style.width = (d.calibPct||0) + '%';
+}
+function updateDuelDOM(elapsedDs){
+  const d = S.duel; if(!d) return;
+  const my = document.getElementById('duelMyReps');
+  if(my) my.textContent = d.reps;
+  const gh = document.getElementById('duelGhostReps');
+  if(gh && d.ghost) gh.textContent = d.ghostReps;
+  const t = document.getElementById('duelTimer');
+  if(t){
+    const left = Math.max(0, DUEL_SECONDS - Math.floor((elapsedDs||0)/10));
+    t.textContent = '0:' + String(left).padStart(2,'0');
+    t.classList.toggle('low', left <= 10);
+  }
+  // Кто ведёт — подсвечиваем, чтобы это читалось боковым зрением с пола.
+  const meBox = document.querySelector('.duel-side.me');
+  const ghBox = document.querySelector('.duel-side.ghost');
+  if(meBox && ghBox && d.ghost){
+    meBox.classList.toggle('lead', d.reps > d.ghostReps);
+    ghBox.classList.toggle('lead', d.ghostReps > d.reps);
+  }
+}
+/* Досрочный выход из боя.
+   Первые DUEL_FREE_ABORT_S секунд — бесплатно: технический сбой почти всегда
+   виден именно там (камера не завелась, скелет не появился, человек не в
+   кадре), и наказывать за него нельзя.
+   Дальше попытка списывается. Без этого выход превращается в способ обойти
+   лимит: увидел на пятидесятой секунде, что идёшь хуже призрака, вышел, начал
+   заново — и три попытки в день перестают что-либо значить.
+   Результат прерванного захода не сохраняется в любом случае: он не идёт ни в
+   таблицу, ни в призраки, и рейтинг не меняет. */
+const DUEL_FREE_ABORT_S = 15;
+function abortDuel(){
+  const d = S.duel;
+  const elapsedS = (d && d.phase === 'fight') ? (performance.now() - d.startedAt) / 1000 : 0;
+  if(elapsedS < DUEL_FREE_ABORT_S){ doAbortDuel(false); return; }
+  sysConfirm('Выйти из дуэли? Попытка будет засчитана, результат не сохранится.', ()=>doAbortDuel(true));
+}
+function doAbortDuel(spendAttempt){
+  const d = S.duel;
+  stopDuelTimers();
+  S.duel = null;
+  // Сообщаем серверу только о платном выходе: он спишет попытку, но ничего
+  // не сохранит. Ответ не ждём — человек уже уходит с экрана.
+  if(spendAttempt && d && d.rated && TG && TG.initData){
+    try{
+      fetch(DUEL_API_URL, {
+        method:'POST',
+        headers:{'Content-Type':'application/json', 'X-Init-Data':TG.initData},
+        body: JSON.stringify({ name:S.ans.name, reps:0, timeline:'', rated:true, aborted:true }),
+      }).then(r=>r.json()).then(j=>{ if(j && j.state) S.duelState = j.state; }).catch(()=>{});
+    }catch(e){}
+  }
+  go('map');
+}
+function stopDuelTimers(){
+  clearInterval(S._duelCountT); clearInterval(S._duelTickT);
+  S._duelCountT = null; S._duelTickT = null;
+}
+/* Минута кончилась. Отправляем результат вместе с дорожкой моментов — именно
+   она служит доказательством, что повторы делались, а не были заявлены.
+   Исход боя и начисление рейтинга считает сервер: он же знает настоящего
+   соперника и остаток лимитов. Клиент лишь показывает то, что вернули. */
+function finishDuel(){
+  const d = S.duel; if(!d) return;
+  stopDuelTimers();
+  d.phase = 'done';
+  if(S.settings.vibration) hapticImpact('heavy');
+  S.duelResult = { pending:true, reps:d.reps, ghostReps:d.ghost ? d.ghost.reps : null };
+  go('duelResult');
+  if(!TG || !TG.initData){
+    S.duelResult = { ...S.duelResult, pending:false, error:'Результат сохраняется только внутри Telegram' };
+    render();
+    return;
+  }
+  fetch(DUEL_API_URL, {
+    method:'POST',
+    headers:{'Content-Type':'application/json', 'X-Init-Data':TG.initData},
+    body: JSON.stringify({
+      name: S.ans.name, reps: d.reps,
+      timeline: d.timeline.join(','), rated: d.rated,
+    }),
+  })
+  .then(r=>r.json().then(j=>({ ok:r.ok, j })))
+  .then(({ok, j})=>{
+    if(!ok){
+      S.duelResult = { ...S.duelResult, pending:false,
+        error: j && j.error === 'limit' ? 'Дуэли на сегодня закончились' : 'Не удалось сохранить результат' };
+    } else {
+      S.duelState = j.state || S.duelState;
+      S.duelResult = { ...S.duelResult, pending:false, outcome:j.outcome, delta:j.delta,
+        rating:j.rating, rated:j.rated, ghostReps:j.ghostReps };
+    }
+    S.duel = null;
+    render();
+  })
+  .catch(()=>{
+    S.duelResult = { ...S.duelResult, pending:false, error:'Нет связи — результат не сохранён' };
+    S.duel = null;
+    render();
+  });
+}
+/* Экран итога. На этом шаге он намеренно простой — оформление и разбор боя
+   доделываются вместе с экраном режима. */
+function rDuelResult(){
+  const r = S.duelResult || {};
+  const title = r.pending ? 'Минута окончена'
+    : r.error ? 'Результат не засчитан'
+    : r.outcome === 'win' ? 'ПОБЕДА'
+    : r.outcome === 'loss' ? 'ПОРАЖЕНИЕ'
+    : r.outcome === 'draw' ? 'НИЧЬЯ'
+    : 'ЗАХОД ЗАСЧИТАН';
+  h(`<div class="screen reveal">
+    <div class="syswin" style="width:100%"><div class="sys-tag"><span class="bang">!</span> ДУЭЛЬ</div>
+      <div style="font-size:15px">${escapeHtml(title)}</div>
+    </div>
+    <div class="duel-result-nums">
+      <div><div class="duel-side-tag">ТЫ</div><div class="duel-result-num">${r.reps ?? 0}</div></div>
+      <div class="duel-result-vs">против</div>
+      <div><div class="duel-side-tag">ПРИЗРАК</div><div class="duel-result-num ghost">${r.ghostReps ?? '—'}</div></div>
+    </div>
+    ${r.pending ? `<div class="sub">Сохраняю результат…</div>` : ''}
+    ${r.error ? `<div class="sub" style="color:var(--danger)">${escapeHtml(r.error)}</div>` : ''}
+    ${(!r.pending && !r.error) ? `<div class="sub" style="font-size:14px">
+      ${r.rated ? `Рейтинг ${r.delta>0?'+'+r.delta:r.delta} → <b class="gold">${r.rating}</b>` : 'Тренировочный заход — рейтинг не изменился'}
+    </div>` : ''}
+    <div class="bottom" style="width:100%">
+      <button class="btn" onclick="openDuelHome()">Ещё раз</button>
+      <button class="gp-btn2" onclick="go('map')">К карте</button>
+    </div>
+  </div>`);
+}
+/* Вход в режим: обновляем состояние с сервера при каждом открытии — лимиты и
+   рейтинг могли измениться на другом устройстве или после прошлого захода. */
+function openDuelHome(){
+  go('duelHome');
+  loadDuelState();
+}
+
 function rVictory(){
   const g=S.raid.gate;
   const total = S.raid.mobs.reduce((a,m)=>a+m.maxHp,0);
@@ -5579,6 +6125,9 @@ function boot(){
   if(hasProfile) syncReminder(); // на случай если прошлая отправка не долетела
   trackOpen();
   checkSubscription(); // тихо обновляем статус "Контракта Охотника" — см. checkSubscription()
+  // Состояние дуэлей — чтобы карточка на карте сразу показала рекорд и остаток
+  // попыток, а не пустые прочерки до первого захода в режим.
+  if(hasProfile) loadDuelState();
   startPresenceHeartbeat();
 }
 boot();
