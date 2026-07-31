@@ -1014,6 +1014,10 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
   font-size:10.5px;color:var(--gold);font-weight:700;margin-top:2px;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
 }
+/* Титул за место в дуэлях — фиолетовым, как весь режим призрака, чтобы его не
+   путали с обычными золотыми титулами: он временный и держится только пока
+   человек в тройке. */
+.lb-title-duel{color:#C9A7F5}
 /* Счёт не растягивает строку: max-width не даёт длинному числу вытолкнуть имя
    и разорвать ряд, а многоточие показывает, что число обрезано. */
 .lb-score{font-family:'JetBrains Mono';font-weight:800;color:var(--gold);font-size:14px;flex-shrink:0;max-width:38%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -3355,6 +3359,30 @@ function navBar(on){
    может показать в таблице произвольный текст: неизвестный id просто не
    находится и ничего не рисует. Ищем сначала среди титулов (выбирать можно
    только их), достижения — на случай, если когда-нибудь разрешим и их. */
+/* Титулы за место в недельной таблице дуэлей. Их НЕТ в TITLES_LIST и нельзя
+   выбрать в профиле: они не принадлежат игроку, а описывают его текущее место
+   и снимаются автоматически, когда место потеряно. Названия здесь только для
+   отображения — выдаёт их сервер, клиент на это не влияет. */
+const DUEL_PLACE_TITLE_NAMES = {
+  duel_blade_1: 'Первый Клинок',
+  duel_blade_2: 'Второй Клинок',
+  duel_blade_3: 'Третий Клинок',
+};
+function duelTitleName(id){ return DUEL_PLACE_TITLE_NAMES[id] || null; }
+
+/* Титульная строка под ником. Титул за место идёт первым и своим цветом —
+   он редкий и временный, а выбранный титул никуда не денется. Оба в одну
+   строку, чтобы ряд таблицы не вырастал до трёх этажей. */
+function lbTitleLineHTML(row){
+  const duel = duelTitleName(row.duel_title);
+  const own  = titleNameById(row.title_id);
+  if(!duel && !own) return '';
+  const parts = [];
+  if(duel) parts.push(`<span class="lb-title-duel">⚔ ${escapeHtml(duel)}</span>`);
+  if(own)  parts.push(escapeHtml(own));
+  return `<div class="lb-title">${parts.join('<span style="opacity:.4"> · </span>')}</div>`;
+}
+
 function titleNameById(id){
   if(!id) return null;
   const t = TITLES_LIST.find(x=>x.id===id);
@@ -3367,7 +3395,6 @@ function titleNameById(id){
    кликабельности. Своя строка некликабельна: драться с собственной записью
    бессмысленно, сервер такой вызов всё равно отклонит. */
 function lbDuelRowHTML(row, isMe){
-  const title = titleNameById(row.title_id);
   const can = !isMe && row.run_id;
   // Кавычки и слэши вырезаем ДО экранирования, а не после: escapeHtml
   // превращает ' в &#39;, но парсер HTML вернёт его обратно в ' уже внутри
@@ -3378,7 +3405,7 @@ function lbDuelRowHTML(row, isMe){
     <div class="lb-rank-badge">${escapeHtml(row.rank||'E')}</div>
     <div class="lb-name-wrap">
       <div class="lb-name">${escapeHtml(row.name)||'Безымянный'}</div>
-      ${title ? `<div class="lb-title">${escapeHtml(title)}</div>` : ''}
+      ${lbTitleLineHTML(row)}
     </div>
     <div class="lb-score">${row.score}</div>
     ${can ? `<div style="margin-left:8px;opacity:.5;font-size:15px">⚔</div>` : ''}
@@ -3387,13 +3414,12 @@ function lbDuelRowHTML(row, isMe){
 function lbRowHTML(row, isMe){
   // Титул — отдельной строкой ПОД именем, а не рядом с ним: строка лидеров
   // узкая, и в один ряд титул отбирал бы ширину у ника, обрезая оба.
-  const title = titleNameById(row.title_id);
   return `<div class="lb-row ${isMe?'me':''}">
     <div class="lb-rnk">${row.rnk}</div>
     <div class="lb-rank-badge">${escapeHtml(row.rank||'E')}</div>
     <div class="lb-name-wrap">
       <div class="lb-name">${escapeHtml(row.name)||'Безымянный'}</div>
-      ${title ? `<div class="lb-title">${escapeHtml(title)}</div>` : ''}
+      ${lbTitleLineHTML(row)}
     </div>
     <div class="lb-score">${row.score}</div>
   </div>`;
