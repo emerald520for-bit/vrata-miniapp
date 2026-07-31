@@ -701,6 +701,13 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
   display:inline-block;font-size:12.5px;color:var(--text);
   background:rgba(2,3,10,.8);border-radius:8px;padding:7px 12px;
 }
+/* Выход подписан и приглушён: он должен находиться, но не соблазнять.
+   Своя подложка обязательна — кнопка лежит поверх живого видео. */
+.duel-quit{
+  display:block;margin:10px auto 0;font-family:inherit;font-size:12.5px;
+  color:var(--muted);background:rgba(2,3,10,.8);border:1px solid var(--line);
+  border-radius:10px;padding:9px 18px;cursor:pointer;
+}
 .duel-result-nums{display:flex;align-items:center;justify-content:center;gap:18px;margin:10px 0}
 .duel-result-num{font-family:'Russo One';font-size:40px;color:var(--sys);line-height:1.1}
 .duel-result-num.ghost{color:#B08BE0}
@@ -5543,6 +5550,10 @@ function rDuel(){
 
     <div class="duel-bottom">
       <div class="duel-hint" id="duelHint">${d.phase==='fight' ? 'Отжимайся!' : 'Встань в упор — минута начнётся, когда Система тебя увидит'}</div>
+      <!-- Стрелка «назад» в углу — маленький безымянный кружок поверх видео;
+           с пола, между повторами, его не найти. Во время боя нужен явный,
+           подписанный выход. -->
+      <button class="duel-quit" onclick="abortDuel()">Прервать дуэль</button>
     </div>
   </div>`);
   attachCamRefs();
