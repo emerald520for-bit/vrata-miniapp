@@ -288,6 +288,14 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
 .gate-node.gold .gate-rank{color:var(--gold)}
 .gate-node.locked .gate-frame{border-color:var(--line);background:var(--panel);box-shadow:none;filter:grayscale(1);opacity:.55}
 .gate-node.done .gate-frame{border-color:var(--ok);box-shadow:0 0 18px rgba(52,211,153,.4)}
+/* Метка незакрытого захода — «3/6» в углу рамки врат. Тот же приём и то же
+   место, что у замка (.lockbadge): угол уже читается как «статус этих врат». */
+.gate-resume{
+  position:absolute;right:-6px;bottom:-6px;background:var(--panel-solid);
+  border:1px solid var(--gold);border-radius:9px;padding:1px 6px;
+  font-family:'JetBrains Mono';font-size:10px;font-weight:700;color:var(--gold);
+  box-shadow:0 0 10px rgba(245,194,66,.35);
+}
 .gate-name{margin-top:8px;font-size:12.5px;font-weight:800;line-height:1.25;text-shadow:0 2px 6px #000}
 .gate-rank{font-family:'JetBrains Mono';font-size:10px;letter-spacing:2px;color:var(--sys);margin-top:2px}
 .gate-node.red .gate-rank{color:var(--danger)}
@@ -296,11 +304,52 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
 .icon-row{display:flex;justify-content:flex-end;gap:10px;margin-bottom:14px}
 .icon-btn{width:40px;height:40px;border-radius:12px;border:1px solid var(--line);background:var(--panel);color:var(--text);font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:transform .12s ease, border-color .2s ease}
 .icon-btn:active{transform:scale(.9)}
+/* Размер картинки задаём здесь, а не в вызовах icon(...) — их четыре штуки в
+   разных экранах (rMap(), rProfile()), и они бы разъехались при первой же
+   правке. icon() отдаёт <img> с атрибутами width/height, CSS их перебивает.
+   Было 18px в коробке 40px — иконка занимала меньше половины кнопки и терялась.
+   24px = ~63% от внутренних 38px, обычная пропорция для иконочной кнопки.
+   Правило намеренно узкое (.icon-btn img): нижнее меню — это .nav button, там
+   иконка стоит рядом с текстом и её увеличение сломало бы строку. */
+.icon-btn img{width:24px;height:24px}
 /* Активный переключатель направления (Врата Силы/Выносливости) в icon-row —
    тот же приём подсветки, что и у выбранного низа nav, см. .nav button.on. */
 .icon-btn.on{border-color:var(--gold);box-shadow:0 0 10px rgba(245,194,66,.35)}
 /* Подпись текущего направления над картой врат — какая из двух карт сейчас
    показана (см. rMap()/TRACKS). */
+/* Ряд выбора направления на карте. Пять ячеек во всю ширину вместо трёх
+   иконок в углу: ряд из трёх читается как «вот и всё, что есть», ряд из пяти
+   с двумя закрытыми — как «это только начало».
+   Профиль и настройки в этот ряд не входят намеренно. Они не направления
+   тренировки, и, стоя рядом с Силой и Выносливостью, предлагали бы выбрать
+   «чем сегодня займусь — прессом или настройками». Они остались отдельной
+   парой выше (.icon-row).
+   Подпись вынесена ПОД рамку, а не внутрь: внутри она отнимала бы высоту у
+   иконки, ради которой ряд и укрупняли. */
+.track-row{display:flex;gap:6px;margin-bottom:10px}
+.track-cell{flex:1;min-width:0;background:none;border:none;padding:0;cursor:pointer;font-family:inherit;text-align:center}
+.track-box{
+  height:60px;border:1px solid var(--line);border-radius:14px;background:var(--panel);
+  display:flex;align-items:center;justify-content:center;
+  transition:border-color .2s ease, transform .12s ease, box-shadow .2s ease;
+}
+/* Иконка задана долей от ширины ячейки, а не фиксированным числом: ячейка
+   тянется от 51px на узком экране до 73px на широком, и один и тот же размер
+   в пикселях выглядел бы то впритык, то потерянным в пустоте.
+   Потолок в 44px нужен, чтобы на широких экранах иконка не упёрлась в высоту
+   рамки (60px): без него на 430px она выросла бы до 52px и села бы вплотную. */
+.track-box img{width:72%;max-width:44px;height:auto}
+.track-cell:active .track-box{transform:scale(.95)}
+/* Подпись узкая: на 320px-экране ячейка ужимается до ~51px, поэтому шрифт 9px
+   и отрицательный трекинг — иначе «Стойкость» не помещается и обрезается. */
+.track-cap{font-size:9px;line-height:1;color:var(--muted);margin-top:5px;white-space:nowrap;letter-spacing:-.2px}
+.track-cell.on .track-box{border-color:var(--gold);box-shadow:0 0 10px rgba(245,194,66,.35)}
+.track-cell.on .track-cap{color:var(--gold)}
+/* Будущие направления. pointer-events:none, а не disabled: кнопки тут нет
+   вовсе — это div, и нажать его нечем даже с клавиатуры. */
+.track-cell.soon{opacity:.45;pointer-events:none}
+.track-cell.soon .track-box{background:transparent}
+.track-soon-ico{font-size:28px;line-height:1;color:var(--gold)}
 .track-tag{font-family:'JetBrains Mono';font-size:12px;letter-spacing:1.5px;text-transform:uppercase;color:var(--sys);text-align:center;margin-bottom:8px}
 /* Верхний блок карты врат (ранг/стрик/уровень + переключатель направления +
    профиль/настройки) — раньше просто скроллился вместе с картой, на 44
@@ -625,22 +674,10 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
 /* ---- Гонка с призраком: карточка на карте ---- */
 /* Фиолетовая рамка отделяет режим от врат: голубой в приложении означает
    Систему и врата, фиолетовый нигде не занят и ложится под «призрака». */
-.duel-card{
   margin:0 14px 10px;border:1px solid rgba(176,139,224,.45);background:rgba(20,16,34,.9);
   border-radius:14px;padding:12px 14px;cursor:pointer;
 }
 /* Когда попытки кончились — карточка гаснет и перестаёт звать. */
-.duel-card.off{border-color:var(--line);background:var(--panel)}
-.duel-card-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
-.duel-card-tag{font-family:'JetBrains Mono';font-size:10px;letter-spacing:2.5px;color:#B08BE0}
-.duel-card.off .duel-card-tag{color:var(--muted)}
-.duel-card-cnt{font-family:'JetBrains Mono';font-size:10px;color:var(--muted)}
-.duel-card-main{display:flex;align-items:baseline;gap:8px;margin-bottom:12px}
-.duel-card-num{font-family:'Russo One';font-size:30px;color:var(--gold);line-height:1}
-.duel-card-cap{font-size:12px;color:var(--muted)}
-.duel-card-line{font-family:'Russo One';font-size:20px;margin-bottom:6px}
-.duel-card-sub{font-size:12.5px;color:var(--muted);line-height:1.5}
-.duel-card-btn{
   background:linear-gradient(135deg,#6D28D9,#8B5CF6);border-radius:11px;padding:11px;
   text-align:center;font-size:14px;color:#fff;
 }
@@ -1114,6 +1151,16 @@ const S = {
      Значение привязано к устройству, а не к игроку — но и сохранение у нас
      локальное, так что при переезде на другой телефон оно просто перепроверится. */
   needWasm: false,
+  /* Незакрытые заходы — по одному на направление. Ключ: 'strength'|'endurance'
+     |'core', значение: снимок вида
+       { gate:23, idx:3, hp:118, reps:47, xp:210, titles:[], n:5, sum:128 }
+     Точка сохранения только МЕЖДУ мобами, поэтому массив HP хранить не нужно:
+     всё до idx мертво, всё начиная с idx — целое. Отсюда и размер снимка —
+     около 70 символов, а лимит облака Telegram 4096 на всю сохранёнку.
+     n и sum — количество мобов и сумма их HP на момент сохранения. Нужны,
+     чтобы отбросить снимок, если врата с тех пор перебалансировали: idx мог бы
+     указать за пределы массива, а бой пойти по другим числам. */
+  raidSaves: {},
   everDied: false, // флаг для ачивки "Восставший из пепла" (см. playerDied()/startRaid())
   // Подписка "Контракт Охотника" — статус приходит с сервера (/api/me,
   // см. checkSubscription() ниже), кэшируется в localStorage вместе с
@@ -1215,15 +1262,27 @@ function trackOpen(){
    мигали замком туда-сюда и чтобы подписчик не упирался в замок, если
    на секунду пропала сеть — см. isSubActive(). */
 const ME_API_URL = 'https://vrata-bot.emerald520for.workers.dev/api/me';
+/* Единственное место, где ответ /api/me превращается в S.sub.
+   Раньше его разбирали в трёх местах независимо, и два из них теряли
+   payments — число оплат, от которого зависят титулы «Верный контракту».
+   Хуже всего это выходило сразу после оплаты: опрос в окне подписки обнулял
+   payments ровно в тот момент, когда оно и должно было вырасти.
+   Объявление титулов сюда НЕ входит: из окна оплаты его звать нельзя, там
+   поверх уже открыта модалка. */
+function setSubFromServer(data){
+  S.sub = {
+    subscribed: !!data.subscribed,
+    paidUntil: data.paidUntil || null,
+    payments: Number(data.payments) || 0,
+    checkedAt: Date.now(),
+  };
+}
 function checkSubscription(){
   if(!TG || !TG.initData || !TG.initDataUnsafe || !TG.initDataUnsafe.user) return;
   fetch(ME_API_URL, { headers:{ 'X-Init-Data':TG.initData } })
     .then(r=>{ if(!r.ok) throw new Error('bad response'); return r.json(); })
     .then(data=>{
-      S.sub = {
-        subscribed:!!data.subscribed, paidUntil:data.paidUntil||null,
-        payments:Number(data.payments)||0, checkedAt:Date.now(),
-      };
+      setSubFromServer(data);
       announceContractTitles();
       saveState();
       render();
@@ -1315,7 +1374,11 @@ function recheckSubscriptionInSettings(){
   fetch(ME_API_URL, { headers:{ 'X-Init-Data':TG.initData } })
     .then(r=>{ if(!r.ok) throw new Error('bad response'); return r.json(); })
     .then(data=>{
-      S.sub = { subscribed:!!data.subscribed, paidUntil:data.paidUntil||null, checkedAt:Date.now() };
+      setSubFromServer(data);
+      // Ручная проверка из настроек — подходящий момент объявить титул за
+      // верность, если число оплат выросло: человек сам открыл этот экран и
+      // ждёт ответа, никакая модалка поверх не висит.
+      announceContractTitles();
       saveState();
       render();
       showToast(S.sub.subscribed ? 'Контракт активен' : 'Контракта нет');
@@ -1397,7 +1460,7 @@ const RANK_TABS = [
   { id:'pushups', label:'👊 Отжимания' },
   { id:'squats',  label:'🦵 Приседания' },
   { id:'situps',  label:'🛡 Пресс' },
-  { id:'duel',    label:'⚔ Дуэли' },
+  { id:'duel',    label:'⚔ Арена' },
 ];
 function togglePeriodMenu(){
   S.rankPeriodMenuOpen = !S.rankPeriodMenuOpen;
@@ -1417,7 +1480,11 @@ function toggleRankTabMenu(){
 function challengeFromRank(runId, name){
   if(S.rankChallenging) return;
   if(!(TG && TG.initData)){ sysNotice('Вызов доступен только внутри Telegram.'); return; }
-  S.rankChallenging = true;
+  // Храним id вызываемого захода, а не просто true: строка таблицы по нему
+  // узнаёт, что ждут именно её, и показывает это (см. lbDuelRowHTML()).
+  S.rankChallenging = Number(runId);
+  render({ keepScroll: true });   // без keepScroll таблицу отбросило бы наверх
+  const done = (fn)=>{ S.rankChallenging = false; render({ keepScroll: true }); fn(); };
   fetch(DUEL_API_URL, {
     method:'POST',
     headers:{ 'Content-Type':'application/json', 'X-Init-Data': TG.initData },
@@ -1425,36 +1492,47 @@ function challengeFromRank(runId, name){
   })
     .then(r=>r.json())
     .then(d=>{
-      S.rankChallenging = false;
       if(d && d.error){
         // 'stale' — заход выпал из недельного окна, пока человек смотрел таблицу.
-        sysNotice(d.error==='stale' ? 'Этот заход уже устарел. Обнови таблицу.'
+        done(()=>sysNotice(d.error==='stale' ? 'Этот заход уже устарел. Обнови таблицу.'
                : d.error==='self'  ? 'Это твой собственный результат.'
-               : 'Не удалось назначить соперника.');
+               : 'Не удалось назначить соперника.'));
         return;
       }
-      // Состояние из ответа намеренно не подставляем: там дорожка призрака
+      // Состояние из ответа намеренно не подставляем: там дорожка соперника
       // приходит строкой, а разбирает её loadDuelState(). Подставили бы —
-      // бой стартовал бы с нечитаемым призраком.
-      openDuelHome();
-      sysNotice('Соперник назначен: ' + (name||'охотник') + '. Начинай бой.');
+      // бой стартовал бы с нечитаемой тенью.
+      done(()=>{
+        openDuelHome();
+        sysNotice('Соперник назначен: ' + (name||'охотник') + '. Начинай бой.');
+      });
     })
-    .catch(()=>{ S.rankChallenging = false; sysNotice('Нет связи с сервером.'); });
+    .catch(()=>done(()=>sysNotice('Нет связи с сервером.')));
 }
 function setRankPeriod(period){
   S.rankPeriodMenuOpen = false;
   if(S.rankPeriod===period){ render(); return; }
   S.rankPeriod = period; S.rankData = null; render(); loadLeaderboard();
 }
-// Закрывает дропдаун День/Неделя при тапе куда угодно вне него — сам дропдаун
-// перерисовывается через innerHTML на каждый render(), поэтому вешать
-// локальный обработчик на сам элемент бессмысленно (он теряется при
-// следующей перерисовке); один делегированный слушатель на document,
-// добавленный один раз при загрузке скрипта, переживает любые render().
+/* Закрывает дропдауны рейтинга при тапе куда угодно вне них — сами дропдауны
+   перерисовываются через innerHTML на каждый render(), поэтому вешать
+   локальный обработчик на сам элемент бессмысленно (он теряется при
+   следующей перерисовке); один делегированный слушатель на document,
+   добавленный один раз при загрузке скрипта, переживает любые render().
+
+   Слушатель ищет класс .rank-menu на обёртке. Это ЖЁСТКАЯ связь с разметкой
+   rRank(): если обёртка потеряет класс, тап по собственной кнопке дропдауна
+   будет считаться тапом "мимо" — обработчик кнопки откроет меню, а этот
+   слушатель тут же закроет его в том же кадре, и меню просто не будет
+   открываться. Ровно это и произошло, когда выбор упражнения переделали из
+   кнопок в список и старый класс .rank-period-wrap исчез из разметки.
+   Меню тут два, и закрываются они вместе: тап по кнопке одного должен гасить
+   другое, иначе они наложатся друг на друга. */
 document.addEventListener('click', (e)=>{
-  if(!S.rankPeriodMenuOpen) return;
-  if(e.target.closest && e.target.closest('.rank-period-wrap')) return;
+  if(!S.rankPeriodMenuOpen && !S.rankTabMenuOpen) return;
+  if(e.target.closest && e.target.closest('.rank-menu')) return;
   S.rankPeriodMenuOpen = false;
+  S.rankTabMenuOpen = false;
   render();
 });
 // "Активен сейчас" в /stats — это не настоящий realtime, а "виделся за
@@ -1612,6 +1690,7 @@ function saveState(){
     lastWinDate:S.lastWinDate, todayDate:S.todayDate, onboarded:S.onboarded,
     titles:S.titles, bestiary:S.bestiary, selectedTitle:S.selectedTitle, contractSeen:S.contractSeen,
     achievements:S.achievements, everDied:S.everDied, sub:S.sub, needWasm:S.needWasm,
+    raidSaves:S.raidSaves,
   });
   try{ localStorage.setItem(SAVE_KEY, payload); }catch(e){ /* приватный режим и т.п. — просто не сохраняем локально */ }
   // CloudStorage синхронизирует прогресс между устройствами одного аккаунта
@@ -1673,10 +1752,18 @@ function applyStateFromRaw(raw){
     S.selectedTitle = data.selectedTitle || null;
     S.contractSeen = data.contractSeen || [];
     S.needWasm = !!data.needWasm;
+    // Старые сохранёнки этого поля не знают — пустой объект, а не undefined,
+    // иначе первое же обращение к S.raidSaves[track] уронит карту.
+    S.raidSaves = (data.raidSaves && typeof data.raidSaves==='object') ? data.raidSaves : {};
     S.achievements = data.achievements || [];
     S.everDied = !!data.everDied;
     if(data.sub && typeof data.sub==='object'){
-      S.sub = { subscribed:!!data.sub.subscribed, paidUntil:data.sub.paidUntil||null, checkedAt:data.sub.checkedAt||0 };
+      // payments обязателен: на нём держатся титулы «Верный контракту», и без
+      // него они исчезали после каждого восстановления из облака — до тех пор,
+      // пока checkSubscription() не сходит на сервер. Без сети — не исчезали бы,
+      // а просто пропадали.
+      S.sub = { subscribed:!!data.sub.subscribed, paidUntil:data.sub.paidUntil||null,
+                payments:Number(data.sub.payments)||0, checkedAt:data.sub.checkedAt||0 };
     }
     return true;
   }catch(e){ return false; }
@@ -1927,12 +2014,20 @@ const RANK_DEFS = [
     regularNames:['Логово слизней','Крысиные туннели','Гоблинский лагерь','Курганы павших','Ядовитая топь','Огрский лагерь'],
     regularKinds:['slime','rat','goblin','skeleton','slime','ogre'],
     regularMobNames:['Слизень','Туннельная крыса','Гоблин-разведчик','Костяной страж','Ядовитый слизень','Огр-разведчик'],
+    /* Ручная сетка HP ранга E (см. regularHp в buildGates). Было 23/28/33/38/
+       43/48 при мобах 3–11, стало 16/18/21/23/26/31 при мобах 2–7.
+       Ранг E — это вход в игру, и его задача не отсеивать, а научить. Сумма
+       ранга падает с 283 до 178, самый тяжёлый подход — с 14 повторов до 10.
+       Дальше по рангам числа не тронуты: там барьер уместен. */
+    regularHp: [[2,4],[3,4],[3,5],[4,5],[4,6],[5,7]],
     trials: [],
-    // Явные HP экзамена (вместо формулы от последних обычных врат) — это
-    // бывший Trial «Вожак огров» 1:1: охрана 10–12, босс 14, всего 70
-    // повторов. По формуле экзамен получился бы ~107 повторов (цифры
-    // прежнего Рыцаря) — ровно та стена, которую этот редизайн убирает.
-    exam:{ kind:'ogre', trashName:'Огр-разведчик', bossName:'Вожак огров', trashLo:10, trashHi:12, bossHp:14 } },
+    /* Экзамен E — первый настоящий барьер игры, и по статистике на нём люди
+       и заканчивали: 14 отжиманий подряд не сделает тот, кто в анкете выбрал
+       «0–5». Охрана 10–12 и босс 14 (всего 70) стали охраной 6–7 и боссом 10
+       (всего 43). Босс намеренно ощутимо тяжелее охраны — 10 против 7: если
+       уравнять, экзамен перестаёт быть событием и превращается в обычные
+       врата с другим названием. */
+    exam:{ kind:'ogre', trashName:'Огр-разведчик', bossName:'Вожак огров', trashLo:6, trashHi:7, bossHp:10 } },
 
   { rank:'D', regularCount:16,
     regularNames:['Орочий стан','Волчья чаща','Разбойничья застава','Клыкастый овраг','Гиеновый овраг','Кладбище без имён','Бесовский закут','Разграбленный караван','Забытая застава','Разбойничий привал','Вепревая тропа','Гиеновая падь','Гниющий погост','Дымный вертеп','Кровавые пороги','Бесовское капище'],
@@ -1994,7 +2089,16 @@ function buildGates(forcedExercise){
   RANK_DEFS.forEach((def,rankIdx)=>{
     const hiList=[];
     for(let i=0;i<def.regularCount;i++){
-      const lo=3+r, hi=6+r; hiList.push(hi);
+      /* regularHp — ручные пары [lo,hi] вместо общей формулы. Введено ради
+         ранга E: он входной, и общая прогрессия делала его непроходимым для
+         тех, ради кого приложение и существует (экзамен требовал 14 отжиманий
+         подряд при том, что верхний вариант ответа в анкете — «20+»).
+         Счётчик r при этом двигается как раньше, поэтому ранги D и выше
+         получают ровно те же числа, что и до правки. */
+      const man = def.regularHp && def.regularHp[i];
+      const lo = man ? man[0] : 3+r;
+      const hi = man ? man[1] : 6+r;
+      hiList.push(hi);
       // 6-е врата E («Огрский лагерь») добавлены сверх исходной сетки из 5:
       // они получают следующие по прогрессии числа (8–11), но НЕ двигают
       // глобальный счётчик r — иначе все последующие ранги (D и выше) стали
@@ -2542,6 +2646,13 @@ function gateArt(g, size){
 // icon() в этом случае тихо откатывается на исходный эмодзи, ничего не ломая.
 const ICON_IMAGES = {
   nav_map: 'data:image/webp;base64,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',
+  /* Иконка «Арены» — отрисована отдельно, поэтому пришла позже остальных.
+     Обработана под свой единственный размер (18px в меню): исходник обрезан
+     по самим клинкам (сплошное свечение вокруг них на таком размере
+     превращалось в пятно), штрихи утолщены и прозрачность поджата — иначе
+     линии тоньше пикселя просто исчезали при уменьшении. Не «улучшайте»
+     обратно из исходника без проверки на реальном размере. */
+  nav_duel: 'data:image/webp;base64,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',
   nav_rank: 'data:image/webp;base64,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',
   nav_profile: 'data:image/webp;base64,UklGRsQQAABXRUJQVlA4WAoAAAAQAAAAfwAAfwAAQUxQSB8EAAABBlq0bZu2o7M27st9fnHKtm3btm3Ftq2/sm3btm07zlP2x/Pe61R9pbU5I2ICsJxX0zTHLNkEyCuSK28BrGsguWTAfe9eGIC6a1e1zCGSfUOLHxUt80Y8VngktPKJFR3zxcDv8VVo9ZfrOYP8kHJW9Jsf2jjvNGuQI8e9FtrxrY0d80Gw4n7zQrv+vIazueAxObT3h6vQ5IB4PN1u+HFNR/2sPzN04BdFZ5QTY6eHDn1imzIjmgkqZocOnreWpXIfdxSmrdaFVO2zDsOIbVTziODvabr1iADTaqxWgm4zFoQIa09xVMpg1cUhyus6aUUObowDRzuqZLjSL8siuWsVZ6mPI68Lsd61tVL9Q0RWG8FKffvdGOKduPX65fpcuTBE/McB65dnypjIcNr65aLNCpFNqHS6CNbcE5f/E1PdCjVN1RBUfwXs+X5M+APorYgpuW0B+UhtVAB611Cgg2WvxSHF3gVo4Xh7SPKOzTYGagTJCcpHh2TnT60xCpiKN3POpVV0pORVLb69xjUVAyAR6UHCFe9OBB8fUaghHU2RZBrW9SAt08G8TVcAis0n5CqYDpaevsJ6wNpkIrJN/7kPkqdvutHNyWDeKY/ghaXk6c4AiMxg7YbQ7JObd3opGdSG5rc2pUAyWPZ+SP8El5SKF/rISgDLVRdr0s9DsngFZYB3+FaTmzdEd0FkwPWa3HEqaRCNK2mmz2JNak8l1zCIxXciUTUs6Nr4AKc6xlOc/PI3Qd+vo/oyaBwRTO6xoNMjMfEJlc6PaphG9dt6G43x2zYq9LKHiUb8Vh8qhIneRWP98UHlw5yNxfEkna6Pp4BTdPqtlzVxsLDaVzphoEcUvmTTD4PSf63tJQLxJV8HtX9e06DjrJ/yt14Y5xgB/+8JziRvfKVRm6VnPfgd8ORGBh0HWNL5Y+p0+fdQb4ukQRZlM3hJl8b9vKVBLADotw66LnvFUoAsXscRygB7WmYxa3TMfyzyRE2eveFhIDYIzgfOG6nDvZXeCpDFLnSkP/gHBZ70SAPNFHavS+657gZZwgUMSG2AFWQpC929aV1mKVnaxvW6EwnVrmOZpU6S5yxO5mNnMgUt3UYvpDBuNDDYqAA4VnyUwKgylEimpePaDXEt+/Oz+zYrg+ghpuuOD0R1c/cS6wHJ9EBXYJfDvorm6VWdpcl0FQP6HefFsq1jpq4A1mP7b6N4c0ClEX2addx4zIsds/QFco6HZGobOE54+tP2++LE3kCJajCOBPvPb5/aPsVy0ggy3cUAdoXjGtph0T4FAAaS6S+WbvcP2zawAMlyUxwr72zDkgGOkuWpJce16rktnWQ5a+B7N7R0lSOz3BWPM1oYacksjz1GNPOlpWS5LOQtAfhnF8sspwVmT2BVI1luiyEJZHneJFu+IwBWUDggfgwAAPAuAJ0BKoAAgAA+USSORKOiIRXMLMg4BQS0ADzk/M+ZZXn9Vt9xd+3ycx5gHOf/bT1Afsl60nof/v3qAf1z/OdYX6AH7K+mv+4/wV/2n/kfuZ8Av7Tf//2APQAvXbGb6v9q+Q50V5lfRr9V/T/RX/XeF/AC9cf5b8vuEHsz/rvUC9aPof+98OLVTyAP5f/Tf+d6yd9P577AX82/vn/d9l7+s/7f+m83f0b/3P9F8Af8u/p/+//vPtq+tz9wPZa/Ylk15SqzjVbdSJFpPt4+TLL6LA3WvSvn2HWEuG2hJYN50qRpTgbAicYpSqIVg3WnfzSsJdECwcNxC/itG0NRCpBzkO9Q7hTT2jHhHX6wN0NcxpuEHcMxWTZ+kpd69OgttN7g1tPSZPn0YA/UQlF46JtbkPc6FU/MYUnFYc6obBZ2oOr9GZ9FQNhQ5UrhUj3uIzhh3nOfRTMe3jGY6nZnOSCYC5ks3G8CrT6uyhB2oQMrMeSFYTmErgEloRyQlEnsAAD+/u6qAViUBgi3E56h+GDeDf9I2IAb5tFKcY2DeD6+4d5XS64dCbtmGFoK/wmjwfdMh7IusH9do/XT8EtuCSF/Dt3mtdeX0wb9+3Vt0OVD+EQdY89scqbNxW17ERxZ6hUll4QgADc9w42ArqbinXIfJJ/8/xJIEfTHsMshiF3dJNpLJJRdm/ab3toRNCc6x2GmgwJDLnPNfD1vnHoYAtjtdkpaYkVL7A8pWlYtp14U5vF7ErViMQZJ3kkzoHDPlTstcqb9Fx8IJdeg3v24lTY2ChevmwwAZOygdtNsWp4pw+RV4ogq3bvD4gDRkFN/+SdjnEe1QJqaMWMHyDqeXYR7nn+iHf8LN09BVl+W1wZwPjpHB5BRuPygnKmZbfa/vRCD5UVrS6c8F2nrN5qUHRBI9pwBE+pr8jkwXvDNPz9eiQqravXqt8GMOKGAhJLi6VrtPXoGwI99s4PCi/zspZLBej7rFHJrP94R0Oxs9Fh5/l5M5DMi/IDXUdjI7M7AvwpxM7rfuh/VQKfqf+DQD+KBj4jkNcjZuayNmfyfOBCMSs7jH7iKzUQ3b/52zW/5u4xlK/MHCCIlvvGyOVrHNQuC38GHvmdQ9lSn2IkfzES4hURf47fv67xaQLixgRlgyrvLpyBb7c/fWzKinIpk3Mk+WG76XUE8UUUB518qNh0WwdQE0G8iZf5gc2gU10Gs66G2tVnkgcCnyOgi6wp64LMjSaWE3b9CiEIiZ9sUCjFN+rEmcc2NUC7W+cbM3mQtTzAKofyiSsUZFLCnb0ZhNdymNSN6oSh24W8ew5wFRzqx30k+PzlRpqN1MfLDv0GQteSwpyEORyfxUBDm5r2705LymSmp6pXgdr9cvpBvtcBbnrzgjzyu4VGxPoJlCFrecXu6El0Eal3Rffma3GkZXPmtQDRyThioMf70jPsdU2z0x3EOM+TQtixtew7CHetLmyvEfgD0kVNrQTldlRW+EH/f+Tx6uXHxnXrutbZrUX7dRDoMQkBIQ6b+rph1ovlECSSKNwu/owHQdG6jZ3TAteFYCYqRYLlZTAw9p2vD3zhwN+CmRf9JxDcKvy69+Tb/4Gtjr8OQbyWYkOCyoCmBD5QrPfpxlZO5f9+nfh7Tey7+FFDBOjM7tHbFwAYXZGXleZFlfikS9wx12AKZ1/H7ctW24rP+zC7sIm60hVRNfN11tL8vLsBpH5O+mint5FD7JuvfpmS+MbVk0RuGjJIAVRWxzp9EBMIw46KwuHuGW7E8bgRRSsK3Ws2mvMiYAwjlfTvP8lSvm9/zV9tek4POmi/GLiFJjIlV1T+GK5sdmq+TYL684XFvTIE3mgIFNKXTA+ObE2lhj+ykiE5auAxbndufPeOg/mivkeNe8G9KRVlh+fxpT73zoa7Rlq1nwXrTV3teZpa6Fi6GvMOj3+OgxgIdEWCX8n/OjkfuVK1YXilABL6Prc4YfysuinAebUlp2tvzuW2m/Xb/jT6fxAneRese+JFEdoAj0TJjR/SFwJJ/GqNU5X9ZVzsj/7X7cmSB8QqwLiTBwX3n88E/jn8AumKMjdMlcpWmcJrnzkCQDvlIA0Yh+yKuN1Iiu7abSFhtedi2dOB+1CJn46Ddnfb1Pbn9EU4fe1BRIct7xXK1p4W/8Nf3X+TKWJH/QVMG75I+nBAg4pBIY1yb5nN2cSSYi9uJ0rQJIC2f45N+1UuSeHV7adw77aFpvSdH+YWoMyqy9o/Bpj91Mz8b/UpYJgfY5P8nkN+9rJwtZscx0JIIpmiTjFv+7VDK/i4X/t91Ho0ufg5v7N2GyfLPwxE/OTPw4VZMYhI8UkPRvhX4iYDZj1mLG9DMS/6d4aFpMv0NrEgL3D9krck5quDfDQ6gAsDp5Vb88mqOXkbtTRFGifB8q/JvUpno9jvaQ2awWBd6kggRkFoJX6GEw5RhojyVzEgyGeour4ZdEXj2/AyWqNb+BFQnD72EubgrRUT+FsgUIGaej46JmStnvxw2YDlfElY56LDGC+Nfrgjh7+OpQzaxX9flTbjJz87XuYLEJauEApZ3peDq6EjOIzsuZBvyGSKDZFBO6O9Ns9Qtwob0ZKqyn36Y6UeEP7rIZkgdEVTTc6xRU6nfDLSb4SUCUyp5/9oo+i4H/sFkOvHA9fc9vMNgL1WEq5dBU4OBtBtUNmHlN+3aN9nJnlQVd/ZHhT7cZQp7kIh1O97NUI4VbHqxhEliQpHdDPsTnkQJ2eAqliYpFy6c5j67TFQXBFD/yMgprQMrKZBSirxUKIm9DiJZVusLJrsD1V277a43fnhUftWPV1O8GST3xNC/5VCGxq1KxuOB0/Ua48xwE9m9SeYPvOYOId02m+Ba8zQDv1jHYgfJGbRf3UGmkz26i+G1mYQx0+1S5LDHuHT6RVrHW80sGXu9MAmtJyEHqPvg3Ckvv4ZwCSUC8Csgudu8jRdWhPjiFpZ7lJmPX9ZtL1QuDENIytR0v6nZKFMOkpIZ1sJ2erry78B3tayWQLMuHuX6TLNPMo6KT0us81LQhE0/nvGKI/M5nHl7tVj0agLlXXT75IaZ4Uf9JM304UV9Z8EPqc8yvpmUaARtUvBhDm/Lbll5TuH218vGmnt3D79LafVRs2V3oCTK/CR/9xu1XqPHBLEKREwrS+OBaaqrswR+D8N7v7sJS8s6WGWPxNP1V9az47PoSVktFvONMyzbJxMomP5OMC22ZCY22TMldSOmco2PI9UnCLF+t7mP/YmxYBM0eiMA+sw1GqzSTddViyC5/n4o5lHXVULMJuxVtj0/yTk9csAPfHJPjIyQrCWG37nBXShaQNLrXX8IP/DvgahdaPVHVyUc9mdNDdkDriPZ/q/TfPvrTJnxBrcHkk08yFPGrFqiN8J8FRtGs8+JnDLKAuA3VLx/bsrkEWoL9DZHB5d7hmqQcxqGouOI/xx8bZWcJdurVQYkfWh+0iOTR1O8Hrgfl1NxT1ZKqek5UuvrjOufpZdsO3JAXlbYBhOyVRyTdlBCyMjiwBAHlg0c4IQafaOyZSLEaKxKH0Ii43y1ZbCfEANDBFFUbzeSIa1UhhdaAY4FZSTEiG7Zckmti1Hp6cjoNMtnKN/12YZbDarxZ8QfebpxuQw9PhC45X+ejwa3ym61VgEZORuKrpievJ/4kYA5v4CcuqGK97cCMgMePFRNddT3yH6dj1SVva2lJ1Q4ruWUanPUZGj/WdNtaFAeKjh3R5Dz+aN6ITkWHruo3HSasstk3V3R2BRbTtNc1APVLOIF1oKceHTCgPWuhTANIDGd6rLx9/hwEntGrob9m2gsVIQTIAEfV02m4o1TYgiKLpFTLWndswcJSPrdAkOZwiEHC7sj5QLWLuxI9XeHuWX37XDS+DMNlNcTske4q4NlSvLobkBIXb7DA3yxZLj4ylGpbbwYpZ3Tk/MUGR3gznNYNxAcbwznAh7fbULyQzvyNLW5dcpsAt9U5eIHGIBGgIhm/cF18brmQ2OoRQ0itx7Dnl2+mjJiTo+hZ+pUeJDoa31D5sPPotkwfObqQamSvkPvMmUEVxKWjjTaBfkrINf+9ONUmK5haFVHn2H9eDJJouDIbsjqeeUvjmzqlyB274eRL80sgN3fddTr0xB0iF1SjlJjB4z1a8gR0JVxJDY3xJ0pmSfFcwJyFDdwRmOxExtP1ROjSt7QMGqMBigTi70oAF09QSvyvZ1Wb7uRp/N73ykTvozL55z4JcPrHeP3WZxYgBtPzH6WT6UKeGTups3B4AAAAA==',
   settings_gear: 'data:image/webp;base64,UklGRlARAABXRUJQVlA4WAoAAAAQAAAAfwAAfwAAQUxQSLwEAAABBmq0bR2SpO993xeZWa5q27atsW3btm3btu1p2xzbZls5FT8KnRHx4uesdW9ETAD+v9UVA+JrIo0sGbQBSmohBUA6lR1wHXltzwAuZQTt9iJ7LiDDmjMHZwCfKhaLvgR+Duve+DX5ZhOBagLUQ6z79k+Em7qsSbFLjwDfhpue/+piZxWzncmsoBaLoN+PBQAurnIGEMAIoJMjxQgq9+f9YWHfdWJAMsiRVjFW7h8WerxjPRzFAAJAgxKgxZ4XPfMicERzFyCCBY4WVfscd8k95GnOwghgPZk0Ke0JXBXWfmimcbvO+xXsU9eAPD6s/bwWjmzSDcgkSwA02W7nezfU8chQ8iVsKNTGqRf1fWZ5HfjjLD+RPCZpAbKVTT4M63v3A/gvjLD6z7Dery8nj+mWkST5ACWHPBUmeeWLhzSrKMomReADHLsxTPquCbLOt9w8TP6uFcVZSUoWh6/ToLJYEjQ+TP6ag7slKHfhfwrgk145a5Jp0S1UcUMfmxTHfXXA5VmmXQUlEcIm++ardWjJhNgmvT8MVbwqMWjSe5YaJvZFpBhkchcr4ZgBbKykG5AxkBzf1uDpAKgiET/nqcNHRazN2/htQ16pQH7hsA5bk2PKvUVcXIBGV88hn5kaAiuTB3ywPATwwbHbNBDEJIM+ocprG8foXaXaVCIWATKbrdSqij4WzTAr1Ln6gHjYYPCzq5XCg/FwweBQ7QlZxMBxs0/1wsP9Y/FcqPl4b6OyrsNq1X5uYyWyTrrhaM+ooN090blOy3V7JTJh0Y/KBd5FA8+XUi6D63S7Lw4Xq7bIMwY3qPaUp4ma1O361NuJNjKxrc/Sa9ql3bxEBovG7wAqTdgiAGhiaHOVwESFZpZmPcXEUdAIg1YqhOOK4QXxaPbWX6HKdzeNhSN9s7dCpb85uIxRCRqQJUdu0AoYP8QiBqesrNbr3zgMmBeqfmVUsMFma3T7JGcl5coYlU878cErul1WRpNynhGBvDj1ztNtT8eoyN10u9YzKkGwIN0grnJxNdIMjrfo9cvjAwTRWdcuXw2lDvDOxFBY9JpWj5TGA+SBeZ0u8QITT+t22ajRTE8xcXWVh9bxuwL5uo73NPGtxK7v/AI8OfgABXbf4aS564HJ9wXOxJrsTJa4AQos2inHcUBTAeJGGwAnKZCf0CaXtRCY2FsUo0deAeCUrE8GUIzLQi1MQotxsxKZxDivw+rRlRWCxGzU4Pd2yRHf7HsNPk4QXPZlDeZ6ikmqRYdfFLgkSRD0f3RadbKWH+KsmASLZ5dNWx6re/t7Mckmu3xE1u+T9vsVbMWZW/1br48eIz1pku/I3X+px2eb5Qq3cftmL9brouZVjjQKCiw7XsDpNT69qjgXxenNhk5e+HdtX93eqXmVwOgAxwBDHwHOLckxcDtGUAyUtx9++6/kPhVOABg1JUBHwDNHejduVTUKs/D0bAaQ4DBghCPF6CqwnhQDsY1HrwkLmT+5TRZGgABwpBi1xTbuP74gX1fRW1NTLGAUr/FWQZZW0Zl0lAw2e4pcW7/3bzlss6qitAAsSHZ49Ttg3l8ryM/nXuYdrUlTIUlbRlZ0BZplXM10qWkBkgSEJEwqCwALCMz/OgNWUDggbgwAANAuAJ0BKoAAgAA+USKORKOiIRYMVLQ4BQSyAGr45l8vklWr/UeRzp36H8nzmznU+YB+t3Sy8wv7eerv6Rf7R6gH9S6jr0APLk/cX4Q/7P/3vSfrE3Pj79/WuKJ0t5k/UL+H67/5fv94AXsndvbTd+v/b+IBqR5AH5hcbt6H7AH6R9Dn/x/1f5M+1z6c/ZL4B/5x/bP+3673sp/cv2Wv2iZUqb7qSHVZ5A/HdV1vxmcBegiyuU8HrYvIBahNpp/ZOlKI1z2p3S5C3tUNYTnXODeNF77KaRX40XEtBxxQku3ZSoehEWjXFlDZsQ35tR2H3kEj9QnXHvJWKScASFB96N0ZFfnBDIA2UX+oex3dRqpUUZhEGsFtUQeT69o7idYOqZtif6SEIQIiS9Z1NMI+Akwjkl6yDKsfo3pYj6Q7ccxLHN1jmqesb8Mqsi456D/f5Ehw4WWv0WIDJa6ib/EYE5g39wSpGSSzQpTjWnKXnog9I0SJK/ZuFiF/t3agKVEwAP7+7qorET2f3RzNkKRviirkXYAqKmpvdi9PwTk48n0XoDANNfPrB5m1vw96DwOD/xXQHF8dZiqOfz2FliJODNIjMp+1E5sw6X+W7Sl4lReLMw6k/9IwqcP9qZhS6oLM+9fJqNOdbXlf85AV7CXlqFrl9timwHGSJK8tAyZef+6+KuL8CY7GhTkh+yNv7s+5ldY7/SPrlzTjKOzftMd5vvNj9rsCvVmdVVq8H5Ethp0vLepaFGqPyiIEBM1pktUWuHTcyhYSncmHgUv4l4AR1Ae6py4CFrNbgsMeo/H1//SyrnbALfdl2YkB2uNkpDHfBBuaZeRL8xrnGOmiITZuV36ovV54vKp+ufKZRM54/jmxWEv5YvhkTwNdLMqD9JYmUuBUzCo9McZhk0nDBD6vt6o2E4miCIuBaXkSXt9hwpE97eo7VShK3WBb+dTIwWt0TQSGbHd4ve8bo762xE9ysPAszmQ3fOreFGjweyCtGM9PCRKlnpYB8rQxx4er4ZPM+9ATlp1gdo3fCOqwkFEJotwIG2/n/4PtjSY9eX+pdXg+qua1HQPidhmBG92KdA7FMlW6J1FXDV4ZmuDpDL6iGvkEDbS0NHuHMy8t1oFBu+oHKfF1pjNXeWM8x6MZsEGrYScfP4pcTVN1PVCSJ72hGMDxZjc1ZZb1LfzIgae2AM6x9vOTDcdepV8dTB1eKaoO1OAbIzSZUDeAYpE4NcOMOTDdF3yF5Vuzl8qhysjfGfj0GkMYArq25mPpnyqXLcn5wS4IHyl2DOBZQMdKF3Ho7frYTFijtgrInaZZF1oEex5xOgDiSDATIJ1zzg3o+kewEN1vKwh4kxbQTht9v1df1iszRlU0FK3Ifn7Ynhma+Ub1FB2nq4tSZlUvucInjkjYmOnmv94QBmeN6dc+KkhBsPKJ/VD2+bQSMXKAOSpREqtWdKEtfCIvGtzniLvjJhRj4C6Z1Mes7SRwc82YuvRCLW4ZDBRxwHObFK0clzxyFtB+k/R5D65JICT20DizVgI5OYybrCd+m7t7Y+oppJMgor84DJdDOVIm6dHy6ctGbuch1yflwDLzdzN+EH1fJboEMZoJl3bQA9OanFqDX9o0KKCH2ZcXuBP+RD8rxr4Nxqaso6eqBU+pZjowY+DdPvbYo5N0w+8GaOXADvvKMqSP5DvlLSRiq//QGJV8lLnnSPn2zU9ZB9lbPXupa7RuEgDpL7G+sPeA+UqJC78HwxsHr679qwgEV8iO+m8F4916vGhoGjDy/thxtjF4EGM/uhGXYoVKGd8kvTKWRNwzl2QJ8nA/CL1cOegpK44rbSPb5bzHIJEovbHbzjLQEny8wvAdMFYH4emQPNKlgJ69cSxJ11sDotu22vWaiDoCNzKJWqZ4V6UWbfCCbvv6tU30h1XnaOoWn37Bf/684oGddcmvm1nFAXNpvhb13jZSFNS8vmMTv3naxXFFxPCzXZH6RzUchigRtD4pjtzEpviB7vFbpr+wKP2r+la6wRSkepq2+ILYUz/W/KnhU57qTVxE9L2k2mdF8rOHYZGxMwFthqSN2UiDFjsLhz5dzzG1sivCq1HgHI4/7BgLbwndPRgfwMjzR+p+Blm6oCIJ2nFhhUtY1yq+cYfBUy5Gh1+Gpf6EjjeAQXfev3g97yGvHs75QW/Vhba3xhFhMUw0dvYQO/upnUeAlZSeLMpU6SJfLLw73vRtPRpQD8DvRCwAraM0swRDZefcBfp7lS/zo6cP5YXesw7+b86aE7z7Luyc4ysqoeEDaPAFUhGYZu3IUuHSFAUcblqVCY6ezDCM65XFoDVESJOrh9HVas339S+98PNcpZhXD78bN2mNf79IkhksanGiFxy6CbZ7kSgi+JpE0KOn3AuPnsJrXL96fapeDRPmGPI7REFm6kuW6kOB2XrWrn9BAxR6DeRIbBrMxXKG7aLAfW2w5I3iONzYYlQf7bLPponT/8/l5YuuXIr/RB8F/EX/D/HLZejsJiaxX+NytXOjhfLMhL2HQBEP45cTcM7py1PlQ+M2BayFf8HvuzhDUPU7CT3StGeHZZwwu7F69Opaz+Xa+bCt9wFSATDMbXezbgNFMF6A/8PMgnL1qUE3e0EEXvwfpix7pff+QCXxx2jUCe+6V63ceQRM9J8bGE/wDTVf1QhvQittw7/zTilFiIGok3a8qa6SYu9q3AdCicMefVDBPs7MQ+EA7KxpbtnEq5pRiOiZPGXY+QvyOIl/Y0GKFuYY5YABVnge1MdXvYb7fw+taCGoA7tYAE/+CPbMQ0FYkXrWxEFQlexbu8JTWXWS6qI9e3IlaVnsqFB+ervD2usVFhWxoNiY4K4RnBXEqDWE5A6CF7OC5O9CkwT4/feu0s6G0gxCDNrvg4I1iJieBLBp06InuJKAw3KLOpmfGzMI4m8msJSGREPCeDEylK9M+4hejZ4k0s7DYuP/BFdJMINS3jHh2sYGCilOmk8vJWEUdeJSfVBv8QYsQQYcL4XiW40N4+e/WLIW/WyFqvcRPPNl2nF2gkzha3RRp0wYBOXLCqXAebzl667nXcMJ2cq9pR52eXdB+rzh1y88mDJRIpJfNQCdlgf5oAJTBuPADfIjHCEaBA6bBEMYlt4OXuC22fXOUT2N7jdskCAdpIQMpb0G9gbHap+EH5T5Eo/TZZHuxdlc8EuqY0VH4W7PNTp461rlnJE1j70Ck54DRv0lnzZMuLXrrewufGLj7ttL4qDbiskc0yAC1V4QSQQJQ4I090zWy3ckeQnNBFEDb/STMuz6ncoijqSL9R6q2hBs0+ibEyaitU47UDW3L3oOTBJV8VrG7r7cqZyWBZdeyKWTxINdCv8qwMVrUZUy9s7Pz4JzfjFKIZD7/ro46Wr4wVD3eC6YEwp/auWVEalZBf/a4Ryew6dDDcX+xxqIqkRT0ZoX8PdpmGLbKA9GAlZb0dlT5X1mRdT4Zbnko/zXNvenkd5/EFkdCwBRJ0Zlh2d6/4Tp6BQ4hvRIF+ghALlkOQnmfGTyPUvP461wjypJ1QgPP0GhoQRMgpXZl/bcqdME81+jD5YzOKH1UpkProBlU+W/SdZm9JGo9isdNJQAPfJgYBBGxNryMTr9lP6sckOp9oVg1Bdl0mA/Zm9if5+7UHqhHzWTK0AwNBGSAcJHMCQYRwnSfp2A3djUpyXE0f+VrNhvsrgK5OHFMM7SRX7EFcVcfl4RDyir+ZpP5oeZEgk0jLIyUIUYJXDIsZbxnAPqsxYSX/IWpoMzEoYOTVPZSeRQ9VLuVOZ1UspLAOzCKnnjsgOvD7+Rjrse3VwOv2RJZEb9gKFv++FiScqJh93Gdyu+hbJkNbuAuqA+FtptoaE2XgvQxmqieZxqvm81Rtopo0+ETVXnW/ou0x00rS3wVoTVAUlNvo3OfMXoFJ9rVWRADDA5dvWSys++DwSOWuf3zg6iyfrFXCC+8hKsMQbrjrj1LSEPqM/Z85VJKghMtd8HlgTPStWecW+qhGd8xSwdUShmNA8gqPP4CfwzkNXLBmBEmIs7PM3D3DvIkeMo2CuVv6lD/ZmqcVwRYhpzKAUJcNungufsgqbD/gZiY4JMO6Uh+f4vmw5Dl3y20Bdtf899uljIaYw3+2YpM5BsGHb3gcBk+cI2XGxJDhPpM+urwdfwH8jwnoxUKae9U0rXlLIlZn7xNQtjl4NsjnKcwf8yR6jQe13UFY8qVrhMbTfemadFH0GTshE+5seiQAAAAAAA',
@@ -2638,6 +2749,27 @@ function sysNotice(message){
   requestAnimationFrame(()=>{ el.style.opacity = '1'; });
   clearTimeout(noticeTimer);
   noticeTimer = setTimeout(()=>{ el.style.opacity = '0'; }, 2600);
+}
+
+/* Диалог с несколькими вариантами — там, где «Да/Отмена» не хватает.
+   Появился ради незакрытых заходов: «продолжить» и «начать заново» это не
+   да и нет, а два равноправных действия, и втискивать их в sysConfirm значило
+   бы прятать одно из них за словом «Отмена». */
+function sysChoice(message, options){
+  modalOpenCount++;
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;background:rgba(2,3,10,.72);padding:24px';
+  wrap.innerHTML = `<div class="syswin" style="max-width:340px;width:100%;background:var(--panel-solid)">
+    <div class="sys-tag"><span class="bang">!</span> СИСТЕМА</div>
+    <div style="font-size:14px;line-height:1.5;margin-bottom:16px">${escapeHtml(message)}</div>
+    <div style="display:flex;flex-direction:column;gap:9px">
+      ${options.map((o,i)=>`<button class="${i?'gp-btn2':'btn'}" style="margin:0;width:100%">${escapeHtml(o.label)}</button>`).join('')}
+    </div>
+  </div>`;
+  document.body.appendChild(wrap);
+  const close = ()=>{ wrap.remove(); modalOpenCount = Math.max(0, modalOpenCount-1); };
+  wrap.addEventListener('click', e=>{ if(e.target===wrap) close(); });
+  wrap.querySelectorAll('button').forEach((b,i)=>{ b.onclick = ()=>{ close(); options[i].run(); }; });
 }
 
 function sysConfirm(message, onConfirm){
@@ -2847,7 +2979,10 @@ function paywallPoll(){
   fetch(ME_API_URL, { headers:{ 'X-Init-Data':TG.initData } })
     .then(r=>{ if(!r.ok) throw new Error('bad response'); return r.json(); })
     .then(data=>{
-      S.sub = { subscribed:!!data.subscribed, paidUntil:data.paidUntil||null, checkedAt:Date.now() };
+      // Титулы здесь намеренно не объявляем: поверх открыто окно оплаты, и
+      // вторая модалка легла бы на него. Объявятся при следующем запуске —
+      // checkSubscription() делает это на старте.
+      setSubFromServer(data);
       saveState();
       if(S.sub.subscribed){ renderPaywallStage('success'); render(); return; }
       schedulePaywallPoll();
@@ -3247,6 +3382,31 @@ function setTrack(track){
   saveState();
   render();
 }
+/* Будущие направления — две закрытые ячейки в ряду выбора. Молния, а не
+   замок: тот же значок, что на вратах по подписке, поэтому читается как
+   «придёт с контрактом», а не как «недоступно навсегда». Замок в приложении
+   уже занят другим смыслом — прогрессионным (предыдущие врата не закрыты). */
+const SOON_TRACKS = [{ cap:'Скоро' }, { cap:'Скоро' }];
+// Короткие подписи под ячейками. Отдельно от TRACKS.short («Выносливость»),
+// потому что то слово в ячейку шириной ~51px на узком экране не помещается.
+const TRACK_CAPS = { strength:'Сила', endurance:'Выносл.', core:'Стойкость' };
+
+/* Ряд выбора направления для карты врат. На экране профиля остаётся компактный
+   trackIconsHTML() — там это служебный переключатель в шапке, а не главный
+   выбор экрана, и укрупнять его незачем. */
+function trackRowHTML(){
+  const live = Object.values(TRACKS).map(t=>
+    `<button class="track-cell ${S.currentTrack===t.key?'on':''}" onclick="setTrack('${t.key}')" aria-label="${t.label}">
+      <span class="track-box">${icon(t.iconKey,32,t.iconFallback)}</span>
+      <span class="track-cap">${TRACK_CAPS[t.key]||t.short}</span>
+    </button>`).join('');
+  const soon = SOON_TRACKS.map(s=>
+    `<div class="track-cell soon" aria-hidden="true">
+      <span class="track-box"><span class="track-soon-ico">⚡</span></span>
+      <span class="track-cap">${s.cap}</span>
+    </div>`).join('');
+  return `<div class="track-row">${live}${soon}</div>`;
+}
 function trackIconsHTML(){
   return Object.values(TRACKS).map(t=>
     `<button class="icon-btn ${S.currentTrack===t.key?'on':''}" onclick="setTrack('${t.key}')" aria-label="${t.label}" title="${t.label}">${icon(t.iconKey,18,t.iconFallback)}</button>`
@@ -3280,7 +3440,7 @@ function rMap(){
     const click = mystery ? `onclick="showToast('Эти врата откроются позже')"`
       : seqLocked ? `onclick="showGatePreview('${track}',${g.id})"`
       : paywalled ? `onclick="showGatePreview('${track}',${g.id})"`
-      : `onclick="startRaid('${track}',${g.id})"`;
+      : `onclick="enterGate('${track}',${g.id})"`;
     let frame, rankLabel;
     if(mystery){
       frame = '<span style="font-family:Russo One;font-size:30px;color:#3A4570">?</span>';
@@ -3294,6 +3454,15 @@ function rMap(){
     } else {
       frame = gateArt(g, 56);
       rankLabel = g.stage==='exam' ? 'ЭКЗАМЕН · РАНГ '+g.rank : g.stage==='trial' ? 'ИСПЫТАНИЕ · РАНГ '+g.rank : 'ВРАТА '+g.rank;
+      /* Незакрытый заход виден прямо на карте: без метки человек не вспомнит,
+         в какие именно врата он не дошёл, и «продолжить» пришлось бы искать
+         перебором. Счёт «3/6» на месте подписи ранга — она тут наименее ценная,
+         ранг и так читается по цвету рамки. */
+      const rs = raidSaveFor(track, g.id);
+      if(rs){
+        frame += `<span class="gate-resume">${rs.idx}/${rs.n}</span>`;
+        rankLabel = 'ЗАХОД НЕ ЗАКРЫТ';
+      }
     }
     return `<div class="${cls}" data-gate-id="${g.id}" style="left:${p.x}%;top:${p.y-43}px" ${click}>
       <div class="gate-frame" style="position:relative">${frame}</div>
@@ -3309,14 +3478,13 @@ function rMap(){
         <div class="pill">УР. <b>${S.level}</b></div>
       </div>
       <div class="icon-row">
-        ${trackIconsHTML()}
         <button class="icon-btn" onclick="go('profile')" aria-label="Профиль">${icon('nav_profile',18,'👤')}</button>
         <button class="icon-btn" onclick="S.prevScreen=S.screen;go('settings')" aria-label="Настройки">${icon('settings_gear',18,'⚙️')}</button>
       </div>
+      ${trackRowHTML()}
       <div class="track-tag">${icon(TRACKS[track].iconKey,16,TRACKS[track].iconFallback)} ${TRACKS[track].label}</div>
     </div>
     <div class="map-top-spacer" id="mapTopSpacer"></div>
-    ${duelCardHTML()}
     <div class="map-wrap"><div class="map-inner" style="min-height:${70+GATES.length*115}px">
       <svg class="map-svg" viewBox="0 0 100 ${70+GATES.length*115}" preserveAspectRatio="none">
         <path d="${path}" fill="none" stroke="#2A3560" stroke-width="7" stroke-linecap="round" vector-effect="non-scaling-stroke"/>
@@ -3345,12 +3513,25 @@ function rMap(){
     }
   });
 }
+/* Нижнее меню: Врата / Дуэль / Рейтинг. Профиль отсюда убран — его место занял
+   режим дуэлей, а вход в профиль есть на каждом экране иконкой в верхнем ряду
+   (см. profileIconHTML()). Три пункта — предел: кнопки делят ширину поровну, и
+   на четвёртом подписи начали бы переноситься.
+   Иконки нет только у дуэли: в ICON_IMAGES её не рисовали, поэтому icon()
+   отдаёт запасной символ ⚔ — тот же, что у вкладки дуэлей в рейтинге. */
 function navBar(on){
   return `<div class="nav-spacer"></div><div class="nav">
     <button class="${on==='map'?'on':''}" onclick="go('map')">${icon('nav_map',18,'⛩')} Врата</button>
+    <button class="${on==='duel'?'on':''}" onclick="openDuelHome()">${icon('nav_duel',18,'⚔')} Арена</button>
     <button class="${on==='rank'?'on':''}" onclick="go('rank')">${icon('nav_rank',18,'🏆')} Рейтинг</button>
-    <button class="${on==='profile'?'on':''}" onclick="go('profile')">${icon('nav_profile',18,'👤')} Охотник</button>
   </div>`;
+}
+/* Иконка профиля для шапок экранов, где нет полного ряда переключателей
+   направления. Раньше профиль был пунктом меню и попасть в него можно было
+   откуда угодно; теперь пункт убран, поэтому иконку обязан нести каждый экран
+   с нижним меню — иначе с рейтинга и дуэлей в профиль было бы не попасть. */
+function profileIconHTML(){
+  return `<button class="icon-btn" onclick="go('profile')" aria-label="Профиль">${icon('nav_profile',18,'👤')}</button>`;
 }
 
 /* ---- Таблица лидеров ---- */
@@ -3396,11 +3577,16 @@ function titleNameById(id){
    бессмысленно, сервер такой вызов всё равно отклонит. */
 function lbDuelRowHTML(row, isMe){
   const can = !isMe && row.run_id;
+  // Пока запрос в полёте, тапнутая строка помечена и остальные погашены —
+  // иначе на медленной сети человек тыкает в пустоту и не понимает, засчиталось
+  // ли (повторный тап-то блокируется, но молча).
+  const busy = S.rankChallenging === Number(row.run_id);
+  const dim  = S.rankChallenging && !busy;
   // Кавычки и слэши вырезаем ДО экранирования, а не после: escapeHtml
   // превращает ' в &#39;, но парсер HTML вернёт его обратно в ' уже внутри
   // значения onclick — и строковый литерал в JS развалится.
   const argName = escapeHtml(String(row.name||'').replace(/['"\\]/g, ''));
-  return `<div class="lb-row ${isMe?'me':''}" ${can?`onclick="challengeFromRank(${Number(row.run_id)}, '${argName}')" style="cursor:pointer"`:''}>
+  return `<div class="lb-row ${isMe?'me':''}${busy?' challenging':''}" ${can?`onclick="challengeFromRank(${Number(row.run_id)}, '${argName}')" style="cursor:pointer${dim?';opacity:.4':''}"`:''}>
     <div class="lb-rnk">${row.rnk}</div>
     <div class="lb-rank-badge">${escapeHtml(row.rank||'E')}</div>
     <div class="lb-name-wrap">
@@ -3408,7 +3594,7 @@ function lbDuelRowHTML(row, isMe){
       ${lbTitleLineHTML(row)}
     </div>
     <div class="lb-score">${row.score}</div>
-    ${can ? `<div style="margin-left:8px;opacity:.5;font-size:15px">⚔</div>` : ''}
+    ${can ? `<div style="margin-left:8px;font-size:15px;${busy?'opacity:1':'opacity:.5'}">${busy?'⏳':'⚔'}</div>` : ''}
   </div>`;
 }
 function lbRowHTML(row, isMe){
@@ -3457,9 +3643,9 @@ function rRank(){
     }
   }
   h(`<div class="screen">
-    <div class="hdr"><h2 style="margin:0">Рейтинг</h2></div>
+    <div class="hdr"><h2 style="margin:0">Рейтинг</h2>${profileIconHTML()}</div>
     <div style="display:flex;gap:8px;margin-top:4px;align-items:flex-start">
-      <div style="position:relative">
+      <div class="rank-menu" style="position:relative">
         <button class="toggle-row" style="width:auto;display:inline-flex;align-items:center;gap:8px;padding:10px 16px" onclick="toggleRankTabMenu()">
           <span>${RANK_TABS.find(t=>t.id===S.rankTab).label}</span>
           <span style="opacity:.6;font-size:11px;transform:${S.rankTabMenuOpen?'rotate(180deg)':'none'};transition:transform .15s ease">▾</span>
@@ -3468,7 +3654,7 @@ function rRank(){
           ${RANK_TABS.map((t,i)=>`<button style="display:block;width:100%;text-align:left;padding:12px 16px;background:none;border:none;${i?'border-top:1px solid var(--line);':''}color:var(--text);font-size:14.5px;font-weight:700;cursor:pointer" onclick="setRankTab('${t.id}')">${t.label}</button>`).join('')}
         </div>` : ''}
       </div>
-      ${S.rankTab==='duel' ? '' : `<div style="position:relative">
+      ${S.rankTab==='duel' ? '' : `<div class="rank-menu" style="position:relative">
         <button class="toggle-row" style="width:auto;display:inline-flex;align-items:center;gap:8px;padding:10px 16px" onclick="togglePeriodMenu()">
           <span>${S.rankPeriod==='week'?'Неделя':'День'}</span>
           <span style="opacity:.6;font-size:11px;transform:${S.rankPeriodMenuOpen?'rotate(180deg)':'none'};transition:transform .15s ease">▾</span>
@@ -4644,6 +4830,11 @@ function playerDied(){
     S.xp = r.snapshot.xp; S.level = r.snapshot.level;
   }
   S.everDied = true; // см. проверку в startRaid() — ачивка "Восставший из пепла" даётся не за саму смерть, а за возвращение
+  /* Смерть стирает незакрытый заход, отступление — сохраняет. Это и есть
+     единственная цена смерти: если бы она тоже сохраняла, полоска HP не
+     значила бы ничего — умереть было бы не дороже, чем выйти, и отступление
+     как решение исчезло бы. */
+  if(r) clearRaidSave(r.track);
   S.raid = null;
   go('death');
 }
@@ -4660,7 +4851,78 @@ function rDeath(){
 }
 
 /* ---- 5. Рейд ---- */
-function startRaid(track, id){
+/* ---- незакрытые заходы: чтение, запись, проверка пригодности ---- */
+
+/* Снимок годен, только если врата с тех пор не перебалансировали. Сверяем
+   количество мобов и сумму HP: если числа разошлись, idx может указывать за
+   пределы массива, а бой пойдёт не по тем цифрам, по которым человек начинал.
+   Негодный снимок молча выбрасываем — теряется один незакрытый заход, а не
+   прогресс. Проверка не теоретическая: ранг E мы только что пересчитали. */
+function raidSaveFor(track, gateId){
+  const s = S.raidSaves && S.raidSaves[track];
+  if(!s || s.gate !== gateId) return null;
+  const g = gatesForTrack(track).find(x=>x.id===gateId);
+  if(!g || !g.mobs) return null;
+  if(s.n !== g.mobs.length) return null;
+  if(s.sum !== g.mobs.reduce((a,m)=>a+m.maxHp,0)) return null;
+  if(!(s.idx > 0 && s.idx < g.mobs.length)) return null;  // 0 — начало, длина — уже победа
+  return s;
+}
+// Незакрытый заход этого направления, каким бы врат он ни касался (для карты
+// и для предупреждения при входе в другие врата).
+function raidSaveOfTrack(track){
+  const s = S.raidSaves && S.raidSaves[track];
+  return s ? raidSaveFor(track, s.gate) : null;
+}
+function clearRaidSave(track){
+  if(S.raidSaves && S.raidSaves[track]){ delete S.raidSaves[track]; saveState(); }
+}
+/* Записывает заход. Вызывается только при отступлении: смерть снимок стирает
+   (см. playerDied()) — иначе полоска HP перестала бы что-либо значить, ведь
+   умереть было бы не дороже, чем выйти.
+   idx — номер ТЕКУЩЕГО моба: бой с ним не сохраняется, при возврате он снова
+   целый. Иначе размен уроном перестал бы быть гонкой: можно было бы бить по
+   одному повтору в день. */
+function writeRaidSave(r){
+  if(!r || !r.gate || !r.gate.mobs) return;
+  if(r.idx <= 0 || r.idx >= r.mobs.length) { clearRaidSave(r.track); return; }
+  S.raidSaves[r.track] = {
+    gate: r.gate.id, idx: r.idx, hp: Math.max(1, Math.round(r.hp)),
+    reps: r.reps||0, repsCam: r.repsCam||0,
+    xp: (r.xpGained||0), titles: (r.newTitles||[]).slice(0,8),
+    n: r.gate.mobs.length, sum: r.gate.mobs.reduce((a,m)=>a+m.maxHp,0),
+  };
+  saveState();
+}
+
+/* Вход во врата с карты. Раньше карта звала startRaid() напрямую; теперь
+   между ними стоит эта развилка, потому что заход может быть незакрытым.
+   Три случая: продолжаем эти врата, начинаем эти поверх незакрытых других,
+   или обычный вход. */
+function enterGate(track, id){
+  const here = raidSaveFor(track, id);
+  if(here){
+    const g = gatesForTrack(track).find(x=>x.id===id);
+    sysChoice('Врата «'+g.name+'» пройдены на '+here.idx+' из '+here.n+'. Продолжить или начать заново?', [
+      { label:'Продолжить — монстр '+(here.idx+1)+' из '+here.n, run:()=>startRaid(track,id,true) },
+      { label:'Начать заново', run:()=>{ clearRaidSave(track); startRaid(track,id); } },
+    ]);
+    return;
+  }
+  // Незакрытый заход в ДРУГИХ вратах этого направления. Снимок один на
+  // направление, поэтому вход сюда его затрёт — предупреждаем, а не молча.
+  const other = raidSaveOfTrack(track);
+  if(other){
+    const og = gatesForTrack(track).find(x=>x.id===other.gate);
+    sysConfirm('Незакрытый заход во врата «'+(og?og.name:'—')+'» ('+other.idx+' из '+other.n+') будет потерян. Начать эти врата?', ()=>{
+      clearRaidSave(track); startRaid(track,id);
+    });
+    return;
+  }
+  startRaid(track, id);
+}
+
+function startRaid(track, id, resume){
   const GATES = gatesForTrack(track);
   const g = GATES.find(x=>x.id===id);
   // Защита от прямого вызова startRaid() в обход замка в rMap() (например,
@@ -4672,18 +4934,35 @@ function startRaid(track, id){
   }
   trackEvent('raid_start', g.rank + '/' + g.stage);
   const mobs = g.mobs.map((m,i)=>({ ...m, n:i+1, hp:m.maxHp }));
-  // Повторное прохождение уже закрытых врат не даёт наград — иначе можно фармить
-  // опыт бесконечно, просто переигрывая пройденный контент.
+  // Повторное прохождение уже закрытых врат не даёт НАГРАД (опыт, уровни) —
+  // иначе можно фармить опыт бесконечно, просто переигрывая пройденный контент.
+  // На счётчики повторов этот флаг не влияет: см. registerPush().
   const replay = doneGatesForTrack(track).includes(g.id);
   const hpMax = hpMaxFor(S.level);
-  S.raid = { gate:g, track, mobs, idx:0, replay, hp:hpMax, hpMax,
+  /* Продолжение незакрытого захода. Мобы до idx помечаем убитыми, чтобы очередь
+     сверху показывала их погашенными, а бой начинался с текущего.
+     HP игрока возвращаем таким, каким он вышел, плюс лечение за отдых — то
+     самое, которое он получил бы, добив моба и не выходя. Возвращать полное
+     нельзя: тогда выход-и-вход стал бы бесплатной аптечкой, и урон перестал бы
+     что-либо значить. */
+  const save = resume ? raidSaveFor(track, id) : null;
+  let idx = 0, hp = hpMax, reps = 0, repsCam = 0, xpGained = 0, newTitles = [];
+  if(save){
+    idx = save.idx;
+    for(let i=0;i<idx;i++) mobs[i].hp = 0;
+    const heal = Math.max(1, Math.round(mobDps(mobs[idx]) * REGEN_RATE_FACTOR * restSecondsFor(mobs[idx-1])));
+    hp = Math.min(hpMax, Math.max(1, save.hp) + heal);
+    reps = save.reps||0; repsCam = save.repsCam||0; xpGained = save.xp||0;
+    newTitles = Array.isArray(save.titles) ? save.titles.slice() : [];
+  }
+  S.raid = { gate:g, track, mobs, idx, replay, hp, hpMax, repsCam, xpGained, resumed: !!save,
     // Счётчик отжиманий за весь текущий заход (все мобы суммарно) — бейдж
     // снизу слева на камере, см. repCounterHTML()/updateRepCounterDOM().
-    reps: 0,
+    reps,
     // id титулов, разблокированных за этот заход (и при смерти мобов, и на
     // самой победе) — копятся тут и разом показываются на экране победы,
     // см. unlockTitle()/checkTitles() и rVictory().
-    newTitles: [],
+    newTitles,
     // Живая калибровка перед боем вместо слепого таймера — см. updateCalibration().
     // Пока started:false, урон мобу/от моба не идёт — см. guard в registerPush()
     // и combatTick().
@@ -4696,6 +4975,15 @@ function startRaid(track, id){
     // отжимания и приседания реальные и честные независимо от исхода боя,
     // откатывать их незачем, см. retreatRaid()/playerDied().
     snapshot: { xp:S.xp, level:S.level } };
+  /* Опыт за мобов, убитых в прошлых заходах, начисляем заново — и обязательно
+     ПОСЛЕ того, как снимок захода уже снят с текущего S.xp.
+     Логика такая: при отступлении опыт откатывается к снимку (защита от фарма
+     лёгких мобов перед боссом), поэтому в сохранённом заходе он лежит только
+     числом. Не вернув его здесь, мы бы потеряли опыт за всё, что человек убил
+     до перерыва: победа начислила бы только опыт последнего сеанса.
+     Порядок важен — начисли мы до снимка, откат вернул бы опыт вместе с ним,
+     и он удваивался бы с каждым выходом. */
+  if(save && save.xp > 0) gainXP(save.xp);
   // Чистое состояние счётчика повторов на случай, если Cam ещё держит
   // остатки предыдущего захода — иначе цвет скелета (skeletonColor()) мог бы
   // на миг показать "неверное" состояние ещё до того, как калибровка вообще
@@ -4943,12 +5231,21 @@ function updateCalibration(angle, depth){
 }
 function retreatRaid(){
   const r = S.raid;
-  sysConfirm('Отступить из врат? Опыт этого захода будет потерян (выполненные повторения уже засчитаны).', ()=>{
+  // Текст зависит от того, есть ли что сохранять: до первого убитого моба
+  // отступление ничего не оставляет, и обещать иное нечестно.
+  const willSave = r && r.idx > 0 && r.idx < r.mobs.length;
+  const msg = willSave
+    ? 'Отступить из врат? Поверженные монстры (' + r.idx + ' из ' + r.mobs.length + ') останутся поверженными — вернёшься к текущему. Бой с ним начнётся заново.'
+    : 'Отступить из врат? Ни один монстр ещё не повержен, врата придётся начать сначала (выполненные повторения уже засчитаны).';
+  sysConfirm(msg, ()=>{
     stopCombatTick();
     stopRaidCountdown();
     if(r && r.snapshot){
       S.xp = r.snapshot.xp; S.level = r.snapshot.level;
     }
+    // Записываем ДО обнуления S.raid. Опыт откатили выше — в снимке он лежит
+    // числом и вернётся при продолжении (см. startRaid()).
+    if(r) writeRaidSave(r);
     // "Разумное отступление" — отступление не проходит через экран победы,
     // поэтому новое достижение (если есть) объявляем через showToast().
     trackEvent('gate_lose', 'retreat');
@@ -4990,7 +5287,7 @@ function rRaid(){
     ${queueDots ? `<div class="raid-mini-queue">${queueDots}</div>` : ''}
     <div class="raid-top-panel">
       ${(g.stage==='exam' && (EXAM_XP_MULT[g.rank]||1)>1) ? `<div class="raid-banner exam"><b>⚡ БОНУС СИСТЕМЫ</b> · Экзамен даёт ×${EXAM_XP_MULT[g.rank]} опыта за подход.</div>` : ''}
-      ${r.replay ? `<div class="raid-banner replay">ℹ️ Повторное прохождение — опыт и повторения за этот заход не засчитываются.</div>` : ''}
+      ${r.replay ? `<div class="raid-banner replay">ℹ️ Повторное прохождение — опыт за этот заход не начисляется. Повторы идут в профиль как обычно.</div>` : ''}
       <div class="raid-mob-card">
         <div class="mob-art" id="mobArt" style="border-color:${gateColor}">${mobVisual(m.kind,120,m.name)}</div>
         <div class="raid-gate-tag" style="color:${gateColor}">${g.stage==='exam'?'ЭКЗАМЕН':g.stage==='trial'?'ИСПЫТАНИЕ':'ВРАТА '+g.rank} · ${g.name.toUpperCase()}</div>
@@ -5075,21 +5372,27 @@ function registerPush(source){
   // идут только камерные повторы.
   if(byCam) r.repsCam = (r.repsCam||0) + 1;
   updateRepCounterDOM();
-  if(!r.replay){
-    S.totalPush++; S.pushToday++; S.pushWeek++;
-    // Та же сумма, но раздельно по упражнению — см. "Прогресс повторений" в
-    // профиле (rProfile()), где отжимания и приседания считаются отдельно.
-    // Камерные счётчики идут парой к обычным и растут только при byCam.
-    if(mobExercise(m)==='squat'){
-      S.squatsTotal++; S.squatsToday++; S.squatsWeek++;
-      if(byCam){ S.squatsCamTotal++; S.squatsCamToday++; S.squatsCamWeek++; }
-    } else if(mobExercise(m)==='situp'){
-      S.situpsTotal++; S.situpsToday++; S.situpsWeek++;
-      if(byCam){ S.situpsCamTotal++; S.situpsCamToday++; S.situpsCamWeek++; }
-    } else {
-      S.pushupsTotal++; S.pushupsToday++; S.pushupsWeek++;
-      if(byCam){ S.pushupsCamTotal++; S.pushupsCamToday++; S.pushupsCamWeek++; }
-    }
+  /* Счётчики повторов растут ВСЕГДА, в том числе в повторном прохождении.
+     Раньше здесь стояло if(!r.replay) — вместе с блокировкой опыта, — и люди,
+     закрывшие много врат, гоняли старые вообще без следа в профиле.
+     Блокировать опыт в реплее необходимо: иначе уровень фармится бесконечным
+     перезаходом в лёгкие врата. Но счётчик отжиманий защищать не от чего — это
+     дневник реальной физической работы, и отжимание в повторных вратах ничем
+     не отличается от любого другого. Та же логика уже действует для смерти и
+     отступления: там повторы тоже не откатываются (см. snapshot в startRaid()).
+     Камерные счётчики идут парой к обычным и растут только при byCam. */
+  S.totalPush++; S.pushToday++; S.pushWeek++;
+  // Та же сумма, но раздельно по упражнению — см. "Прогресс повторений" в
+  // профиле (rProfile()), где отжимания и приседания считаются отдельно.
+  if(mobExercise(m)==='squat'){
+    S.squatsTotal++; S.squatsToday++; S.squatsWeek++;
+    if(byCam){ S.squatsCamTotal++; S.squatsCamToday++; S.squatsCamWeek++; }
+  } else if(mobExercise(m)==='situp'){
+    S.situpsTotal++; S.situpsToday++; S.situpsWeek++;
+    if(byCam){ S.situpsCamTotal++; S.situpsCamToday++; S.situpsCamWeek++; }
+  } else {
+    S.pushupsTotal++; S.pushupsToday++; S.pushupsWeek++;
+    if(byCam){ S.pushupsCamTotal++; S.pushupsCamToday++; S.pushupsCamWeek++; }
   }
   updateRaidDOM();
   if(S.settings.vibration) hapticImpact(m.hp<=0 ? 'heavy' : 'medium');
@@ -5205,6 +5508,7 @@ function winRaid(){
   const g=S.raid.gate;
   trackEvent('gate_win', g.rank + '/' + g.stage);
   const track = S.raid.track;
+  clearRaidSave(track); // врата закрыты — продолжать больше нечего
   const wasReplay = S.raid.replay;
   // Первые в жизни закрытые врата — считаем по ОБОИМ направлениям сразу, а не
   // только по тому, в котором сейчас играем (иначе ачивка "Первый шаг" могла
@@ -5410,7 +5714,7 @@ function pluralRuClient(n, forms){
   return forms[2];
 }
 
-/* ============ ГОНКА С ПРИЗРАКОМ ============
+/* ============ АРЕНА ТЕНЕЙ (бой с записью соперника) ============
    Минута отжиманий против записи прошлого захода. Соперник не сидит сейчас с
    телефоном — мы храним МОМЕНТЫ его повторов и воспроизводим их как тикающий
    счётчик. Со стороны игрока это неотличимо от живого боя, но ждать никого не
@@ -5515,51 +5819,6 @@ function onCameraRep(){
   }
   registerPush('cam');
 }
-/* Карточка режима на карте врат. Три состояния, и активна только первая:
-   когда дуэли кончились, карточка гаснет и перестаёт звать — это честнее, чем
-   яркая кнопка, которая ни к чему не ведёт.
-   Данные берём из кэша: запрашивать состояние при каждой отрисовке карты
-   незачем, а свежие цифры человек увидит, зайдя внутрь. Если кэша ещё нет —
-   показываем нейтральный вид, без цифр. */
-function duelCardHTML(){
-  const st = S.duelState;
-  const ratedLeft = st ? st.ratedLeft : null;
-  const trainLeft = st ? st.trainLeft : null;
-  const hasRated = ratedLeft === null || ratedLeft > 0;
-  const hasTrain = trainLeft === null || trainLeft !== 0;
-  const spent = st && !hasRated && !hasTrain;
-
-  if(spent){
-    return `<div class="duel-card off" onclick="openDuelHome()">
-      <div class="duel-card-top">
-        <span class="duel-card-tag">ГОНКА С ПРИЗРАКОМ</span>
-        <span class="duel-card-cnt">${st.resetAt ? duelResetText(st.resetAt).toLowerCase() : ''}</span>
-      </div>
-      <div class="duel-card-line">Сегодня — всё</div>
-      ${!isSubActive() ? `<div class="duel-card-sub">По «Контракту Охотника» — 6 рейтинговых в день и тренировочные без ограничения.</div>` : ''}
-    </div>`;
-  }
-  if(st && !hasRated){
-    return `<div class="duel-card off" onclick="openDuelHome()">
-      <div class="duel-card-top">
-        <span class="duel-card-tag">ГОНКА С ПРИЗРАКОМ</span>
-        <span class="duel-card-cnt">0 / ${st.ratedMax||3}</span>
-      </div>
-      <div class="duel-card-sub">Рейтинговые на сегодня закончились. Остались тренировочные — результат сохранится, рейтинг не изменится.</div>
-    </div>`;
-  }
-  return `<div class="duel-card" onclick="openDuelHome()">
-    <div class="duel-card-top">
-      <span class="duel-card-tag">ГОНКА С ПРИЗРАКОМ</span>
-      ${st ? `<span class="duel-card-cnt">${st.ratedLeft} / ${st.ratedMax||3}</span>` : ''}
-    </div>
-    <div class="duel-card-main">
-      <span class="duel-card-num">${st && st.best7 ? st.best7 : '—'}</span>
-      <span class="duel-card-cap">${st && st.best7 ? 'твой рекорд за минуту' : 'минута отжиманий против записи'}</span>
-    </div>
-    <div class="duel-card-btn">${st && st.best7 ? 'Побить рекорд' : 'Начать'}</div>
-  </div>`;
-}
 /* Экран режима. Открывается с карточки на карте и держит всё, что относится
    к дуэлям: рекорд, рейтинг, остаток попыток и запуск боя.
    Состояние приходит с сервера — там источник правды по лимитам и рейтингу.
@@ -5614,9 +5873,9 @@ function rDuelHome(){
   const resetTxt = st && st.resetAt ? duelResetText(st.resetAt) : '';
   h(`<div class="screen">
     <div class="hdr" style="width:100%">
-      <button class="icon-btn" onclick="go('map')" aria-label="Назад">‹</button>
-      <div class="gp-toptag" style="color:#B08BE0">ГОНКА С ПРИЗРАКОМ</div>
-      <div style="width:34px"></div>
+      <div style="width:40px"></div>
+      <div class="gp-toptag" style="color:#B08BE0">АРЕНА ТЕНЕЙ</div>
+      ${profileIconHTML()}
     </div>
 
     ${loading ? `<div class="sub" style="margin-top:40px">Загружаю…</div>` : ''}
@@ -5649,7 +5908,7 @@ function rDuelHome(){
     <div class="duel-opponent ${st.oppKind==='rival'?'rival':''}">
       ${st.ghost
         ? `<div class="duel-opp-tag">СОПЕРНИК</div>
-           <div class="duel-opp-name">${st.oppKind==='rival' ? escapeHtml(st.ghost.name||'Охотник') : 'Твой призрак'}</div>
+           <div class="duel-opp-name">${st.oppKind==='rival' ? escapeHtml(st.ghost.name||'Охотник') : 'Твоя тень'}</div>
            <div class="duel-opp-sub">${st.ghost.reps} ${pluralRuClient(st.ghost.reps,['повторение','повторения','повторений'])} · ${duelAgoText(st.ghost.createdAt)}</div>`
         : `<div class="duel-opp-tag">СОПЕРНИКА НЕТ</div>
            <div class="duel-opp-sub">Первый заход задаёт эталон. Дальше будешь бежать против него.</div>`}
@@ -5657,7 +5916,7 @@ function rDuelHome(){
         ? `<button class="duel-find" onclick="findDuelOpponent()" ${S.duelFinding?'disabled':''}>${S.duelFinding?'Ищу…':'Найти соперника'}</button>`
         : ''}
       ${st.oppKind === 'rival'
-        ? `<div class="duel-opp-note">Соперник закреплён до конца боя. Отказаться можно, но нового выдадут только завтра.</div>`
+        ? `<div class="duel-opp-note">Случайный подбор второй раз не сработает, но соперника можно выбрать самому — «Рейтинг» → вкладка «Арена», тап по строке.</div>`
         : ''}
     </div>
 
@@ -5670,6 +5929,8 @@ function rDuelHome(){
       ${(canRated && canTrain) ? `<button class="gp-btn2" onclick="startDuel(false)">Тренировочный заход</button>` : ''}
       ${(!canRated && !canTrain && !isSubActive()) ? `<div class="sub" style="margin-top:10px;font-size:12px">По «Контракту Охотника» — 6 рейтинговых в день и тренировочные без ограничения.</div>` : ''}
     </div>` : ''}
+    <div style="flex:1"></div>
+    ${navBar('duel')}
   </div>`);
 }
 /* «Обновится в 08:00» — время берём из строки, которую посчитал сервер по
@@ -5873,7 +6134,7 @@ function rDuelResult(){
     <div class="duel-result-nums">
       <div><div class="duel-side-tag">ТЫ</div><div class="duel-result-num">${r.reps ?? 0}</div></div>
       <div class="duel-result-vs">против</div>
-      <div><div class="duel-side-tag">${r.oppName ? escapeHtml(String(r.oppName).toUpperCase()).slice(0,14) : 'ПРИЗРАК'}</div><div class="duel-result-num ghost">${r.ghostReps ?? '—'}</div></div>
+      <div><div class="duel-side-tag">${r.oppName ? escapeHtml(String(r.oppName).toUpperCase()).slice(0,14) : 'ТЕНЬ'}</div><div class="duel-result-num ghost">${r.ghostReps ?? '—'}</div></div>
     </div>
     ${r.pending ? `<div class="sub">Сохраняю результат…</div>` : ''}
     ${r.error ? `<div class="sub" style="color:var(--danger)">${escapeHtml(r.error)}</div>` : ''}
@@ -5910,7 +6171,7 @@ function rVictory(){
     </div>` : ''}
     ${titleUnlockHTML()}
     <div class="loot">
-      <div class="card"><div class="v">+${total}</div><div class="k">${S.raid.replay?'повт. (повтор)':'повторений'}</div></div>
+      <div class="card"><div class="v">+${total}</div><div class="k">повторений</div></div>
       <div class="card"><div class="v">+${S.raid.xpGained||0}</div><div class="k">опыта</div></div>
       <div class="card"><div class="v">${S.justStreakInc?'+1':S.streak}</div><div class="k">${S.justStreakInc?'к стрику 🔥':'стрик, дн. 🔥'}</div></div>
     </div>
@@ -5988,7 +6249,7 @@ function rProfile(){
       <div class="sub" style="font-size:14px">Призыв во врата: <b class="cy">${a.time||'—'}</b>. Выполни рейд сегодня, чтобы сохранить стрик.</div>
     </div>
     <div style="flex:1"></div>
-    ${navBar('profile')}
+    ${navBar('')}
   </div>`);
 }
 function rankProgressHTML(){
@@ -6308,9 +6569,10 @@ function boot(){
   if(hasProfile) syncReminder(); // на случай если прошлая отправка не долетела
   trackOpen();
   checkSubscription(); // тихо обновляем статус "Контракта Охотника" — см. checkSubscription()
-  // Состояние дуэлей — чтобы карточка на карте сразу показала рекорд и остаток
-  // попыток, а не пустые прочерки до первого захода в режим.
-  if(hasProfile) loadDuelState();
+  // Состояние дуэлей на старте больше не грузим: карточка с карты убрана, а
+  // экран Арены сам вызывает loadDuelState() при каждом открытии
+  // (см. openDuelHome()). Запрос на каждый запуск приложения был бы потрачен
+  // впустую у всех, кто в режим вообще не заходит.
   startPresenceHeartbeat();
 }
 boot();
