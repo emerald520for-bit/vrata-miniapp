@@ -731,6 +731,26 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
 .duel-side.lead{box-shadow:0 0 16px rgba(255,255,255,.12)}
 .duel-side.me.lead{border-color:var(--sys)}
 .duel-side.ghost.lead{border-color:#B08BE0}
+/* Канат: одна полоса на двоих, шов между цветами едет к тому, кто отстаёт.
+   Два числа приходится вычитать в уме, а во время отжиманий на это нет
+   ресурса — полоса же считывается боковым зрением, не отрываясь от пола.
+   Показывает РАЗНИЦУ, а не отношение: в минутной гонке важно «на сколько
+   впереди», а не «во сколько раз». */
+.duel-bar{
+  position:absolute;top:calc(120px + env(safe-area-inset-top));left:12px;right:12px;z-index:5;
+  height:14px;border-radius:7px;background:rgba(2,3,10,.82);border:1px solid var(--line);
+  overflow:hidden;display:flex;
+}
+.duel-bar i{display:block;height:100%;transition:width .35s ease, background-color .3s ease}
+.duel-bar .mine{background:var(--sys)}
+.duel-bar .theirs{background:#B08BE0}
+/* Красный — только пока соперник ВЕДЁТ. Если бы он был красным всегда, цвет
+   стал бы просто его меткой и перестал что-либо сообщать; загораясь в момент
+   обгона, он работает как событие. Порога нет намеренно: при равной борьбе
+   полоса будет мигать через ноль, и это тот накал, ради которого режим и есть. */
+.duel-bar .theirs.ahead{background:var(--danger)}
+.duel-side.ghost.behind{border-color:rgba(255,59,92,.55)}
+.duel-side.ghost.behind .duel-side-num{color:var(--danger)}
 .duel-side-tag{font-family:'JetBrains Mono';font-size:9px;letter-spacing:1.5px;color:var(--muted)}
 .duel-side-num{font-family:'Russo One';font-size:30px;line-height:1.15;color:var(--text)}
 .duel-side.ghost .duel-side-num{color:#B08BE0}
@@ -5981,6 +6001,11 @@ function rDuel(){
       </div>
     </div>
 
+    ${d.ghost ? `<div class="duel-bar" id="duelBar">
+      <i class="mine" id="duelBarMine" style="width:50%"></i>
+      <i class="theirs" id="duelBarTheirs" style="width:50%"></i>
+    </div>` : ''}
+
     <div class="duel-bottom">
       <div class="duel-hint" id="duelHint">${d.phase==='fight' ? 'Отжимайся!' : 'Встань в упор — минута начнётся, когда Система тебя увидит'}</div>
       <!-- Стрелка «назад» в углу — маленький безымянный кружок поверх видео;
@@ -6032,10 +6057,37 @@ function updateDuelDOM(elapsedDs){
   // Кто ведёт — подсвечиваем, чтобы это читалось боковым зрением с пола.
   const meBox = document.querySelector('.duel-side.me');
   const ghBox = document.querySelector('.duel-side.ghost');
+  const behind = !!d.ghost && d.ghostReps > d.reps;
   if(meBox && ghBox && d.ghost){
     meBox.classList.toggle('lead', d.reps > d.ghostReps);
-    ghBox.classList.toggle('lead', d.ghostReps > d.reps);
+    ghBox.classList.toggle('lead', behind);
+    // Красный переносим и на счётчик соперника: если краснеет только полоса,
+    // а цифра рядом остаётся фиолетовой, получаются два разных сигнала об
+    // одном и том же событии.
+    ghBox.classList.toggle('behind', behind);
   }
+  updateDuelBar();
+}
+/* Положение шва на канате. DUEL_BAR_MAX — отрыв, при котором полоса упирается
+   в край. При типичном результате 20–45 повторов за минуту разрыв в 8 ощутим,
+   но отыгрываем; поставить больше — полоса почти всегда стояла бы посередине
+   и перестала бы что-либо значить.
+   Края намеренно недожаты (42%, а не 50%): даже при разгроме видна полоска
+   чужого цвета. Заливка целиком читалась бы как «всё кончено», и человек
+   бросал бы на сороковой секунде вместо того, чтобы тянуть канат. */
+const DUEL_BAR_MAX = 8;
+const DUEL_BAR_SWING = 42;
+function updateDuelBar(){
+  const d = S.duel; if(!d || !d.ghost) return;
+  const mine = document.getElementById('duelBarMine');
+  const theirs = document.getElementById('duelBarTheirs');
+  if(!mine || !theirs) return;
+  const lead = d.reps - d.ghostReps;
+  const k = Math.max(-1, Math.min(1, lead / DUEL_BAR_MAX));
+  const pct = 50 + k * DUEL_BAR_SWING;
+  mine.style.width = pct + '%';
+  theirs.style.width = (100 - pct) + '%';
+  theirs.classList.toggle('ahead', lead < 0);
 }
 /* Досрочный выход из боя.
    Первые DUEL_FREE_ABORT_S секунд — бесплатно: технический сбой почти всегда
