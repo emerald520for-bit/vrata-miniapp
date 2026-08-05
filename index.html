@@ -1204,6 +1204,8 @@ const S = {
   step: 0,
   // Вкладка инвентаря и добыча последнего захода — для экранов победы/смерти.
   invTab: 'trophy', wonLoot: [], lostLoot: [],
+  // Номер ревизии сохранения — растёт на каждую запись, см. saveState().
+  rev: 0,
   // Чужой профиль: чей открыт и что про него известно. Живёт только в сессии.
   otherUid: null, otherData: null, otherLoading: false, otherError: false,
   ans: { name:'', exp:null, goal:null, age:25, max:null, days:null, time:null },
@@ -1528,6 +1530,7 @@ const ITEMS_API_URL = 'https://vrata-bot.emerald520for.workers.dev/api/items';
 const EQUIP_API_URL = 'https://vrata-bot.emerald520for.workers.dev/api/equip';
 const CRAFT_API_URL = 'https://vrata-bot.emerald520for.workers.dev/api/craft';
 const PROFILE_API_URL = 'https://vrata-bot.emerald520for.workers.dev/api/profile';
+const STATE_API_URL = 'https://vrata-bot.emerald520for.workers.dev/api/state';
 
 /* ============ ПРЕДМЕТЫ ============
    Инвентарь, в отличие от врат и уровня, живёт НА СЕРВЕРЕ — иначе его не
@@ -1768,6 +1771,14 @@ function startPresenceHeartbeat(){
   setInterval(()=>{ if(document.visibilityState==='visible') trackOpen(); }, 300000);
   document.addEventListener('visibilitychange', ()=>{
     if(document.visibilityState==='visible') trackOpen();
+    else {
+      /* Свернули приложение — выталкиваем накопленный снимок немедленно, не
+         дожидаясь таймера склейки. Это самый вероятный момент, после которого
+         приложение может уже не вернуться (телефон выгрузит вкладку), и
+         несохранённые изменения пропали бы вместе с ней. */
+      if(statePushTimer){ clearTimeout(statePushTimer); statePushTimer = null; }
+      flushStatePush();
+    }
   });
 }
 // Пока в фокусе текстовое поле, не трогаем --tg-vh вообще — судя по видео от
@@ -1901,7 +1912,69 @@ function tgInit(){
 // находиться (loadState()/syncFromCloud() не видят их), никто их не трогает
 // и не удаляет — новый чистый старт для всех, без порчи данных.
 const SAVE_KEY = 'vrata_save_v2';
+/* Отправка снимка на сервер.
+   Со склейкой: saveState() дёргается на каждый переход экрана, и слать запрос
+   каждый раз значило бы сотни обращений за сеанс. Копим и отправляем не чаще
+   раза в 10 секунд, а в важных точках (закрыл врата, свернул приложение)
+   выталкиваем немедленно.
+   Писать МОЖНО только после успешного чтения — та же защита, что у облака:
+   иначе пустое состояние на «чистом» после сброса телефоне затрёт серверную
+   копию прежде, чем мы её прочитаем. Именно так однажды уже терялся
+   прогресс. */
+const STATE_PUSH_MIN_INTERVAL_MS = 10000;
+let statePushTimer = null;
+let statePushPending = false;
+let statePushLastAt = 0;
+let statePushInFlight = false;
+function canWriteServerState(){
+  return !!(TG && TG.initData && rankChatId())
+      && serverState !== 'pending' && serverState !== 'failed';
+}
+function scheduleStatePush(){
+  if(!canWriteServerState()) return;
+  statePushPending = true;
+  if(statePushTimer) return;
+  const since = Date.now() - statePushLastAt;
+  const wait = Math.max(0, STATE_PUSH_MIN_INTERVAL_MS - since);
+  statePushTimer = setTimeout(()=>{ statePushTimer = null; flushStatePush(); }, wait);
+}
+function flushStatePush(){
+  if(!statePushPending || statePushInFlight || !canWriteServerState()) return;
+  const raw = (function(){ try{ return localStorage.getItem(SAVE_KEY); }catch(e){ return null; } })();
+  if(!raw) return;
+  statePushPending = false;
+  statePushLastAt = Date.now();
+  statePushInFlight = true;
+  fetch(STATE_API_URL, {
+    method:'POST', keepalive:true,
+    headers:{ 'Content-Type':'application/json', 'X-Init-Data':TG.initData },
+    body: JSON.stringify({ payload: raw, rev: S.rev }),
+  })
+    .then(r=>r.json().catch(()=>null))
+    .then(data=>{
+      statePushInFlight = false;
+      if(!data) return;
+      if(data.ok){ appliedRev = Number(data.rev) || S.rev; appliedSrc = 'server'; return; }
+      /* Сервер отклонил запись: там ревизия свежее (играли с другого
+         устройства). Настаивать нельзя — забираем серверное состояние, иначе
+         два телефона будут бесконечно перетирать друг друга. */
+      if(data.stale && typeof data.payload === 'string'){
+        const rev = Number(data.rev) || 0;
+        if(applyStateFromRaw(data.payload)){
+          appliedRev = rev; appliedSrc = 'server';
+          ensureDay(); // см. тот же комментарий в syncFromCloud()
+          try{ localStorage.setItem(SAVE_KEY, data.payload); }catch(e){}
+          if(S.screen!=='raid' && S.screen!=='rest') render();
+        }
+      }
+    })
+    .catch(()=>{ statePushInFlight = false; statePushPending = true; });
+}
+
 function saveState(){
+  // Каждая запись — новая ревизия. Именно счётчик, а не время: часы на
+  // телефонах врут, и сравнение копий по ним даёт неверный ответ.
+  S.rev = (Number(S.rev) || 0) + 1;
   const payload = JSON.stringify({
     ans:S.ans, rank:S.rank, level:S.level, xp:S.xp, streak:S.streak,
     totalPush:S.totalPush, pushToday:S.pushToday, pushWeek:S.pushWeek,
@@ -1918,6 +1991,10 @@ function saveState(){
     titles:S.titles, bestiary:S.bestiary, selectedTitle:S.selectedTitle, contractSeen:S.contractSeen,
     achievements:S.achievements, everDied:S.everDied, sub:S.sub, needWasm:S.needWasm,
     raidSaves:S.raidSaves,
+    // Ревизия снимка. Лежит ВНУТРИ сохранения, а не рядом, чтобы переживать
+    // и localStorage, и облако Telegram, и серверную копию: куда бы снимок
+    // ни попал, номер едет вместе с ним. См. serverState/appliedRev.
+    rev:S.rev,
   });
   try{ localStorage.setItem(SAVE_KEY, payload); }catch(e){ /* приватный режим и т.п. — просто не сохраняем локально */ }
   // CloudStorage синхронизирует прогресс между устройствами одного аккаунта
@@ -1939,10 +2016,18 @@ function saveState(){
   if(TG && TG.CloudStorage && payload.length < 4000 && cloudState !== 'pending' && cloudState !== 'failed'){
     try{ TG.CloudStorage.setItem(SAVE_KEY, payload, ()=>{}); }catch(e){}
   }
+  /* Серверная копия. В отличие от облака у неё нет лимита в 4096 символов —
+     именно поэтому она и заводилась: сохранение продвинутого игрока уже
+     подошло к этому потолку вплотную, и облако скоро перестало бы его
+     принимать молча. Отправка отложенная, см. scheduleStatePush(). */
+  scheduleStatePush();
 }
 function applyStateFromRaw(raw){
   try{
     const data = JSON.parse(raw);
+    // У сохранений, сделанных до появления серверной копии, поля нет — это
+    // ноль, а не ошибка. Тогда порядок предпочтений остаётся прежним.
+    S.rev = Number(data.rev) || 0;
     Object.assign(S.ans, data.ans||{});
     S.rank = data.rank || 'E';
     S.level = data.level || 1;
@@ -2013,7 +2098,32 @@ function loadState(){
    Разница между 'failed' и 'unavailable' принципиальна: в первом случае
    резервная копия может существовать, и затирать её нельзя; во втором её
    заведомо нет. */
-let cloudState = 'pending';
+/* Состояние СЕРВЕРНОЙ копии — отдельный флаг с той же логикой, что у облака.
+   Именно отдельный, а не общий: облако может ответить, а сервер нет, и
+   наоборот. Общий флаг означал бы, что молчание одного источника разрешает
+   затирать другой. */
+let serverState = 'pending';
+
+/* Ревизия применённого сейчас состояния и откуда оно взято.
+   Ревизия — обычный счётчик, растущий на каждую запись. Сравнивать копии по
+   времени нельзя: часы на телефонах врут и разъезжаются, и «более свежая» по
+   часам копия запросто оказывается старой. Счётчик от часов не зависит.
+   У всех нынешних игроков ревизии в сохранении нет — считаем её нулём, и
+   тогда порядок предпочтений остаётся ровно таким, каким был до этой правки:
+   облако важнее локального. */
+let appliedRev = 0;
+let appliedSrc = 'local';
+function revOf(raw){
+  try{ const d = JSON.parse(raw); return Number(d && d.rev) || 0; }catch(e){ return 0; }
+}
+/* Стоит ли применять копию из источника src с ревизией rev.
+   Строго большая ревизия побеждает всегда. При равной ревизии побеждает
+   удалённая копия над локальной — это сохраняет прежнее поведение для тех,
+   у кого ревизий ещё нет вовсе (то есть сейчас для всех). */
+function shouldApplyRestore(rev, src){
+  if(rev > appliedRev) return true;
+  return rev === appliedRev && appliedSrc === 'local' && src !== 'local';
+}
 const CLOUD_READ_RETRIES = 3;
 // Сколько максимум держим заставку в ожидании облака. 5 секунд — заметно
 // дольше обычного ответа (доли секунды) и заведомо короче терпения человека.
@@ -2037,7 +2147,18 @@ function syncFromCloud(attempt){
       cloudState = 'ready';
       if(value){
         const localRaw = (function(){ try{ return localStorage.getItem(SAVE_KEY); }catch(e){ return null; } })();
-        if(value !== localRaw && applyStateFromRaw(value)){
+        // Сравнение по ревизии, а не только «отличается от локального»: иначе
+        // облако с более старым снимком могло бы откатить уже применённый
+        // серверный, если тот успел прийти раньше.
+        const rev = revOf(value);
+        if(value !== localRaw && shouldApplyRestore(rev, 'cloud') && applyStateFromRaw(value)){
+          appliedRev = rev; appliedSrc = 'cloud';
+          /* Дневные счётчики принадлежат ДНЮ снимка, а не сегодняшнему.
+             Снимок мог быть сделан вчера или на устройстве в другом часовом
+             поясе — без пересчёта вчерашние отжимания считались бы сегодняшними
+             и заодно испортили бы стрик. ensureDay() умеет это разбирать, его
+             просто забыли позвать на этом пути. */
+          ensureDay();
           try{ localStorage.setItem(SAVE_KEY, value); }catch(e){}
           if(S.onboarded && S.screen!=='raid' && S.screen!=='rest'){ S.screen='map'; }
         }
@@ -2049,12 +2170,70 @@ function syncFromCloud(attempt){
     finishCloudRestore();
   }
 }
-/* Пока идёт первое чтение облака, а локального сохранения нет, приложение не
-   пускает в анкету: иначе человек успевает пройти её поверх ещё не прочитанной
-   резервной копии. Как только облако ответило (или попытки исчерпаны) — либо
-   показываем восстановленный прогресс, либо честно начинаем заново. */
-function finishCloudRestore(){
+/* Чтение серверной копии. Идёт ПАРАЛЛЕЛЬНО с облаком, а не вместо него:
+   две независимые резервные копии лучше одной, и та, у которой ревизия выше,
+   побеждает.
+   Отказ сервера — это НЕ «данных нет». Ровно как с облаком: при неудачном
+   чтении писать туда запрещено, иначе мы затрём копию, которую не смогли
+   прочитать. За это отвечает serverState. */
+function syncFromServer(attempt){
+  attempt = attempt || 1;
+  if(!TG || !TG.initData || !rankChatId()){ serverState = 'unavailable'; finishCloudRestore(); return; }
+  fetch(STATE_API_URL, { headers:{ 'X-Init-Data':TG.initData } })
+    .then(r=>{ if(!r.ok) throw new Error('bad response'); return r.json(); })
+    .then(data=>{
+      if(data && data.none){
+        /* Сервер про игрока ничего не знает. Это ожидаемо для всех, кто играл
+           до появления серверной копии, и НЕ означает, что прогресса нет.
+           Локальное состояние не трогаем — наоборот, при первой же записи оно
+           уедет на сервер и станет первой ревизией. */
+        serverState = 'ready';
+        finishCloudRestore();
+        return;
+      }
+      if(data && typeof data.payload === 'string'){
+        const rev = Number(data.rev) || 0;
+        if(shouldApplyRestore(rev, 'server')){
+          if(applyStateFromRaw(data.payload)){
+            appliedRev = rev; appliedSrc = 'server';
+            ensureDay(); // см. тот же комментарий в syncFromCloud()
+            try{ localStorage.setItem(SAVE_KEY, data.payload); }catch(e){}
+            if(S.onboarded && S.screen!=='raid' && S.screen!=='rest'){ S.screen='map'; }
+          } else {
+            // Снимок не разобрался — битый или обрезанный. Молча остаёмся на
+            // том, что есть, но помечаем в аналитике: иначе такие случаи
+            // придётся разбирать вслепую.
+            trackEvent('state_bad', 'server');
+          }
+        }
+      }
+      serverState = 'ready';
+      finishCloudRestore();
+    })
+    .catch(()=>{
+      // Сеть или сервер молчат — пробуем ещё, как с облаком. Исчерпали
+      // попытки — 'failed', и запись на сервер остаётся заблокированной.
+      if(attempt < CLOUD_READ_RETRIES){
+        setTimeout(()=>syncFromServer(attempt+1), 700*attempt);
+        return;
+      }
+      serverState = 'failed';
+      finishCloudRestore();
+    });
+}
+
+/* Пока идёт первое чтение резервных копий, а локального сохранения нет,
+   приложение не пускает в анкету: иначе человек успевает пройти её поверх
+   ещё не прочитанного прогресса.
+   Ждём ОБА источника — облако и сервер, — но общий потолок ожидания остаётся
+   прежним (5 секунд на всё вместе, см. boot()). Удваивать ожидание из-за
+   второго источника нельзя: человек ждёт заставку, а не наши запросы. */
+function restoreSourcesPending(){
+  return cloudState === 'pending' || serverState === 'pending';
+}
+function finishCloudRestore(force){
   if(!S.restoring) return;
+  if(!force && restoreSourcesPending()) return;
   S.restoring = false;
   render();
 }
@@ -6443,6 +6622,11 @@ function winRaid(){
   S.wonLoot = (S.raid && S.raid.loot) ? S.raid.loot.slice(0, 12) : [];
   endRaidItems(true);
   go('victory');
+  /* Закрытые врата — самое ценное, что случается в игре, и терять их из-за
+     десятисекундной склейки нельзя. go() уже вызвал saveState(), поэтому
+     снимок в localStorage свежий — остаётся вытолкнуть его немедленно. */
+  if(statePushTimer){ clearTimeout(statePushTimer); statePushTimer = null; }
+  flushStatePush();
   // Отправляем текущий дневной счёт на сервер для таблицы лидеров — именно
   // здесь, а не на каждый повтор: закрытые врата это естественная точка,
   // где прогресс уже точно "настоящий" (не откатится, как при отступлении
@@ -7502,12 +7686,15 @@ function boot(){
      поверх собственного прогресса.
      Ждём недолго и с потолком по времени — приложение не должно зависнуть
      из-за молчащего облака. */
-  if(!hasProfile && TG && TG.CloudStorage){
+  if(!hasProfile && TG && (TG.CloudStorage || TG.initData)){
     S.restoring = true;
-    setTimeout(()=>{ finishCloudRestore(); }, CLOUD_RESTORE_MAX_WAIT_MS);
+    // force=true: потолок ожидания срабатывает независимо от того, ответили
+    // ли источники. Иначе молчащий сервер держал бы заставку бесконечно.
+    setTimeout(()=>{ finishCloudRestore(true); }, CLOUD_RESTORE_MAX_WAIT_MS);
   }
   render();
   syncFromCloud();
+  syncFromServer();
   if(hasProfile) syncReminder(); // на случай если прошлая отправка не долетела
   trackOpen();
   checkSubscription(); // тихо обновляем статус "Контракта Охотника" — см. checkSubscription()
