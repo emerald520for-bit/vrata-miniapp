@@ -383,9 +383,19 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
    которое он раньше занимал внизу .screen, больше не резервируется само,
    без спейсера последние врата/кнопки на экране оказались бы под панелью. */
 .nav-spacer{height:calc(70px + env(safe-area-inset-bottom))}
-.nav{display:flex;gap:10px;padding:14px 20px calc(14px + env(safe-area-inset-bottom));border-top:1px solid var(--line);position:fixed;left:50%;bottom:0;transform:translateX(-50%);width:100%;max-width:430px;background:var(--void);z-index:5;box-sizing:border-box}
-.nav button{flex:1;padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--panel);color:var(--muted);font-weight:800;font-size:13px;cursor:pointer}
+/* Четыре пункта вместо трёх. Кнопки делят ширину поровну, поэтому каждый
+   лишний пункт съедает место у всех: на 430px было ~107px на кнопку, стало
+   ~85px, а на узком 360px — всего ~72px. Отсюда три правки против переноса
+   подписей: уже боковые поля и промежутки, шрифт 12 вместо 13 и nowrap.
+   Сами подписи тоже укорочены — «Топ» вместо «Рейтинг», «Клан» вместо
+   «Гильдия» (см. navBar). На совсем узких экранах прячем иконки: подпись
+   важнее картинки, без неё пункт просто не опознать. */
+.nav{display:flex;gap:6px;padding:12px 12px calc(12px + env(safe-area-inset-bottom));border-top:1px solid var(--line);position:fixed;left:50%;bottom:0;transform:translateX(-50%);width:100%;max-width:430px;background:var(--void);z-index:5;box-sizing:border-box}
+.nav button{flex:1;min-width:0;padding:11px 6px;border-radius:12px;border:1px solid var(--line);background:var(--panel);color:var(--muted);font-weight:800;font-size:12px;cursor:pointer;white-space:nowrap;display:flex;align-items:center;justify-content:center;gap:5px}
 .nav button.on{color:var(--sys);border-color:var(--sys-dim);box-shadow:0 0 12px rgba(76,201,255,.15)}
+.nav .nav-ico{display:inline-flex;align-items:center}
+.nav .nav-ico img{vertical-align:0}
+@media (max-width:350px){ .nav .nav-ico{display:none} }
 
 /* ---- рейд ---- */
 .mob-stage{display:flex;flex-direction:column;align-items:center;margin:8px 0 4px}
@@ -1009,6 +1019,46 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
 .item-card-name{font-family:'Russo One',sans-serif;font-size:18px;color:var(--rk);margin-top:10px}
 .item-card-meta{font-size:12px;color:var(--muted);margin-top:3px}
 .item-card-desc{font-size:13px;color:var(--muted);margin-top:12px;line-height:1.5;font-style:italic}
+/* ---- Гильдии ----
+   Главный блок экрана — список «кто тренировался сегодня». Он вверху и он же
+   самый заметный: ради него всё и делается. Точка слева (.gd-dot) — весь
+   визуальный язык списка: горит зелёным у тех, кто уже отжимался сегодня,
+   и остаётся тусклой у остальных. Человек делает подход, чтобы не быть
+   единственным серым. */
+.gd-modal{border:1px solid var(--line);border-radius:14px;padding:18px;background:var(--panel-solid)}
+.gd-hero{border:1px solid var(--line);border-radius:14px;padding:14px;background:rgba(10,13,31,.55);margin-bottom:14px}
+.gd-name{font-family:'Russo One',sans-serif;font-size:20px;color:var(--text);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.gd-tag{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--sys);border:1px solid var(--sys-dim);border-radius:6px;padding:2px 6px}
+.gd-sub{font-size:12px;color:var(--muted);margin-top:6px}
+.gd-goal{margin-top:12px}
+.gd-goal-top{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:5px}
+.gd-bar{height:8px;background:rgba(255,255,255,.08);border-radius:4px;overflow:hidden}
+.gd-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--mana),var(--sys));border-radius:4px;transition:width .4s}
+.gd-bar.done i{background:var(--ok)}
+.gd-sect{font-size:11px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin:18px 0 8px}
+.gd-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);font-size:13px}
+.gd-row:last-child{border-bottom:none}
+.gd-dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.16);flex:none}
+.gd-dot.on{background:var(--ok);box-shadow:0 0 8px rgba(52,211,153,.6)}
+.gd-nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gd-nm .crown{color:var(--gold);font-size:11px;margin-left:4px}
+.gd-away{font-size:11px;color:var(--muted)}
+.gd-reps{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text);flex:none}
+.gd-kick{border:none;background:transparent;color:var(--danger);font-size:16px;cursor:pointer;padding:0 2px;flex:none}
+.gd-card{border:1px solid var(--line);border-radius:12px;padding:12px;margin-top:8px;background:rgba(10,13,31,.5)}
+.gd-card-top{display:flex;align-items:center;gap:8px}
+.gd-card-meta{display:flex;gap:12px;font-size:11px;color:var(--muted);margin-top:7px;flex-wrap:wrap}
+.gd-card-meta b{color:var(--text);font-weight:700}
+.gd-full{opacity:.55}
+.gd-inp{width:100%;box-sizing:border-box;background:rgba(2,3,10,.6);border:1px solid var(--line);border-radius:10px;padding:11px 12px;color:var(--text);font-family:'Manrope';font-size:15px;margin-top:6px}
+.gd-inp:focus{outline:none;border-color:var(--sys-dim)}
+.gd-lbl{font-size:11px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-top:14px}
+.gd-err{color:var(--danger);font-size:12px;margin-top:8px;min-height:15px}
+.gd-empty{text-align:center;padding:26px 12px;color:var(--muted);font-size:13px;line-height:1.5}
+.gd-lock{border:1px solid var(--line);border-radius:12px;padding:14px;background:rgba(10,13,31,.5);font-size:13px;color:var(--muted);line-height:1.5;margin-top:12px}
+.gd-frozen{border:1px solid var(--gold);border-radius:10px;padding:10px 12px;background:rgba(245,194,66,.08);font-size:12px;color:var(--gold);line-height:1.45;margin-top:10px}
+.gd-last{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:rgba(10,13,31,.5);font-size:12px;color:var(--muted);line-height:1.45;margin-top:10px}
+.gd-last.win{border-color:rgba(52,211,153,.4);background:rgba(52,211,153,.07);color:var(--ok)}
 /* Рецепты */
 .rcp{border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-top:8px;background:rgba(10,13,31,.5);cursor:pointer}
 .rcp.ready{border-color:var(--ok)}
@@ -1180,6 +1230,9 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
    путали с обычными золотыми титулами: он временный и держится только пока
    человек в тройке. */
 .lb-title-duel{color:#C9A7F5}
+/* Тег гильдии — тем же голубым, что и вся «системная» часть интерфейса, чтобы
+   не путался с золотыми титулами: титул это заслуга, тег — принадлежность. */
+.lb-gtag{color:var(--sys);font-family:'JetBrains Mono',monospace;font-size:10px}
 /* Счёт не растягивает строку: max-width не даёт длинному числу вытолкнуть имя
    и разорвать ряд, а многоточие показывает, что число обрезано. */
 .lb-score{font-family:'JetBrains Mono';font-weight:800;color:var(--gold);font-size:14px;flex-shrink:0;max-width:38%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -1294,6 +1347,11 @@ const S = {
      чтобы отбросить снимок, если врата с тех пор перебалансировали: idx мог бы
      указать за пределы массива, а бой пойти по другим числам. */
   raidSaves: {},
+  /* Какую закрытую неделю гильдии человек уже видел в поздравлении. Это
+     единственное, что про гильдию хранится на телефоне, и хранится сознательно:
+     это не данные гильдии (они только на сервере), а отметка «я уже видел эту
+     картинку». Потеря отметки максимум покажет поздравление второй раз. */
+  guildSeenWeek: null,
   everDied: false, // флаг для ачивки "Восставший из пепла" (см. playerDied()/startRaid())
   // Подписка "Контракт Охотника" — статус приходит с сервера (/api/me,
   // см. checkSubscription() ниже), кэшируется в localStorage вместе с
@@ -1533,6 +1591,8 @@ const EQUIP_API_URL = 'https://vrata-bot.emerald520for.workers.dev/api/equip';
 const CRAFT_API_URL = 'https://vrata-bot.emerald520for.workers.dev/api/craft';
 const PROFILE_API_URL = 'https://vrata-bot.emerald520for.workers.dev/api/profile';
 const STATE_API_URL = 'https://vrata-bot.emerald520for.workers.dev/api/state';
+const GUILD_API_URL  = 'https://vrata-bot.emerald520for.workers.dev/api/guild';
+const GUILDS_API_URL = 'https://vrata-bot.emerald520for.workers.dev/api/guilds';
 
 /* ============ ПРЕДМЕТЫ ============
    Инвентарь, в отличие от врат и уровня, живёт НА СЕРВЕРЕ — иначе его не
@@ -1573,6 +1633,166 @@ function loadItems(force){
     })
     .catch(()=>{ Items.loading = false; Items.error = true;
       if(S.screen==='inventory') render({ keepScroll:true }); });
+}
+
+/* ============ ГИЛЬДИИ ============
+   Здесь принципиальное отличие от всего остального в этом файле: состояние
+   гильдии НЕ хранится в S и не пишется в saveState(). Гильдия — общая
+   сущность, она живёт только на сервере, и её нельзя восстанавливать из
+   локального снимка: у пятнадцати человек он был бы разный, а прав на состав
+   у клиента нет вообще. Поэтому Guild — кэш на время сессии, ровно как Items:
+   пришло с сервера, показали, при действии перезапросили. */
+const Guild = {
+  data: null,        // моя гильдия (объект) или null, если не состою
+  meta: null,        // что показать тому, у кого гильдии нет: права, задержка, лимиты
+  loading: false,
+  error: false,
+  list: null,        // список всех гильдий
+  listLoading: false,
+  listError: false,
+  busy: false,       // идёт действие — блокируем повторные нажатия
+  form: { name:'', tag:'', error:'' },
+};
+
+function guildHeaders(json){
+  const h = { 'X-Init-Data': (TG && TG.initData) || '' };
+  if(json) h['Content-Type'] = 'application/json';
+  return h;
+}
+function guildAvailable(){ return !!(TG && TG.initData && rankChatId()); }
+
+function loadGuild(force){
+  if(!guildAvailable()) return Promise.resolve();
+  if(Guild.loading) return Promise.resolve();
+  if(Guild.data !== null && !force) return Promise.resolve();
+  Guild.loading = true; Guild.error = false;
+  return fetch(GUILD_API_URL, { headers: guildHeaders(false) })
+    .then(r=>{ if(!r.ok) throw new Error('bad'); return r.json(); })
+    .then(d=>{
+      Guild.data = d.guild || null;
+      Guild.meta = d.guild ? null : d;
+      Guild.loading = false;
+      maybeShowGuildResult();
+      if(S.screen==='guild') render({ keepScroll:true });
+    })
+    .catch(()=>{ Guild.loading=false; Guild.error=true;
+      if(S.screen==='guild') render({ keepScroll:true }); });
+}
+
+function loadGuildList(force){
+  if(!guildAvailable()) return Promise.resolve();
+  if(Guild.listLoading) return Promise.resolve();
+  if(Guild.list && !force) return Promise.resolve();
+  Guild.listLoading = true; Guild.listError = false;
+  return fetch(GUILDS_API_URL, { headers: guildHeaders(false) })
+    .then(r=>{ if(!r.ok) throw new Error('bad'); return r.json(); })
+    .then(d=>{
+      Guild.list = d.guilds || [];
+      Guild.listLoading = false;
+      if(S.screen==='guild') render({ keepScroll:true });
+    })
+    .catch(()=>{ Guild.listLoading=false; Guild.listError=true;
+      if(S.screen==='guild') render({ keepScroll:true }); });
+}
+
+/* Общая обёртка для всех изменяющих действий. Сервер в ответ отдаёт уже
+   пересобранную карточку гильдии — берём её и не додумываем состояние
+   локально: любое «оптимистичное» изменение состава на клиенте разошлось бы
+   с правдой при первом же отказе (мест не хватило, человек успел вступить
+   в другую гильдию, подписка кончилась). */
+function guildAction(path, body, onDone){
+  if(Guild.busy) return;
+  if(!guildAvailable()){ showModal(guildNoteHTML('Гильдии доступны только внутри Telegram.')); return; }
+  Guild.busy = true; render({ keepScroll:true });
+  fetch(GUILD_API_URL + path, {
+    method:'POST', headers: guildHeaders(true), body: JSON.stringify(body||{}),
+  })
+    /* Не всякий ответ — JSON: на 401 и 405 воркер отдаёт обычный текст. Без
+       этой развилки любой такой случай проваливался бы в catch и показывал
+       «связь потерялась», хотя связь как раз есть, а проблема в другом. */
+    .then(r=>r.text().then(txt=>{
+      let d = null;
+      try{ d = txt ? JSON.parse(txt) : null; }catch(e){ d = { error: txt || 'Сервер ответил непонятно' }; }
+      return { ok: r.ok, d: d || {} };
+    }))
+    .then(({ok,d})=>{
+      Guild.busy = false;
+      if(!ok || (d && d.error)){
+        showModal(guildNoteHTML((d && d.error) || 'Не получилось. Попробуй ещё раз.'));
+        render({ keepScroll:true });
+        return;
+      }
+      if(d.guild) { Guild.data = d.guild; Guild.meta = null; }
+      if(d.disbanded || d.cooldownUntil !== undefined && !d.guild){ Guild.data = null; Guild.meta = null; }
+      Guild.list = null;                 // список устарел — перезапросим при показе
+      if(onDone) onDone(d);
+      if(!Guild.data) loadGuild(true);
+      render({ keepScroll:true });
+    })
+    .catch(()=>{
+      Guild.busy = false;
+      showModal(guildNoteHTML('Связь потерялась. Попробуй ещё раз.'));
+      render({ keepScroll:true });
+    });
+}
+
+function guildNoteHTML(text){
+  return `<div class="modal-card"><div style="font-size:14px;line-height:1.5;color:var(--text)">${escapeHtml(text)}</div>
+    <button class="btn ghost" style="margin-top:16px" onclick="closeModal()">Понятно</button></div>`;
+}
+
+function openGuild(){
+  S.screen = 'guild'; render(); saveState();
+  loadGuild(true);
+  loadGuildList(true);
+}
+
+/* Итог недели показываем один раз. Отметку о показе держим локально, в S:
+   это единственное, что про гильдию вообще можно хранить на телефоне, потому
+   что это не данные гильдии, а «я уже видел эту картинку». Худшее, что даёт
+   потеря отметки, — человек прочитает поздравление дважды.
+   Сундук не расписываем по предметам: сервер их не запоминает, а хранить ради
+   одной картинки отдельную таблицу дорого. Вместо этого зажигаем красную
+   точку на инвентаре — тот же механизм, что и у обычной добычи. */
+function maybeShowGuildResult(){
+  const g = Guild.data;
+  if(!g || !g.last || !g.last.done) return;
+  if(S.guildSeenWeek === g.last.week) return;
+  S.guildSeenWeek = g.last.week;
+  saveState();
+  if(g.last.gotChest) Items.seen = false;
+  showGuildResultModal(g, g.last);
+}
+
+function showGuildResultModal(g, last){
+  const body = last.gotChest
+    ? `<div style="font-size:14px;line-height:1.55;color:var(--text)">
+         Гильдия <b>${escapeHtml(g.name)}</b> взяла недельную цель.
+       </div>
+       <div style="font-size:13px;color:var(--muted);margin-top:10px;line-height:1.5">
+         Общий счёт: <b style="color:var(--text)">${last.reps}</b> из ${last.goal}.<br>
+         Твой вклад: <b style="color:var(--text)">${last.myReps}</b>.
+       </div>
+       <div style="font-size:13px;color:var(--ok);margin-top:14px;line-height:1.5">
+         Сундук с трофеями уже в инвентаре. Мест в гильдии стало на ${g.slotsStep} больше.
+       </div>`
+    : `<div style="font-size:14px;line-height:1.55;color:var(--text)">
+         Гильдия <b>${escapeHtml(g.name)}</b> взяла недельную цель.
+       </div>
+       <div style="font-size:13px;color:var(--muted);margin-top:10px;line-height:1.5">
+         Общий счёт: <b style="color:var(--text)">${last.reps}</b> из ${last.goal}.
+       </div>
+       <div style="font-size:13px;color:var(--gold);margin-top:14px;line-height:1.5">
+         Сундук достаётся тем, кто сам сделал хотя бы ${g.chestMinReps} повторов за неделю.
+         У тебя вышло ${last.myReps}. На следующей неделе успеешь.
+       </div>`;
+  showModal(`<div class="gd-modal" style="text-align:center">
+    <div style="font-size:34px;line-height:1">🏆</div>
+    <div style="font-family:'Russo One',sans-serif;font-size:19px;color:var(--gold);margin:8px 0 12px">Цель недели взята</div>
+    ${body}
+    ${last.gotChest ? `<button class="btn" style="margin-top:16px" onclick="closeModal();go('inventory')">Открыть инвентарь</button>` : ''}
+    <button class="btn ghost" style="margin-top:8px" onclick="closeModal()">Закрыть</button>
+  </div>`);
 }
 
 /* Бросок за убитого моба. Кубик бросает СЕРВЕР — клиенту такое доверять
@@ -1992,7 +2212,7 @@ function saveState(){
     lastWinDate:S.lastWinDate, todayDate:S.todayDate, onboarded:S.onboarded,
     titles:S.titles, bestiary:S.bestiary, selectedTitle:S.selectedTitle, contractSeen:S.contractSeen,
     achievements:S.achievements, everDied:S.everDied, sub:S.sub, needWasm:S.needWasm,
-    raidSaves:S.raidSaves,
+    raidSaves:S.raidSaves, guildSeenWeek:S.guildSeenWeek,
     // Ревизия снимка. Лежит ВНУТРИ сохранения, а не рядом, чтобы переживать
     // и localStorage, и облако Telegram, и серверную копию: куда бы снимок
     // ни попал, номер едет вместе с ним. См. serverState/appliedRev.
@@ -2069,6 +2289,7 @@ function applyStateFromRaw(raw){
     // Старые сохранёнки этого поля не знают — пустой объект, а не undefined,
     // иначе первое же обращение к S.raidSaves[track] уронит карту.
     S.raidSaves = (data.raidSaves && typeof data.raidSaves==='object') ? data.raidSaves : {};
+    S.guildSeenWeek = data.guildSeenWeek || null;
     S.achievements = data.achievements || [];
     S.everDied = !!data.everDied;
     if(data.sub && typeof data.sub==='object'){
@@ -3569,6 +3790,12 @@ function go(screen){
   if(screen==='rank'){ S.rankData = null; S.rankError = false; S.rankLoading = true; }
   S.screen = screen; render(); saveState();
   if(screen==='rank') loadLeaderboard();
+  /* Гильдию в своём профиле показываем, только если она уже загружена. Тянем
+     её тихо в фоне при первом заходе в профиль: без принудительного обновления
+     (loadGuild без force сам ничего не сделает, если данные уже есть) и без
+     блокировки экрана — если запрос не дойдёт, профиль просто откроется без
+     строки гильдии. */
+  if(screen==='profile') loadGuild();
 }
 
 /* ---- слайд-переход между шагами квиза (вперёд/назад), как в нативных приложениях ---- */
@@ -3630,7 +3857,7 @@ function render(opts){
     map: rMap, raid: rRaid, rest: rRest, victory: rVictory, profile: rProfile, settings: rSettings,
     death: rDeath, titles: rTitlesScreen, rank: rRank, instructions: rInstructions,
     gatePreview: rGatePreview, duelHome: rDuelHome, duel: rDuel, duelResult: rDuelResult,
-    inventory: rInventory, otherProfile: rOtherProfile,
+    inventory: rInventory, otherProfile: rOtherProfile, guild: rGuild,
   })[S.screen]();
   updateTgBackButton();
   updateSwipeLock();
@@ -4001,17 +4228,24 @@ function rMap(){
     }
   });
 }
-/* Нижнее меню: Врата / Дуэль / Рейтинг. Профиль отсюда убран — его место занял
-   режим дуэлей, а вход в профиль есть на каждом экране иконкой в верхнем ряду
-   (см. profileIconHTML()). Три пункта — предел: кнопки делят ширину поровну, и
-   на четвёртом подписи начали бы переноситься.
-   Иконки нет только у дуэли: в ICON_IMAGES её не рисовали, поэтому icon()
-   отдаёт запасной символ ⚔ — тот же, что у вкладки дуэлей в рейтинге. */
+/* Нижнее меню: Врата / Арена / Топ / Клан. Профиль отсюда убран — его место
+   занял режим дуэлей, а вход в профиль есть на каждом экране иконкой в верхнем
+   ряду (см. profileIconHTML()).
+   Раньше здесь стояло «три пункта — предел, на четвёртом подписи начали бы
+   переноситься». Гильдии этот предел сдвинули, и цена известна: подписи
+   укорочены («Топ» вместо «Рейтинг», «Клан» вместо «Гильдия»), шрифт и
+   отступы уменьшены, на узких экранах прячутся иконки — см. .nav в стилях.
+   Внутри самих экранов слово «гильдия» остаётся полным: сокращение нужно
+   только кнопке.
+   Иконки нет у дуэли и клана: в ICON_IMAGES их не рисовали, поэтому icon()
+   отдаёт запасной символ — тот же ⚔, что у вкладки дуэлей в рейтинге, и 🛡 у
+   гильдий. */
 function navBar(on){
   return `<div class="nav-spacer"></div><div class="nav">
-    <button class="${on==='map'?'on':''}" onclick="go('map')">${icon('nav_map',18,'⛩')} Врата</button>
-    <button class="${on==='duel'?'on':''}" onclick="openDuelHome()">${icon('nav_duel',18,'⚔')} Арена</button>
-    <button class="${on==='rank'?'on':''}" onclick="go('rank')">${icon('nav_rank',18,'🏆')} Рейтинг</button>
+    <button class="${on==='map'?'on':''}" onclick="go('map')"><span class="nav-ico">${icon('nav_map',16,'⛩')}</span>Врата</button>
+    <button class="${on==='duel'?'on':''}" onclick="openDuelHome()"><span class="nav-ico">${icon('nav_duel',16,'⚔')}</span>Арена</button>
+    <button class="${on==='rank'?'on':''}" onclick="go('rank')"><span class="nav-ico">${icon('nav_rank',16,'🏆')}</span>Топ</button>
+    <button class="${on==='guild'?'on':''}" onclick="openGuild()"><span class="nav-ico">${icon('nav_guild',16,'🛡')}</span>Клан</button>
   </div>`;
 }
 /* Иконка профиля для шапок экранов, где нет полного ряда переключателей
@@ -4042,11 +4276,18 @@ function duelTitleName(id){ return DUEL_PLACE_TITLE_NAMES[id] || null; }
 /* Титульная строка под ником. Титул за место идёт первым и своим цветом —
    он редкий и временный, а выбранный титул никуда не денется. Оба в одну
    строку, чтобы ряд таблицы не вырастал до трёх этажей. */
+/* Строка под именем: тег гильдии и титулы.
+   Тег стоит именно здесь, а не рядом с ником, сознательно. Ник в строке
+   рейтинга и так живёт с многоточием (.lb-name — nowrap + ellipsis), и пять
+   символов тега отобрали бы у него ширину на каждом экране. А эта строка чаще
+   всего пустая — тег занимает её бесплатно. */
 function lbTitleLineHTML(row){
   const duel = duelTitleName(row.duel_title);
   const own  = titleNameById(row.title_id);
-  if(!duel && !own) return '';
+  const tag  = row.guildTag;
+  if(!duel && !own && !tag) return '';
   const parts = [];
+  if(tag)  parts.push(`<span class="lb-gtag">[${escapeHtml(tag)}]</span>`);
   if(duel) parts.push(`<span class="lb-title-duel">⚔ ${escapeHtml(duel)}</span>`);
   if(own)  parts.push(escapeHtml(own));
   return `<div class="lb-title">${parts.join('<span style="opacity:.4"> · </span>')}</div>`;
@@ -6304,6 +6545,272 @@ function rInventory(){
   </div>`);
 }
 
+/* ---- ЭКРАН ГИЛЬДИИ ---- */
+function guildPlural(n, forms){
+  const a = Math.abs(n) % 100, b = a % 10;
+  if(a > 10 && a < 20) return forms[2];
+  if(b > 1 && b < 5) return forms[1];
+  if(b === 1) return forms[0];
+  return forms[2];
+}
+
+function rGuild(){
+  /* Экран сам чинит своё состояние. Загрузка раньше запускалась только из
+     openGuild(), то есть по нажатию на пункт меню. Но S.screen сохраняется:
+     человек, закрывший приложение на этой вкладке, при следующем запуске
+     попадал сюда напрямую, минуя openGuild, — и видел вечный «пустой» экран
+     с надписью «Гильдий пока нет», который сам никогда не исправлялся.
+     Повторных запросов это не вызывает: loadGuild сразу ставит свой флаг, а
+     после ответа заполняется либо data, либо meta, и условие больше не
+     срабатывает. */
+  if(guildAvailable() && !Guild.loading && !Guild.error && Guild.data===null && !Guild.meta){
+    loadGuild();
+    loadGuildList();
+  }
+  let body;
+  if(!guildAvailable()){
+    body = `<div class="gd-empty">Гильдии доступны только внутри Telegram.</div>`;
+  } else if(Guild.loading && Guild.data===null && !Guild.meta){
+    body = `<div class="gd-empty">Открываю зал гильдий…</div>`;
+  } else if(Guild.error && Guild.data===null && !Guild.meta){
+    body = `<div class="gd-empty">Не удалось загрузить.<br>Проверь связь и попробуй снова.
+      <div style="margin-top:12px"><button class="btn ghost" onclick="loadGuild(true);loadGuildList(true)">Повторить</button></div></div>`;
+  } else if(Guild.data){
+    body = guildMineHTML(Guild.data);
+  } else {
+    body = guildBrowseHTML();
+  }
+  h(`<div class="screen">
+    <div class="topbar" style="justify-content:space-between">
+      <h2 style="margin:0;font-size:20px">Гильдия</h2>
+      ${profileIconHTML()}
+    </div>
+    ${body}
+    ${navBar('guild')}
+  </div>`);
+}
+
+/* Экран того, у кого гильдии ещё нет. Порядок блоков не случайный: сначала
+   короткое объяснение (человек впервые видит слово «гильдия» и не обязан
+   догадываться), потом кнопка создания или объяснение, чего для неё не
+   хватает, и только потом список. Список — главное действие для большинства:
+   создать гильдию смогут единицы, вступить может каждый. */
+function guildBrowseHTML(){
+  const m = Guild.meta || {};
+  let create;
+  if(m.canCreate){
+    create = `<button class="btn" style="margin-top:14px" onclick="openGuildCreate()">Создать гильдию</button>`;
+  } else {
+    const need = [];
+    if(!(m.myRank && m.myRank!=='E')) need.push('ранг D');
+    if(!m.hasSub) need.push('активный контракт');
+    create = `<div class="gd-lock">Создать свою гильдию можно с рангом D и активным контрактом.
+      ${need.length ? `Пока не хватает: ${need.join(' и ')}.` : ''}
+      <br>Вступить в чужую гильдию можно уже сейчас — без ранга и без контракта.</div>`;
+  }
+
+  let list;
+  if(Guild.listLoading && !Guild.list){
+    list = `<div class="gd-empty">Ищу гильдии…</div>`;
+  } else if(Guild.listError && !Guild.list){
+    list = `<div class="gd-empty">Список не загрузился.
+      <div style="margin-top:12px"><button class="btn ghost" onclick="loadGuildList(true)">Повторить</button></div></div>`;
+  } else if(!Guild.list || !Guild.list.length){
+    list = `<div class="gd-empty">Гильдий пока нет.<br>Первая появится, когда кто-то её создаст.</div>`;
+  } else {
+    list = Guild.list.map(g=>{
+      const full = g.members >= g.slots;
+      const can = !full && !g.frozen;
+      const label = g.joinMode==='request' ? 'Подать заявку' : 'Вступить';
+      return `<div class="gd-card ${can?'':'gd-full'}">
+        <div class="gd-card-top">
+          <span class="gd-tag">${escapeHtml(g.tag)}</span>
+          <span class="gd-nm" style="font-weight:700">${escapeHtml(g.name)}</span>
+        </div>
+        <div class="gd-card-meta">
+          <span><b>${g.members}</b>/${g.slots} мест</span>
+          <span>сегодня тренировалось <b>${g.todayActive}</b></span>
+          <span>за неделю <b>${g.weekReps}</b></span>
+        </div>
+        <button class="btn ${can?'':'ghost'}" style="margin-top:10px;padding:9px"
+          ${can && !Guild.busy ? '' : 'disabled'}
+          onclick="guildJoin(${g.id})">${full ? 'Мест нет' : (g.frozen ? 'Не принимает' : label)}</button>
+      </div>`;
+    }).join('');
+  }
+
+  const cd = m.cooldownUntil
+    ? `<div class="gd-frozen">Ты недавно вышел из гильдии. Вступить в новую можно будет чуть позже — так никто не сможет перебегать к победителям перед раздачей наград.</div>`
+    : '';
+
+  return `<div class="gd-hero">
+      <div class="gd-name">Гильдия</div>
+      <div class="gd-sub">Отряд охотников, которые тренируются вместе. Ваши повторы складываются в общий счёт, и раз в неделю гильдия берёт общую цель — за неё каждому падает сундук с трофеями.</div>
+    </div>
+    ${cd}
+    ${create}
+    <div class="gd-sect">Открытые гильдии</div>
+    ${list}`;
+}
+
+/* Экран своей гильдии. Первым идёт состав с отметкой сегодняшней активности —
+   это и есть та самая вещь, ради которой люди состоят в группах: видно, что
+   ты не один, и видно, что тебя видят. */
+function guildMineHTML(g){
+  const goal = g.week.goal || 0;
+  const reps = g.week.reps || 0;
+  const pct = goal > 0 ? Math.min(100, Math.round(reps / goal * 100)) : 0;
+  const left = Math.max(0, goal - reps);
+  const trainedToday = g.roster.filter(r=>r.todayReps>0).length;
+
+  const frozen = g.frozen ? `<div class="gd-frozen">${g.isOwner
+    ? 'Контракт закончился. Гильдия работает как обычно, но принимать новых охотников и расширять места пока нельзя — продли контракт, и рост вернётся.'
+    : 'Гильдия временно не принимает новых охотников.'}</div>` : '';
+
+  const requests = (g.isOwner && g.requests.length) ? `
+    <div class="gd-sect">Заявки · ${g.requests.length}</div>
+    ${g.requests.map(r=>`<div class="gd-row">
+      <span class="gd-nm">${escapeHtml(r.name)} <span style="color:var(--muted);font-size:11px">${r.rank}</span></span>
+      <button class="btn" style="padding:6px 12px;font-size:12px;flex:none" ${Guild.busy?'disabled':''}
+        onclick="guildRequest('${r.chat_id}',true)">Принять</button>
+      <button class="gd-kick" ${Guild.busy?'disabled':''} onclick="guildRequest('${r.chat_id}',false)">✕</button>
+    </div>`).join('')}` : '';
+
+  const roster = g.roster.map(r=>{
+    const isOwner = String(r.chat_id) === String(g.ownerId);
+    const away = (!r.todayReps && r.daysAway != null && r.daysAway > 0)
+      ? `<span class="gd-away">${r.daysAway} ${guildPlural(r.daysAway,['день','дня','дней'])} без боёв</span>` : '';
+    const kick = (g.isOwner && !isOwner)
+      ? `<button class="gd-kick" ${Guild.busy?'disabled':''} onclick="guildKick('${r.chat_id}','${escapeHtml(r.name).replace(/'/g,"\\'")}')">✕</button>` : '';
+    return `<div class="gd-row">
+      <span class="gd-dot ${r.todayReps>0?'on':''}"></span>
+      <span class="gd-nm">${escapeHtml(r.name)}${isOwner?'<span class="crown">★</span>':''}</span>
+      ${away}
+      <span class="gd-reps">${r.weekReps}</span>
+      ${kick}
+    </div>`;
+  }).join('');
+
+  const owner = g.isOwner ? `
+    <div class="gd-sect">Управление</div>
+    <div class="gd-card">
+      <div style="font-size:13px;color:var(--text)">Вступление</div>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button class="btn ${g.joinMode==='open'?'':'ghost'}" style="padding:9px;font-size:13px" ${Guild.busy?'disabled':''}
+          onclick="guildSetMode('open')">Свободный вход</button>
+        <button class="btn ${g.joinMode==='request'?'':'ghost'}" style="padding:9px;font-size:13px" ${Guild.busy?'disabled':''}
+          onclick="guildSetMode('request')">По заявке</button>
+      </div>
+      <div style="font-size:11px;color:var(--muted);margin-top:8px;line-height:1.45">
+        ${g.joinMode==='open'
+          ? 'Любой может войти, пока есть места.'
+          : 'Каждого нужно подтвердить. Если переключишь на свободный вход — те, кто уже подал заявку, войдут сами.'}
+      </div>
+    </div>
+    <button class="btn ghost" style="margin-top:10px" ${Guild.busy?'disabled':''} onclick="openGuildRename()">Переименовать</button>
+    <button class="btn ghost" style="margin-top:8px;color:var(--danger);border-color:rgba(255,59,92,.35)" ${Guild.busy?'disabled':''}
+      onclick="confirmGuildDisband()">Распустить гильдию</button>`
+    : `<button class="btn ghost" style="margin-top:18px" ${Guild.busy?'disabled':''} onclick="confirmGuildLeave()">Покинуть гильдию</button>`;
+
+  /* Итог прошлой недели строкой на экране, а не только всплывающим окном:
+     окно человек закроет и забудет, а сюда вернётся. */
+  const last = g.last ? `<div class="gd-last ${g.last.done?'win':''}">
+      ${g.last.done
+        ? `Прошлая неделя взята — ${g.last.reps} из ${g.last.goal}.${g.last.gotChest?' Сундук ушёл тебе в инвентарь.':''}`
+        : `Прошлую неделю не добрали — ${g.last.reps} из ${g.last.goal}. Эта ещё в игре.`}
+    </div>` : '';
+
+  return `<div class="gd-hero">
+      <div class="gd-name"><span class="gd-tag">${escapeHtml(g.tag)}</span>${escapeHtml(g.name)}</div>
+      <div class="gd-sub">${g.members} из ${g.slots} · сегодня тренировалось ${trainedToday}</div>
+      <div class="gd-goal">
+        <div class="gd-goal-top">
+          <span>Общая цель недели</span>
+          <span>${reps} / ${goal}</span>
+        </div>
+        <div class="gd-bar ${pct>=100?'done':''}"><i style="width:${pct}%"></i></div>
+        <div style="font-size:11px;color:${pct>=100?'var(--ok)':'var(--muted)'};margin-top:6px">
+          ${pct>=100
+            ? 'Цель взята. Сундук придёт в понедельник.'
+            : `Осталось ${left} ${guildPlural(left,['повтор','повтора','повторов'])} на всех`}
+        </div>
+      </div>
+    </div>
+    ${last}
+    ${frozen}
+    ${requests}
+    <div class="gd-sect">Кто тренировался сегодня</div>
+    ${roster}
+    <div style="font-size:11px;color:var(--muted);margin-top:10px;line-height:1.45">
+      Справа — вклад за неделю. Сундук получит каждый, кто сам сделал хотя бы ${g.chestMinReps} повторов.
+    </div>
+    ${owner}`;
+}
+
+/* ---- действия ---- */
+function guildJoin(id){
+  guildAction('/join', { guildId:id }, d=>{
+    if(d.requested) showModal(guildNoteHTML('Заявка отправлена. Основатель гильдии её увидит.'));
+  });
+}
+function guildKick(chatId, name){
+  sysConfirm(`Исключить ${name} из гильдии?`, ()=> guildAction('/kick', { chatId }));
+}
+function guildRequest(chatId, accept){
+  guildAction('/request', { chatId, accept });
+}
+function guildSetMode(mode){
+  guildAction('/settings', { joinMode: mode });
+}
+function confirmGuildLeave(){
+  sysConfirm('Покинуть гильдию? Вступить в новую можно будет через три дня.', ()=> guildAction('/leave'));
+}
+function confirmGuildDisband(){
+  sysConfirm('Распустить гильдию? Она исчезнет вместе со всем составом, вернуть её будет нельзя.',
+    ()=> guildAction('/disband'));
+}
+
+/* Создание и переименование — модальное окно, а не отдельный экран: полей
+   всего два, а лишний экран в истории навигации ломает кнопку «назад». */
+function openGuildCreate(){
+  Guild.form = { name:'', tag:'', error:'' };
+  showGuildForm('create');
+}
+function openGuildRename(){
+  Guild.form = { name: (Guild.data && Guild.data.name) || '', tag:'', error:'' };
+  showGuildForm('rename');
+}
+function showGuildForm(mode){
+  const isCreate = mode === 'create';
+  showModal(`<div class="gd-modal">
+    <div style="font-family:'Russo One',sans-serif;font-size:18px;color:var(--text)">${isCreate?'Новая гильдия':'Переименовать'}</div>
+    <div class="gd-lbl">Название</div>
+    <input class="gd-inp" id="gdName" maxlength="24" value="${escapeHtml(Guild.form.name)}" placeholder="Охотники Багровой Луны">
+    <div style="font-size:11px;color:var(--muted);margin-top:5px">От 3 до 24 символов. Название не должно повторять чужое.</div>
+    ${isCreate ? `<div class="gd-lbl">Тег</div>
+      <input class="gd-inp" id="gdTag" maxlength="5" value="${escapeHtml(Guild.form.tag)}" placeholder="ТЕНЬ" style="text-transform:uppercase">
+      <div style="font-size:11px;color:var(--muted);margin-top:5px">2–5 символов. Будет стоять рядом с именами вас всех в рейтинге и на Арене.</div>` : ''}
+    <div class="gd-err" id="gdErr"></div>
+    <button class="btn" onclick="submitGuildForm('${mode}')">${isCreate?'Создать':'Сохранить'}</button>
+    <button class="btn ghost" style="margin-top:8px" onclick="closeModal()">Отмена</button>
+  </div>`);
+}
+function submitGuildForm(mode){
+  const nameEl = document.getElementById('gdName');
+  const tagEl  = document.getElementById('gdTag');
+  const errEl  = document.getElementById('gdErr');
+  const name = (nameEl && nameEl.value || '').trim();
+  const tag  = (tagEl && tagEl.value || '').trim().toUpperCase();
+  // Быстрая проверка на месте — чтобы не гонять заведомо неверное на сервер и
+  // не заставлять человека ждать ответа ради «слишком короткое название».
+  // Настоящая проверка всё равно на сервере, эта только экономит время.
+  if(name.length < 3){ if(errEl) errEl.textContent = 'Название — минимум 3 символа'; return; }
+  if(mode==='create' && tag.length < 2){ if(errEl) errEl.textContent = 'Тег — минимум 2 символа'; return; }
+  closeModal();
+  guildAction(mode==='create' ? '/create' : '/settings',
+    mode==='create' ? { name, tag } : { name });
+}
+
 /* Карточка предмета. Не отдельный экран, а модальное окно поверх инвентаря —
    так не теряется место в сетке и не плодятся экраны в истории навигации. */
 function openItem(id){
@@ -6479,6 +6986,10 @@ function rOtherProfile(){
           Ранг ${escapeHtml(d.rank||'E')}${d.level>1 ? ' · Уровень '+d.level : ''}${d.streak>1 ? ' · 🔥 '+d.streak : ''}
         </div>
         ${title ? `<div style="display:inline-block;margin-top:8px;background:rgba(245,194,66,.12);border:1px solid rgba(245,194,66,.4);border-radius:12px;padding:3px 12px;font-size:12px;color:var(--gold)">${escapeHtml(title.name)}</div>` : ''}
+        ${d.guild ? `<div style="margin-top:8px">
+          <span class="gd-tag" style="cursor:pointer" onclick="openGuild()">${escapeHtml(d.guild.tag)}</span>
+          <span style="font-size:12px;color:var(--muted);margin-left:6px">${escapeHtml(d.guild.name)}</span>
+        </div>` : ''}
       </div>
 
       <div class="sub" style="margin-top:20px;font-size:12px;letter-spacing:1px;text-transform:uppercase">Экипировка</div>
@@ -7442,6 +7953,10 @@ function rProfile(){
       <div>
         <div style="font-family:'Russo One';font-size:22px">${escapeHtml(a.name)||'Безымянный'}</div>
         ${selectedTitleObj() ? `<div style="color:var(--gold);font-size:13px;font-weight:700;margin-top:2px">${escapeHtml(selectedTitleObj().name)}</div>` : ''}
+        ${Guild.data ? `<div style="margin-top:3px;cursor:pointer" onclick="openGuild()">
+          <span class="gd-tag">${escapeHtml(Guild.data.tag)}</span>
+          <span style="font-size:12px;color:var(--muted);margin-left:5px">${escapeHtml(Guild.data.name)}</span>
+        </div>` : ''}
         <div class="sub" style="font-size:13px">Ранг ${S.rank} · Уровень ${S.level} · ${a.age} лет</div>
       </div>
     </div>
