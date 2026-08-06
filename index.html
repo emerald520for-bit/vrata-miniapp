@@ -1256,7 +1256,9 @@ const S = {
   // КАЖДОМ переключении направления (Сила/Выносливость/Стойкость), см.
   // setTrack()/showTrackIntro(). Можно выключить в Настройках, если подсказка
   // больше не нужна (в отличие от разовых экранов, эта всплывает каждый раз).
-  settings: { notifications:true, sound:true, vibration:true, stormMode:false, trackTips:true },
+  // camIntroSeen — видел ли человек объяснение перед первым запросом камеры
+  // (см. showCameraIntro). Один раз за всё время, дальше только мешало бы.
+  settings: { notifications:true, sound:true, vibration:true, stormMode:false, trackTips:true, camIntroSeen:false },
   prevScreen: 'map',
   _navDir: 0,
   onboarded: false,
@@ -4189,6 +4191,19 @@ const POSE_LIBS = {
   wasm: 'https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-wasm@4.20.0/dist/tf-backend-wasm.min.js',
   wasmBinaries: 'https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-wasm@4.20.0/dist/',
 };
+/* Запасной источник — наш собственный воркер (см. маршрут /lib/ в
+   vrata-bot-worker.js). Он не заменяет CDN, а подхватывает, когда тот не
+   ответил: адреса версий там зашиты те же самые, воркер просто проксирует их
+   и кэширует на границе сети.
+   Ключевое свойство — этот домен для игрока заведомо достижим, иначе у него
+   не работали бы ни подписка, ни рейтинг. */
+const LIB_MIRROR_BASE = 'https://vrata-bot.emerald520for.workers.dev/lib/';
+const POSE_LIBS_MIRROR = {
+  tf: LIB_MIRROR_BASE + 'tf.js',
+  pd: LIB_MIRROR_BASE + 'pose-detection.js',
+  wasm: LIB_MIRROR_BASE + 'tf-backend-wasm.js',
+  wasmBinaries: LIB_MIRROR_BASE,
+};
 /* Ниже какой уверенности считаем, что видеочип считает неверно.
    Здоровое устройство на отчётливо видимом человеке даёт максимум 0.85–0.95.
    На realme 10 (Mali-G57) потолок оказался 0.30–0.36 при любом ракурсе — и
@@ -4371,9 +4386,20 @@ async function maybeSwitchToWasm(){
   console.warn('поза: видеочип даёт заниженную уверенность (макс', Cam.bestEver, ') — перехожу на WASM');
   try{
     setCamStatus('Перенастраиваю распознавание…');
-    await loadScriptOnce(POSE_LIBS.wasm);
+    /* Запасной вычислитель тоже с двумя источниками: устройства, попадающие
+       сюда, — это как раз слабые телефоны, у которых и со связью чаще плохо.
+       Двоичные файлы бэкенда качает уже сам tfjs по пути из setWasmPaths,
+       поэтому путь надо согласовать с тем, откуда реально приехал скрипт. */
+    let wasmBase = POSE_LIBS.wasmBinaries;
+    try{
+      await loadScriptOnce(POSE_LIBS.wasm);
+    }catch(e){
+      trackEvent('lib_fallback', 'wasm');
+      await loadScriptOnce(POSE_LIBS_MIRROR.wasm);
+      wasmBase = POSE_LIBS_MIRROR.wasmBinaries;
+    }
     // Без явного пути бэкенд ищет .wasm рядом со страницей, где его нет.
-    if(window.tf && tf.wasm && tf.wasm.setWasmPaths) tf.wasm.setWasmPaths(POSE_LIBS.wasmBinaries);
+    if(window.tf && tf.wasm && tf.wasm.setWasmPaths) tf.wasm.setWasmPaths(wasmBase);
     const ok = await tf.setBackend('wasm');
     if(!ok) throw new Error('бэкенд wasm не зарегистрировался');
     await tf.ready();
@@ -4421,13 +4447,30 @@ function loadScriptOnce(src){
     document.head.appendChild(s);
   });
 }
+/* Загрузка с запасным источником.
+   Зачем: по данным /cam за 05.08 четверть всех сбоев камеры (113 из 455)
+   приходится ровно на этот шаг — камеру человеку дали, а библиотеки с
+   jsdelivr не доехали. Причины разные и от нас не зависят: блокировки у
+   оператора, обрыв мобильной связи посреди полутора мегабайт, корпоративные
+   фильтры. В пересчёте на неделю это около 237 человек, которые вошли во
+   врата и не смогли начать.
+   Сначала пробуем CDN — он быстрый и раздаётся с ближайшей точки. Если не
+   вышло, идём на наш собственный воркер: он до этого места заведомо доступен,
+   потому что через него уже прошли проверка подписки и таблица лидеров.
+   В обычном случае второй запрос не делается вовсе, лишней нагрузки нет. */
+async function loadScriptWithFallback(primary, fallback, tag){
+  try{
+    await loadScriptOnce(primary);
+  }catch(e){
+    trackEvent('lib_fallback', tag || 'lib');
+    await loadScriptOnce(fallback);
+  }
+}
 async function ensurePoseLibsLoaded(){
-  if(!(window.tf)) await loadScriptOnce(POSE_LIBS.tf);
-  if(!(window.poseDetection)) await loadScriptOnce(POSE_LIBS.pd);
-  // Обе библиотеки тянутся с внешнего CDN. Если он недоступен (блокировки у
-  // конкретного оператора, обрыв связи), сюда мы просто не дойдём — но факт
-  // успешной загрузки надо зафиксировать, чтобы отличить «CDN не ответил» от
-  // «библиотеки есть, но модель ничего не находит».
+  if(!(window.tf)) await loadScriptWithFallback(POSE_LIBS.tf, POSE_LIBS_MIRROR.tf, 'tf');
+  if(!(window.poseDetection)) await loadScriptWithFallback(POSE_LIBS.pd, POSE_LIBS_MIRROR.pd, 'pd');
+  // Факт успешной загрузки фиксируем, чтобы отличить «источники не ответили»
+  // от «библиотеки есть, но модель ничего не находит».
   Cam.libsOk = !!(window.tf && window.poseDetection);
 }
 function setCamStatus(msg){
@@ -4441,10 +4484,25 @@ function showCamError(msg){
   // На отдыхе ручной кнопки быть не должно — она бы сразу списывала HP
   // следующему мобу ещё до начала боя с ним. Там просто прячем камеру.
   if(S.screen==='rest'){ wrap.remove(); return; }
-  wrap.innerHTML = `<div class="cam-fallback">⚠️ ${escapeHtml(msg)}<div class="sub" style="margin-top:6px;font-size:12px">Используй кнопку «+» внизу — так повторение засчитывается вручную.</div></div>`;
-  // Кнопка "+" теперь всегда на экране боя (не только при сбое камеры, см.
-  // .raid-side-btn.manual в rRaid()), так что здесь её видимость больше не
-  // нужно чинить отдельным патчем DOM — только сам фолбэк камеры.
+  /* Кнопка «Попробовать снова» — не украшение. Раньше сбой камеры был
+     тупиком: человек уходил в настройки телефона, включал разрешение,
+     возвращался, а приложение всё ещё показывало ошибку, потому что
+     повторить попытку было нечем. Единственным выходом оставался перезапуск,
+     до которого доходили немногие.
+     Особенно важно при NotAllowedError — это три четверти всех сбоев, и
+     чинится он ровно так: разрешить в настройках и попробовать ещё раз. */
+  wrap.innerHTML = `<div class="cam-fallback">⚠️ ${escapeHtml(msg)}
+    <div class="sub" style="margin-top:8px;font-size:12px">Или считай повторы кнопкой «+» внизу — вручную.</div>
+    <button class="btn ghost" style="margin-top:12px;padding:8px 18px" onclick="retryCamera()">Попробовать снова</button>
+  </div>`;
+}
+/* Повторная попытка после сбоя. Полностью сбрасываем состояние камеры —
+   иначе startCamera() увидит недоделанный прошлый запуск и выйдет сразу. */
+function retryCamera(){
+  trackEvent('cam_retry', Cam.error ? 'after_fail' : 'manual');
+  stopCamera();
+  Cam.error = null;
+  render();
 }
 function attachCamRefs(){
   const v = document.getElementById('raidVideo');
@@ -4490,6 +4548,57 @@ function playCamVideo(v){
       }
     });
   }
+}
+/* Объяснение ПЕРЕД запросом доступа к камере.
+   Почему это самая важная правка по камере. По данным /cam за 05.08 из 455
+   чистых сбоев 334 — это NotAllowedError, то есть человек сам нажал
+   «Запретить». Это три четверти всех потерь, и после отказа сделать уже
+   ничего нельзя: браузер второй раз не спрашивает, нужно лезть в настройки
+   телефона. Единственное место, где на это можно повлиять, — момент ДО
+   системного окна.
+   Системное окно спрашивает сухо и без контекста: «Разрешить доступ к
+   камере?». Человек, только что установивший приложение для отжиманий,
+   вполне резонно пугается. Наш экран отвечает на два вопроса, которые у него
+   в голове: зачем и куда уйдёт видео.
+   Показывается ровно один раз за всё время — дальше только мешал бы. */
+function showCameraIntro(onDone){
+  showModal(`<div class="syswin" style="background:var(--panel-solid)">
+    <div class="sys-tag"><span class="bang">!</span> ДОСТУП К КАМЕРЕ</div>
+    <div style="font-size:14px;line-height:1.55">
+      Система считает повторы по камере — иначе засчитывать нечего.
+      <div style="margin-top:12px;display:flex;gap:9px;align-items:flex-start">
+        <span style="color:var(--ok);font-size:15px">✓</span>
+        <span>Видео обрабатывается прямо на твоём телефоне.</span>
+      </div>
+      <div style="margin-top:8px;display:flex;gap:9px;align-items:flex-start">
+        <span style="color:var(--ok);font-size:15px">✓</span>
+        <span>Никуда не отправляется и нигде не сохраняется.</span>
+      </div>
+      <div style="margin-top:8px;display:flex;gap:9px;align-items:flex-start">
+        <span style="color:var(--ok);font-size:15px">✓</span>
+        <span>Записи не ведётся — только счёт повторов.</span>
+      </div>
+      <div class="sub" style="margin-top:14px;font-size:12.5px;line-height:1.45">
+        Сейчас телефон спросит разрешение. Без него придётся считать повторы
+        вручную кнопкой — это работает, но медленнее и без контроля техники.
+      </div>
+    </div>
+    <button class="btn" style="width:100%;margin-top:16px" id="camIntroOk">Разрешить доступ</button>
+  </div>`);
+  const btn = document.getElementById('camIntroOk');
+  if(btn) btn.onclick = ()=>{
+    closeModal();
+    S.settings.camIntroSeen = true;
+    saveState();
+    trackEvent('cam_intro', 'ok');
+    if(onDone) onDone();
+  };
+}
+/* Показать объяснение и только потом запускать камеру. Если объяснение уже
+   видели — запускаем сразу, без задержки. */
+function startCameraWithIntro(){
+  if(S.settings.camIntroSeen){ startCamera(); return; }
+  showCameraIntro(()=>startCamera());
 }
 async function startCamera(){
   if(Cam.running || Cam.stream || Cam.initializing) { attachCamRefs(); return; }
@@ -4574,8 +4683,15 @@ async function startCamera(){
     let startedOnWasm = false;
     if(S.needWasm){
       try{
-        await loadScriptOnce(POSE_LIBS.wasm);
-        if(window.tf && tf.wasm && tf.wasm.setWasmPaths) tf.wasm.setWasmPaths(POSE_LIBS.wasmBinaries);
+        let wb = POSE_LIBS.wasmBinaries;
+        try{
+          await loadScriptOnce(POSE_LIBS.wasm);
+        }catch(e){
+          trackEvent('lib_fallback', 'wasm');
+          await loadScriptOnce(POSE_LIBS_MIRROR.wasm);
+          wb = POSE_LIBS_MIRROR.wasmBinaries;
+        }
+        if(window.tf && tf.wasm && tf.wasm.setWasmPaths) tf.wasm.setWasmPaths(wb);
         startedOnWasm = await tf.setBackend('wasm');
       }catch(e){
         console.warn('поза: не удалось стартовать на WASM, пробую видеочип', e);
@@ -6039,7 +6155,10 @@ function rRaid(){
     return `<span class="raid-qdot ${state}${mm.isBoss?' boss':''}"></span>`;
   }).join('');
   const camInner = Cam.error
-    ? `<div class="cam-fallback">⚠️ ${escapeHtml(Cam.error)}<div class="sub" style="margin-top:6px;font-size:12px">Используй кнопку «+» внизу — так повторение засчитывается вручную.</div></div>`
+    ? `<div class="cam-fallback">⚠️ ${escapeHtml(Cam.error)}
+        <div class="sub" style="margin-top:8px;font-size:12px">Или считай повторы кнопкой «+» внизу — вручную.</div>
+        <button class="btn ghost" style="margin-top:12px;padding:8px 18px" onclick="retryCamera()">Попробовать снова</button>
+      </div>`
     : `<video id="raidVideo" autoplay playsinline muted></video><canvas id="raidCanvas"></canvas><div class="cam-status" id="camStatus">Включаю сканер Системы…</div>`;
   h(`<div class="screen raid-fullbleed">
     <div class="cam-wrap" id="camWrap">${camInner}
@@ -6077,7 +6196,7 @@ function rRaid(){
     </div>
   </div>`);
   attachCamRefs();
-  if(!Cam.running && !Cam.error) startCamera();
+  if(!Cam.running && !Cam.error) startCameraWithIntro();
 }
 /* ============ ЭКРАН ИНВЕНТАРЯ ============ */
 const INV_TABS = [
@@ -6561,7 +6680,7 @@ function rRest(){
   // заново привязываем новый <video>/<canvas> (root перерисован целиком).
   // Детектор позы всё равно бездействует вне экрана raid (camLoop), так что
   // повторы во время отдыха не считаются — только живой предпросмотр.
-  if(!Cam.error){ attachCamRefs(); if(!Cam.running) startCamera(); }
+  if(!Cam.error){ attachCamRefs(); if(!Cam.running) startCameraWithIntro(); }
 }
 function tickRest(){
   clearInterval(S._t);
@@ -7043,7 +7162,10 @@ function rDuel(){
   const d = S.duel;
   if(!d){ go('map'); return; }
   const camInner = Cam.error
-    ? `<div class="cam-fallback">⚠️ ${escapeHtml(Cam.error)}<div class="sub" style="margin-top:6px;font-size:12px">Дуэль засчитывает только повторы, распознанные камерой.</div></div>`
+    ? `<div class="cam-fallback">⚠️ ${escapeHtml(Cam.error)}
+        <div class="sub" style="margin-top:8px;font-size:12px">Дуэль засчитывает только повторы, распознанные камерой — без неё бой не пойдёт.</div>
+        <button class="btn ghost" style="margin-top:12px;padding:8px 18px" onclick="retryCamera()">Попробовать снова</button>
+      </div>`
     : `<video id="raidVideo" autoplay playsinline muted></video><canvas id="raidCanvas"></canvas><div class="cam-status" id="camStatus">Включаю сканер Системы…</div>`;
   // Над счётчиком — имя того, с кем дерёшься. Чужой соперник должен быть
   // назван: безличный «призрак» не создаёт ощущения, ради которого всё это.
@@ -7082,7 +7204,7 @@ function rDuel(){
     </div>
   </div>`);
   attachCamRefs();
-  if(!Cam.running && !Cam.error) startCamera();
+  if(!Cam.running && !Cam.error) startCameraWithIntro();
 }
 /* Оверлей калибровки и отсчёта. Проще, чем во вратах: там подсказки под три
    упражнения и разные ракурсы, здесь всегда отжимания. */
