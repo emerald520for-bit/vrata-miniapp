@@ -1040,9 +1040,13 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
 .gd-row:last-child{border-bottom:none}
 .gd-dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.16);flex:none}
 .gd-dot.on{background:var(--ok);box-shadow:0 0 8px rgba(52,211,153,.6)}
-.gd-nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* Обёртка нужна, чтобы имя и титул стояли столбиком внутри строки-флекса:
+   сам .gd-nm обрезается многоточием и не может содержать второй этаж. */
+.gd-nm-wrap{flex:1;min-width:0}
+.gd-nm{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .gd-nm .crown{color:var(--gold);font-size:11px;margin-left:4px}
-.gd-away{font-size:11px;color:var(--muted)}
+.gd-title{font-size:11px;color:var(--muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gd-away{font-size:11px;color:var(--muted);flex:none}
 .gd-reps{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text);flex:none}
 .gd-kick{border:none;background:transparent;color:var(--danger);font-size:16px;cursor:pointer;padding:0 2px;flex:none}
 .gd-card{border:1px solid var(--line);border-radius:12px;padding:12px;margin-top:8px;background:rgba(10,13,31,.5)}
@@ -6589,6 +6593,44 @@ function rInventory(){
 }
 
 /* ---- ЭКРАН ГИЛЬДИИ ---- */
+/* Одна строка состава — общая для своей гильдии и для просмотра чужой.
+   Раньше разметка была продублирована в двух местах, и любая правка (титул,
+   тап по строке) требовала помнить про оба — а забыть второе очень легко.
+
+   Титул стоит под именем, а не рядом: имя и так живёт с многоточием, а титулы
+   бывают длинные («Тот, кто не пропустил ни дня»). Ровно та же раскладка, что
+   в таблице лидеров, — человек уже знает, где искать.
+
+   Тап по строке открывает профиль. Кнопка «исключить» внутри строки гасит
+   всплытие, иначе основатель, целясь в крестик, попадал бы в профиль. */
+function guildRowHTML(r, opts){
+  const o = opts || {};
+  const away = (!r.todayReps && r.daysAway != null && r.daysAway > 0)
+    ? `<span class="gd-away">${r.daysAway} ${guildPlural(r.daysAway,['день','дня','дней'])} без боёв</span>` : '';
+
+  const duel = duelTitleName(r.duel_title);
+  const own  = titleNameById(r.title_id);
+  const bits = [];
+  if(duel) bits.push(`<span class="lb-title-duel">⚔ ${escapeHtml(duel)}</span>`);
+  if(own)  bits.push(escapeHtml(own));
+  const titleLine = bits.length
+    ? `<div class="gd-title">${bits.join('<span style="opacity:.4"> · </span>')}</div>` : '';
+
+  const id = String(r.chat_id || '');
+  const tap = id ? ` onclick="openOtherProfile('${id}')" style="cursor:pointer"` : '';
+
+  return `<div class="gd-row"${tap}>
+    <span class="gd-dot ${r.todayReps>0?'on':''}"></span>
+    <span class="gd-nm-wrap">
+      <span class="gd-nm">${escapeHtml(r.name)}${o.crown?'<span class="crown">★</span>':''}</span>
+      ${titleLine}
+    </span>
+    ${away}
+    <span class="gd-reps">${r.weekReps}</span>
+    ${o.kick || ''}
+  </div>`;
+}
+
 function guildPlural(n, forms){
   const a = Math.abs(n) % 100, b = a % 10;
   if(a > 10 && a < 20) return forms[2];
@@ -6662,16 +6704,7 @@ function rGuildPreview(){
     const trainedToday = g.roster.filter(r=>r.todayReps>0).length;
     const full = g.members >= g.slots;
 
-    const roster = g.roster.map(r=>{
-      const away = (!r.todayReps && r.daysAway != null && r.daysAway > 0)
-        ? `<span class="gd-away">${r.daysAway} ${guildPlural(r.daysAway,['день','дня','дней'])} без боёв</span>` : '';
-      return `<div class="gd-row">
-        <span class="gd-dot ${r.todayReps>0?'on':''}"></span>
-        <span class="gd-nm">${escapeHtml(r.name)}</span>
-        ${away}
-        <span class="gd-reps">${r.weekReps}</span>
-      </div>`;
-    }).join('');
+    const roster = g.roster.map(r=>guildRowHTML(r)).join('');
 
     let action;
     if(p.isMine){
@@ -6805,17 +6838,12 @@ function guildMineHTML(g){
 
   const roster = g.roster.map(r=>{
     const isOwner = String(r.chat_id) === String(g.ownerId);
-    const away = (!r.todayReps && r.daysAway != null && r.daysAway > 0)
-      ? `<span class="gd-away">${r.daysAway} ${guildPlural(r.daysAway,['день','дня','дней'])} без боёв</span>` : '';
+    /* stopPropagation обязателен: строка целиком открывает профиль, и без него
+       тап по крестику сначала спрашивал бы «исключить?», а следом уводил на
+       чужой профиль. */
     const kick = (g.isOwner && !isOwner)
-      ? `<button class="gd-kick" ${Guild.busy?'disabled':''} onclick="guildKick('${r.chat_id}','${escapeHtml(r.name).replace(/'/g,"\\'")}')">✕</button>` : '';
-    return `<div class="gd-row">
-      <span class="gd-dot ${r.todayReps>0?'on':''}"></span>
-      <span class="gd-nm">${escapeHtml(r.name)}${isOwner?'<span class="crown">★</span>':''}</span>
-      ${away}
-      <span class="gd-reps">${r.weekReps}</span>
-      ${kick}
-    </div>`;
+      ? `<button class="gd-kick" ${Guild.busy?'disabled':''} onclick="event.stopPropagation();guildKick('${r.chat_id}','${escapeHtml(r.name).replace(/'/g,"\\'")}')">✕</button>` : '';
+    return guildRowHTML(r, { crown: isOwner, kick });
   }).join('');
 
   const owner = g.isOwner ? `
