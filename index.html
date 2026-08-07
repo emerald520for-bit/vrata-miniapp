@@ -1652,6 +1652,10 @@ const Guild = {
   listError: false,
   busy: false,       // идёт действие — блокируем повторные нажатия
   form: { name:'', tag:'', error:'' },
+  previewId: null,     // id гильдии, которую сейчас смотрим (без вступления)
+  preview: null,       // данные просмотра — { guild, isMine, canJoin, cooldownUntil }
+  previewLoading: false,
+  previewError: false,
 };
 
 function guildHeaders(json){
@@ -1693,6 +1697,31 @@ function loadGuildList(force){
     })
     .catch(()=>{ Guild.listLoading=false; Guild.listError=true;
       if(S.screen==='guild') render({ keepScroll:true }); });
+}
+
+/* Просмотр чужой гильдии без вступления — отдельный от loadGuild запрос,
+   read-only на сервере (не трогает guild_week_member и owner_seen), так что
+   заходить сюда можно сколько угодно раз без побочных эффектов. */
+function loadGuildPreview(id, force){
+  if(!guildAvailable()) return Promise.resolve();
+  if(Guild.previewLoading) return Promise.resolve();
+  if(Guild.preview && Guild.previewId===id && !force) return Promise.resolve();
+  Guild.previewId = id; Guild.preview = null;
+  Guild.previewLoading = true; Guild.previewError = false;
+  return fetch(GUILD_API_URL + '/view?id=' + encodeURIComponent(id), { headers: guildHeaders(false) })
+    .then(r=>{ if(!r.ok) throw new Error('bad'); return r.json(); })
+    .then(d=>{
+      // Пока шёл запрос, могли уйти с экрана или открыть другую гильдию.
+      if(S.screen!=='guildPreview' || Guild.previewId!==id) return;
+      Guild.preview = d;
+      Guild.previewLoading = false;
+      render({ keepScroll:true });
+    })
+    .catch(()=>{
+      if(S.screen!=='guildPreview' || Guild.previewId!==id) return;
+      Guild.previewLoading = false; Guild.previewError = true;
+      render({ keepScroll:true });
+    });
 }
 
 /* Общая обёртка для всех изменяющих действий. Сервер в ответ отдаёт уже
@@ -1745,6 +1774,17 @@ function openGuild(){
   S.screen = 'guild'; render(); saveState();
   loadGuild(true);
   loadGuildList(true);
+}
+
+/* Просмотр карточки гильдии из списка — отдельный экран, не модалка: состав
+   может быть длинным (до шестнадцати строк), и хочется нормального скролла
+   с шапкой, как у "чужого профиля" (rOtherProfile), а не тесного окна. */
+function openGuildPreview(id){
+  if(!id) return;
+  Guild.previewId = id; Guild.preview = null; Guild.previewError = false;
+  S.prevScreen = S.screen;
+  go('guildPreview');
+  loadGuildPreview(id);
 }
 
 /* Итог недели показываем один раз. Отметку о показе держим локально, в S:
@@ -2045,6 +2085,9 @@ function tgBack(){
     case 'otherProfile':
       if(_modalEl){ closeModal(); return; }
       go(S.prevScreen||'rank'); return;
+    case 'guildPreview':
+      if(_modalEl){ closeModal(); return; }
+      go(S.prevScreen||'guild'); return;
     case 'instructions': go(S.prevScreen||'settings'); return;
     case 'gatePreview': go('map'); return;
     case 'duel': abortDuel(); return;
@@ -2054,7 +2097,7 @@ function tgBack(){
 }
 function updateTgBackButton(){
   if(!TG || !TG.BackButton) return;
-  const show = ['quiz','journey','raid','settings','titles','instructions','gatePreview','duel','duelHome','inventory','otherProfile'].includes(S.screen);
+  const show = ['quiz','journey','raid','settings','titles','instructions','gatePreview','duel','duelHome','inventory','otherProfile','guildPreview'].includes(S.screen);
   try{ show ? TG.BackButton.show() : TG.BackButton.hide(); }catch(e){}
 }
 /* Блокировка свайпа-вниз нужна ТОЛЬКО во время подхода — иначе на экранах с
@@ -3857,7 +3900,7 @@ function render(opts){
     map: rMap, raid: rRaid, rest: rRest, victory: rVictory, profile: rProfile, settings: rSettings,
     death: rDeath, titles: rTitlesScreen, rank: rRank, instructions: rInstructions,
     gatePreview: rGatePreview, duelHome: rDuelHome, duel: rDuel, duelResult: rDuelResult,
-    inventory: rInventory, otherProfile: rOtherProfile, guild: rGuild,
+    inventory: rInventory, otherProfile: rOtherProfile, guild: rGuild, guildPreview: rGuildPreview,
   })[S.screen]();
   updateTgBackButton();
   updateSwipeLock();
@@ -6590,6 +6633,90 @@ function rGuild(){
   </div>`);
 }
 
+/* Просмотр чужой гильдии — отдельный экран (не модалка), открывается кликом
+   по названию из списка. Не даёт ничего менять (нет ни кика, ни настроек) —
+   это read-only витрина плюс кнопка вступления, ровно то, что решает "надо
+   мне сюда или нет" до самого вступления. */
+function rGuildPreview(){
+  const id = Guild.previewId;
+  // Самолечение на прямой заход, тот же приём, что в rGuild(): S.screen
+  // сохраняется между запусками, и если человек закрыл приложение прямо на
+  // этом экране, при следующем открытии данных ещё нет — подгружаем сами.
+  if(guildAvailable() && id && !Guild.previewLoading && !Guild.preview && !Guild.previewError){
+    loadGuildPreview(id);
+  }
+  let body;
+  if(!guildAvailable()){
+    body = `<div class="gd-empty">Гильдии доступны только внутри Telegram.</div>`;
+  } else if(Guild.previewLoading || (!Guild.preview && !Guild.previewError)){
+    body = `<div class="gd-empty">Открываю гильдию…</div>`;
+  } else if(Guild.previewError || !Guild.preview || !Guild.preview.guild){
+    body = `<div class="gd-empty">Не удалось загрузить.<br>Возможно, гильдию уже распустили.
+      <div style="margin-top:12px"><button class="btn ghost" onclick="loadGuildPreview('${id}',true)">Повторить</button></div></div>`;
+  } else {
+    const p = Guild.preview;
+    const g = p.guild;
+    const goal = g.week.goal || 0;
+    const reps = g.week.reps || 0;
+    const pct = goal > 0 ? Math.min(100, Math.round(reps / goal * 100)) : 0;
+    const trainedToday = g.roster.filter(r=>r.todayReps>0).length;
+    const full = g.members >= g.slots;
+
+    const roster = g.roster.map(r=>{
+      const away = (!r.todayReps && r.daysAway != null && r.daysAway > 0)
+        ? `<span class="gd-away">${r.daysAway} ${guildPlural(r.daysAway,['день','дня','дней'])} без боёв</span>` : '';
+      return `<div class="gd-row">
+        <span class="gd-dot ${r.todayReps>0?'on':''}"></span>
+        <span class="gd-nm">${escapeHtml(r.name)}</span>
+        ${away}
+        <span class="gd-reps">${r.weekReps}</span>
+      </div>`;
+    }).join('');
+
+    let action;
+    if(p.isMine){
+      action = `<button class="btn" style="margin-top:14px" onclick="openGuild()">Перейти в свою гильдию</button>`;
+    } else if(p.cooldownUntil){
+      action = `<div class="gd-frozen" style="margin-top:14px">Ты недавно вышел из гильдии. Вступить в новую можно будет чуть позже.</div>`;
+    } else if(!p.canJoin){
+      action = `<div class="gd-frozen" style="margin-top:14px">Ты уже состоишь в другой гильдии — сначала выйди из неё.</div>`;
+    } else {
+      const label = g.joinMode==='request' ? 'Подать заявку' : 'Вступить';
+      const disabled = full || g.frozen || Guild.busy;
+      action = `<button class="btn" style="margin-top:14px" ${disabled?'disabled':''}
+        onclick="guildJoinFromPreview(${g.id})">${full ? 'Мест нет' : (g.frozen ? 'Не принимает' : label)}</button>`;
+    }
+
+    body = `<div class="gd-hero">
+        <div class="gd-name"><span class="gd-tag">${escapeHtml(g.tag)}</span>${escapeHtml(g.name)}</div>
+        <div class="gd-sub">${g.members} из ${g.slots} · сегодня тренировалось ${trainedToday}</div>
+        <div class="gd-goal">
+          <div class="gd-goal-top">
+            <span>Общая цель недели</span>
+            <span>${reps} / ${goal}</span>
+          </div>
+          <div class="gd-bar ${pct>=100?'done':''}"><i style="width:${pct}%"></i></div>
+        </div>
+        ${action}
+      </div>
+      <div class="gd-sect">Состав · ${g.members}</div>
+      ${roster}`;
+  }
+  h(`<div class="screen">
+    <div class="topbar">
+      <button class="back" onclick="go(S.prevScreen||'guild')">‹</button>
+      <h2 style="margin:0;font-size:20px">Гильдия</h2>
+    </div>
+    ${body}
+  </div>`);
+}
+function guildJoinFromPreview(id){
+  guildAction('/join', { guildId:id }, d=>{
+    if(d.requested) showModal(guildNoteHTML('Заявка отправлена. Основатель гильдии её увидит.'));
+    if(d.guild || d.requested) go('guild');
+  });
+}
+
 /* Экран того, у кого гильдии ещё нет. Порядок блоков не случайный: сначала
    короткое объяснение (человек впервые видит слово «гильдия» и не обязан
    догадываться), потом кнопка создания или объяснение, чего для неё не
@@ -6623,7 +6750,7 @@ function guildBrowseHTML(){
       const can = !full && !g.frozen;
       const label = g.joinMode==='request' ? 'Подать заявку' : 'Вступить';
       return `<div class="gd-card ${can?'':'gd-full'}">
-        <div class="gd-card-top">
+        <div class="gd-card-top" style="cursor:pointer" onclick="openGuildPreview(${g.id})">
           <span class="gd-tag">${escapeHtml(g.tag)}</span>
           <span class="gd-nm" style="font-weight:700">${escapeHtml(g.name)}</span>
         </div>
