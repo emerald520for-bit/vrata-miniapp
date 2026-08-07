@@ -251,11 +251,21 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
 .chip:active{transform:scale(.94)}
 .chip.sel{border-color:var(--sys);color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.25)}
 
-/* ---- онбординг: поза перед камерой ---- */
-.pose-card{
-  width:100%;border-radius:18px;border:1px solid var(--sys-dim);background:var(--panel);
-  padding:18px 14px 6px;margin-top:14px;box-shadow:0 0 24px rgba(76,201,255,.12);
+/* ---- онбординг: экран режима (дни + время на одном экране) ----
+   Дни компактной сеткой, а не списком в высоту: под ними на том же экране
+   должно поместиться колесо времени, иначе оба ответа не влезут без прокрутки
+   и экран снова начнёт терять людей. */
+.plan-days{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:14px}
+.plan-day{
+  display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 2px;
+  border-radius:12px;border:1px solid var(--line);background:var(--panel);
+  color:var(--text);cursor:pointer;transition:border-color .2s ease, box-shadow .2s ease, color .2s ease, transform .12s ease;
 }
+.plan-day:active{transform:scale(.94)}
+.plan-day .v{font-family:'JetBrains Mono';font-size:13px;line-height:1.1;white-space:nowrap}
+.plan-day .s{font-size:9.5px;color:var(--muted);letter-spacing:.2px}
+.plan-day.sel{border-color:var(--sys);color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.25)}
+.plan-day.sel .s{color:var(--sys)}
 
 /* ---- экран ранга ---- */
 .reveal{align-items:center;justify-content:center;text-align:center;gap:18px}
@@ -1315,7 +1325,11 @@ const S = {
   // больше не нужна (в отличие от разовых экранов, эта всплывает каждый раз).
   // camIntroSeen — видел ли человек объяснение перед первым запросом камеры
   // (см. showCameraIntro). Один раз за всё время, дальше только мешало бы.
-  settings: { notifications:true, sound:true, vibration:true, stormMode:false, trackTips:true, camIntroSeen:false },
+  // poseIntroSeen — видел ли инструкцию «как встать» перед первым боем. Она
+  // переехала из квиза к самой камере: showTrackIntro сам по себе показывается
+  // только при СМЕНЕ направления, а новичок направление не меняет и до боя
+  // инструкции не увидел бы вовсе (см. startCameraWithIntro).
+  settings: { notifications:true, sound:true, vibration:true, stormMode:false, trackTips:true, camIntroSeen:false, poseIntroSeen:false },
   prevScreen: 'map',
   _navDir: 0,
   onboarded: false,
@@ -2508,43 +2522,44 @@ function finishCloudRestore(force){
   render();
 }
 
+/* ============ КВИЗ ============
+   Было девять экранов, стало два — и это не косметика, а самая дорогая
+   правка во всём проекте по цене вопроса.
+
+   Из 14215 открывших приложение до первых врат доходили 4378. Десять тысяч
+   человек уходили внутри квиза: после онбординга воронка не проседает вообще,
+   вся потеря — до него. При этом четыре вопроса из девяти собирали данные,
+   которые дальше нигде не читались:
+     · опыт тренировок  — не использовался ни одной строкой кода;
+     · цель, максимум   — показывались один раз на экране ранга и всё;
+     · возраст          — строка в профиле, при подписи «Система откалибрует
+                          нагрузку», чего она не делала.
+   Мы просили пройти четыре лишних экрана ради ничего.
+
+   Куда делись остальные:
+     · дни и время слиты в один экран — они про одно и то же;
+     · приватность камеры удалена как ДУБЛЬ: тот же текст уже показывается
+       модалкой showCameraIntro прямо перед запросом доступа, где он и нужен
+       (в квизе человек читал его за минуты до того, как камера понадобится);
+     · «как встать перед камерой» переехало туда же, к самой камере.
+
+   Время призыва трогать нельзя ни при каких сокращениях: на нём держатся
+   напоминания, а это самый сильный канал удержания — 10 411 подписок. */
 const QUIZ = [
   { id:'name', h:'Как Система должна обращаться к тебе?', sub:'Имя будет вписано в реестр охотников.', type:'input', ph:'Введи имя' },
-  { id:'exp', h:'Твой опыт тренировок?', type:'opts', opts:[
-      {v:'never', t:'Никогда не тренировался', i:'▫️'},
-      {v:'some',  t:'Пробовал раньше', i:'◽️'},
-      {v:'reg',   t:'Тренируюсь регулярно', i:'⬜️'} ]},
-  { id:'goal', h:'Главная цель пробуждения?', sub:'Можно изменить позже.', type:'opts', opts:[
-      {v:'muscle', t:'Набрать мышцы', i:'💪'},
-      {v:'strong', t:'Стать сильнее', i:'⚔️'},
-      {v:'lean',   t:'Похудеть / рельеф', i:'🔥'},
-      {v:'health', t:'Здоровье и тонус', i:'🫀'},
-      {v:'fun',    t:'Хочу испытание', i:'🏆'} ]},
-  { id:'age', h:'Сколько тебе лет?', sub:'Система откалибрует нагрузку.', type:'age' },
-  { id:'max', h:'Сколько отжиманий ты делаешь за один подход?', sub:'Честно. Система всё равно проверит.', type:'opts', opts:[
-      {v:3,  t:'0 – 5',  i:'·'},
-      {v:8,  t:'6 – 10', i:'·'},
-      {v:15, t:'11 – 20',i:'·'},
-      {v:25, t:'21 – 30',i:'·'},
-      {v:35, t:'30+',    i:'·'} ]},
-  { id:'days', h:'Сколько дней в неделю готов сражаться?', type:'opts', opts:[
-      {v:3, t:'3 дня / неделя', s:'Разведка'},
-      {v:4, t:'4 дня / неделя', s:'Патруль'},
-      {v:5, t:'5 дней / неделя', s:'Штурм'},
-      {v:6, t:'6 дней / неделя', s:'Осада'},
-      {v:7, t:'7 дней / неделя', s:'Война'} ]},
-  { id:'time', h:'Ежедневный призыв', sub:'В это время Система будет звать тебя во врата.', type:'time',
-    chips:['06:00','07:30','12:00','18:00','20:00','21:30'] },
-  { id:'privacy', h:'Приватность камеры', sub:'Это важно — прочитай перед первым боем.', type:'info', icon:'🔒',
-    text:'Видео с камеры никогда не покидает твой телефон. Распознавание позы и подсчёт отжиманий, приседаний и подъёмов корпуса происходят полностью на устройстве, прямо в браузере — ни один кадр не передаётся ни на какой сервер.' },
-  { id:'pose', h:'Как встать перед камерой', sub:'Система должна видеть тебя целиком.', type:'pose' },
+  { id:'plan', h:'Режим охотника', sub:'Сколько дней в неделю и когда Система будет звать тебя во врата.', type:'plan',
+    days:[
+      {v:3, t:'3 дня', s:'Разведка'},
+      {v:4, t:'4 дня', s:'Патруль'},
+      {v:5, t:'5 дней', s:'Штурм'},
+      {v:6, t:'6 дней', s:'Осада'},
+      {v:7, t:'7 дней', s:'Война'} ] },
 ];
 
 const RANK_ORDER = ['E','D','C','B','A','S'];
 const RANK_LEVEL_TARGET = { E:5, D:23, C:48, B:83, A:130, S:null };
 
 /* ============ WHEEL PICKER (в стиле iOS) ============ */
-const AGE_VALUES = Array.from({length:80-14+1}, (_,i)=>14+i);
 const HOUR_VALUES = Array.from({length:24}, (_,i)=> i<10?'0'+i:''+i);
 const MIN_VALUES = Array.from({length:60}, (_,i)=> i<10?'0'+i:''+i);
 
@@ -3806,7 +3821,12 @@ function ensureQuizBottomEl(){
 }
 function quizStepFilled(){
   const q = QUIZ[S.step]; if(!q) return false;
-  return q.type==='age' || q.type==='info' || q.type==='pose' || (q.type==='input' ? !!S.ans.name.trim() : S.ans[q.id]!=null);
+  if(q.type==='input') return !!S.ans.name.trim();
+  // На экране режима два ответа: дни и время. Время подставлено по умолчанию
+  // (18:00) и колесо его сразу пишет в S.ans.time, поэтому упереться можно
+  // только в невыбранные дни — их и проверяем.
+  if(q.type==='plan') return S.ans.days != null;
+  return S.ans[q.id] != null;
 }
 function renderQuizBottom(){
   if(S.screen!=='quiz'){ if(quizBottomEl) quizBottomEl.style.display='none'; return; }
@@ -3913,37 +3933,6 @@ function render(opts){
   else if(!isSlideTransition) window.scrollTo(0,0);
 }
 
-/* Статичная иллюстрация "как встать перед камерой" для онбординга — не
-   привязана к живому детектору позы (тот и не работает вне экрана raid),
-   просто нарисованная от руки SVG-схема в той же бело-золотой стилистике,
-   что и реальный оверлей скелета (drawSkeleton()) поверх камеры в бою — так
-   у пользователя уже сложится верная ассоциация "белые линии + жёлтые
-   точки = это меня отслеживают" ещё до первого боя. */
-function poseIllustrationHTML(){
-  return `<div class="pose-card">
-    <svg viewBox="0 0 300 250" width="100%" height="auto">
-      <line x1="26" y1="234" x2="274" y2="234" stroke="#232C52" stroke-width="2"/>
-      <circle cx="150" cy="40" r="24" fill="none" stroke="#F5F7FF" stroke-width="3"/>
-      <path d="M150 64 L150 92" stroke="#F5F7FF" stroke-width="3" fill="none" stroke-linecap="round"/>
-      <path d="M106 108 Q150 146 194 108" stroke="#F5F7FF" stroke-width="3" fill="none" stroke-linecap="round"/>
-      <path d="M132 146 L118 196 L98 232" stroke="#F5F7FF" stroke-width="3" fill="none" stroke-linecap="round" opacity=".8"/>
-      <path d="M168 146 L182 196 L202 232" stroke="#F5F7FF" stroke-width="3" fill="none" stroke-linecap="round" opacity=".8"/>
-      <path d="M106 108 L76 158 L56 214" stroke="#F5C242" stroke-width="4" fill="none" stroke-linecap="round"/>
-      <path d="M194 108 L224 158 L244 214" stroke="#F5C242" stroke-width="4" fill="none" stroke-linecap="round"/>
-      <g fill="#F5C242">
-        <circle cx="106" cy="108" r="6"/><circle cx="76" cy="158" r="6"/><circle cx="56" cy="214" r="6"/>
-        <circle cx="194" cy="108" r="6"/><circle cx="224" cy="158" r="6"/><circle cx="244" cy="214" r="6"/>
-      </g>
-    </svg>
-  </div>
-  <div style="text-align:center;margin-top:16px">
-    <h2 style="font-size:20px">Прими боевую позу</h2>
-    <div class="sub" style="margin-top:6px">Полностью помести тело в кадр — Система начнёт засчитывать повторы, как только начнётся бой.</div>
-    <div class="sub" style="margin-top:10px">Двигайся медленно, с полной амплитудой вверх-вниз — Система считывает именно фазу движения, а не рывок. Быстрые или неполные повторы она может не засчитать.</div>
-    <div class="sub" style="margin-top:10px">Каждое направление врат целиком завязано на одно упражнение — отжимания, приседания или подъём корпуса. Нужное упражнение всегда показано перед боем и во время калибровки — просто следуй подсказке.</div>
-  </div>`;
-}
-
 /* ---- 1. Сплэш ---- */
 function rSplash(){
   h(`<div class="screen screen-splash" style="align-items:center;justify-content:center;text-align:center;gap:22px">
@@ -3983,22 +3972,19 @@ function rQuiz(){
         ${o.i?`<span class="ico">${o.i}</span>`:''}${o.t}${o.s?`<span class="side">${o.s}</span>`:''}
       </button>`).join('')+`</div>`;
   }
-  if(q.type==='age'){
-    body = `<div class="wheel-wrap"><div class="wheel-highlight"></div>${wheelColHTML('wheelAge', AGE_VALUES, AGE_VALUES.indexOf(S.ans.age))}</div>`;
-  }
-  if(q.type==='time'){
-    body = timeWheelHTML(S.ans.time) +
-      `<div class="syswin" style="margin-top:22px"><div class="sys-tag"><span class="bang">!</span> УВЕДОМЛЕНИЕ</div>
+  /* Дни и время на одном экране. Раньше это были два подряд идущих вопроса про
+     одно и то же расписание — человек дважды отвечал на «когда ты будешь
+     тренироваться». Дни компактными фишками, чтобы под ними осталось место
+     колесу времени и оба ответа помещались без прокрутки. */
+  if(q.type==='plan'){
+    body = `<div class="plan-days">`+q.days.map((o,idx)=>`
+      <button class="plan-day ${S.ans.days===o.v?'sel':''}" data-pick-q="days" data-pick-i="${idx}">
+        <span class="v">${o.t}</span><span class="s">${o.s}</span>
+      </button>`).join('')+`</div>
+      <div class="sub" style="margin-top:18px;font-size:13px">Во сколько звать во врата</div>
+      ${timeWheelHTML(S.ans.time)}
+      <div class="syswin" style="margin-top:16px"><div class="sys-tag"><span class="bang">!</span> УВЕДОМЛЕНИЕ</div>
       <div style="font-size:14px" class="sub">В дни тренировок Система пришлёт призыв во врата. Пропуск призыва снижает дисциплину охотника.</div></div>`;
-  }
-  if(q.type==='info'){
-    body = `<div class="syswin" style="margin-top:14px;text-align:center">
-      <div style="font-size:40px;margin-bottom:10px">${q.icon==='🔒'?icon('lock',40,'🔒'):(q.icon||'')}</div>
-      <div style="font-size:15px;line-height:1.55">${q.text}</div>
-    </div>`;
-  }
-  if(q.type==='pose'){
-    body = poseIllustrationHTML();
   }
   const stepHtml = `<div class="screen quiz-body-pad">
     <div class="topbar">
@@ -4011,15 +3997,22 @@ function rQuiz(){
   </div>`;
   if(S._navDir){ hAnimated(stepHtml, S._navDir); S._navDir=0; } else { h(stepHtml); }
   renderQuizBottom();
-  if(q.type==='age'){
-    setupWheel('wheelAge', AGE_VALUES, AGE_VALUES.indexOf(S.ans.age), v=>{ S.ans.age=v; });
-  }
-  if(q.type==='time'){
+  if(q.type==='plan'){
     setupTimeWheels(S.ans.time, v=>{
       S.ans.time=v;
       const btn=document.getElementById('nextBtn'); if(btn) btn.disabled=false;
       syncReminder();
     });
+  }
+  /* Отметка «этот экран показан». Раньше на весь квиз было одно событие в
+     самом конце, и провал внутри него был невидим: между «открыл» и «прошёл
+     онбординг» терялось 69% людей, а где именно — установить было нечем.
+     Дедупликация в рамках сессии нужна не для точности (сервер и так считает
+     уникальных), а чтобы не слать запрос на каждую перерисовку экрана. */
+  if(!rQuiz._seen) rQuiz._seen = new Set();
+  if(!rQuiz._seen.has(q.id)){
+    rQuiz._seen.add(q.id);
+    trackEvent('quiz_step', q.id);
   }
 }
 function pick(id,v){ S.ans[id]=v; }
@@ -4028,9 +4021,14 @@ root.addEventListener('click', (e)=>{
   if(!el) return;
   const qid = el.getAttribute('data-pick-q');
   const idx = Number(el.getAttribute('data-pick-i'));
+  /* Дни живут внутри экрана 'plan', а не отдельным вопросом с id 'days' —
+     поэтому искать только по QUIZ[].id недостаточно, иначе выбор дней молча
+     перестаёт работать: клик проходит, ответ не сохраняется, кнопка «Далее»
+     остаётся выключенной, и человек упирается в тупик на последнем экране. */
   const q = QUIZ.find(x=>x.id===qid);
-  if(!q || !q.opts || !q.opts[idx]) return;
-  pick(qid, q.opts[idx].v);
+  const list = q ? q.opts : (QUIZ.find(x=>x.type==='plan') || {}).days;
+  if(!list || !list[idx]) return;
+  pick(qid, list[idx].v);
   // точечно подсвечиваем выбранную карточку, без ре-рендера всего экрана
   root.querySelectorAll(`[data-pick-q="${qid}"]`).forEach(b=>b.classList.remove('sel'));
   el.classList.add('sel');
@@ -4053,10 +4051,8 @@ function rReveal(){
     <div class="rankbox"><span class="glyph">${S.rank}</span></div>
     <h2 style="font-size:22px">Ранг охотника: ${S.rank}</h2>
     <div class="syswin" style="width:100%;text-align:left">
-      <div class="stat-row"><span>Максимум за подход</span><b>~${a.max} отж.</b></div>
       <div class="stat-row"><span>Режим</span><b>${a.days} дн. / неделя</b></div>
-      <div class="stat-row"><span>Ежедневный призыв</span><b>${a.time}</b></div>
-      <div class="stat-row" style="border:none"><span>Цель</span><b>${{muscle:'Мышцы',strong:'Сила',lean:'Рельеф',health:'Здоровье',fun:'Испытание'}[a.goal]}</b></div>
+      <div class="stat-row" style="border:none"><span>Ежедневный призыв</span><b>${a.time}</b></div>
     </div>
     <div class="bottom" style="width:100%"><button class="btn" onclick="go('journey')">Открыть первые врата</button></div>
   </div>`);
@@ -4883,10 +4879,28 @@ function showCameraIntro(onDone){
   };
 }
 /* Показать объяснение и только потом запускать камеру. Если объяснение уже
-   видели — запускаем сразу, без задержки. */
+   видели — запускаем сразу, без задержки.
+
+   Вторым шагом — инструкция «как встать». Она переехала сюда из квиза, и не
+   просто так: showTrackIntro срабатывает только при ПЕРЕКЛЮЧЕНИИ направления
+   (setTrack выходит сразу, если направление то же), а новичок по умолчанию
+   стоит на «Силе» и ничего не переключает. То есть до первого боя он не видел
+   бы инструкцию вообще. В квизе она была нарисованной схемой, здесь — те же
+   TRACK_TIPS с реальными фотографиями и текстом под конкретное упражнение,
+   что заметно полезнее, и показывается ровно в тот момент, когда нужна.
+
+   Флаг ставим ДО показа, а не в колбэке: экран боя перерисовывается часто и
+   зовёт эту функцию на каждой перерисовке, пока камера не запущена, — иначе
+   поверх одной модалки открывалась бы вторая. */
 function startCameraWithIntro(){
-  if(S.settings.camIntroSeen){ startCamera(); return; }
-  showCameraIntro(()=>startCamera());
+  const run = ()=>{
+    if(S.settings.poseIntroSeen){ startCamera(); return; }
+    S.settings.poseIntroSeen = true;
+    saveState();
+    showTrackIntro(S.currentTrack, ()=>startCamera());
+  };
+  if(S.settings.camIntroSeen){ run(); return; }
+  showCameraIntro(run);
 }
 async function startCamera(){
   if(Cam.running || Cam.stream || Cam.initializing) { attachCamRefs(); return; }
@@ -8112,7 +8126,7 @@ function rProfile(){
           <span class="gd-tag">${escapeHtml(Guild.data.tag)}</span>
           <span style="font-size:12px;color:var(--muted);margin-left:5px">${escapeHtml(Guild.data.name)}</span>
         </div>` : ''}
-        <div class="sub" style="font-size:13px">Ранг ${S.rank} · Уровень ${S.level} · ${a.age} лет</div>
+        <div class="sub" style="font-size:13px">Ранг ${S.rank} · Уровень ${S.level}${S.streak>1 ? ' · 🔥 '+S.streak : ''}</div>
       </div>
     </div>
     <div style="display:flex;justify-content:space-between;font-size:12px" class="mono"><span>УРОВЕНЬ ${S.level}</span><span>${S.xp}/100 XP</span></div>
@@ -8410,9 +8424,9 @@ function rSettings(){
   setupTimeWheels(a.time, v=>{ S.ans.time=v; saveState(); syncReminder(); });
 }
 /* Статичный экран-инструкция в Настройках — та же информация, что уже
-   показывается в других местах (poseIllustrationHTML() при онбординге,
-   showTrackIntro() при каждом переключении направления), но собранная в
-   одном месте, куда можно вернуться в любой момент. */
+   показывается в других местах (showTrackIntro() перед первым боем и при
+   каждом переключении направления), но собранная в одном месте, куда можно
+   вернуться в любой момент. */
 // Один блок «Инструкций» на упражнение: заголовок, свайп-галерея верх/низ,
 // текст — из TRACK_TIPS (единственный источник, общий с showTrackIntro()).
 function instructionBlockHTML(trackKey, exercise, emoji, label){
