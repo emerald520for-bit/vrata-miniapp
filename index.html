@@ -1609,6 +1609,7 @@ const EQUIP_API_URL = 'https://vrata-bot.emerald520for.workers.dev/api/equip';
 const CRAFT_API_URL = 'https://vrata-bot.emerald520for.workers.dev/api/craft';
 const PROFILE_API_URL = 'https://vrata-bot.emerald520for.workers.dev/api/profile';
 const STATE_API_URL = 'https://vrata-bot.emerald520for.workers.dev/api/state';
+const RESET_API_URL = 'https://vrata-bot.emerald520for.workers.dev/api/reset';
 const GUILD_API_URL  = 'https://vrata-bot.emerald520for.workers.dev/api/guild';
 const GUILDS_API_URL = 'https://vrata-bot.emerald520for.workers.dev/api/guilds';
 
@@ -7740,6 +7741,10 @@ function findDuelOpponent(){
       S.duelState = j.state;
     }
     if(j && j.none) showToast('Пока не с кем — заходов других охотников ещё нет');
+    // Соперник не сменился: других свежих заходов в базе просто нет. Молчать
+    // тут нельзя — человек нажал и увидел бы то же имя, решив, что кнопка
+    // сломана (ровно так она и выглядела, пока повторный поиск был запрещён).
+    else if(j && j.same) showToast('Других соперников пока нет — остаётся этот');
     S.duelFinding = false; render();
   })
   .catch(()=>{ S.duelFinding = false; showToast('Нет связи с Системой'); render(); });
@@ -7794,14 +7799,15 @@ function rDuelHome(){
            <div class="duel-opp-sub">${st.ghost.reps} ${pluralRuClient(st.ghost.reps,['повторение','повторения','повторений'])} · ${duelAgoText(st.ghost.createdAt)}</div>`
         : `<div class="duel-opp-tag">СОПЕРНИКА НЕТ</div>
            <div class="duel-opp-sub">Первый заход задаёт эталон. Дальше будешь бежать против него.</div>`}
-      ${(st.oppKind !== 'rival' && st.rivalsAvailable)
-        ? `<button class="duel-find" onclick="findDuelOpponent()" ${S.duelFinding?'disabled':''}>${S.duelFinding?'Ищу…':'Найти соперника'}</button>`
+      ${st.rivalsAvailable
+        ? `<button class="duel-find" onclick="findDuelOpponent()" ${S.duelFinding?'disabled':''}>${
+            S.duelFinding ? 'Ищу…' : (st.oppKind==='rival' ? 'Другой соперник' : 'Найти соперника')}</button>`
         : ''}
       ${(st.oppKind === 'rival' && st.ghost && st.ghost.chatId)
         ? `<button class="duel-find" style="margin-top:8px" onclick="openOtherProfile('${String(st.ghost.chatId)}')">Профиль соперника</button>`
         : ''}
       ${st.oppKind === 'rival'
-        ? `<div class="duel-opp-note">Случайный подбор второй раз не сработает, но соперника можно выбрать самому — «Рейтинг» → вкладка «Арена», тап по строке.</div>`
+        ? `<div class="duel-opp-note">Соперника можно сменить сколько угодно раз или выбрать самому — «Рейтинг» → вкладка «Арена», тап по строке.</div>`
         : ''}
     </div>
 
@@ -8457,8 +8463,42 @@ function rInstructions(){
     ${navBar('')}
   </div>`);
 }
+/* Сброс идёт в двух местах сразу, и порядок здесь важен.
+
+   Раньше сброс был только клиентским: чистил локальное состояние, а всё
+   остальное — рейтинг Арены, заходы дуэлей, строку в таблице лидеров,
+   предметы, членство в гильдии — оставалось лежать на сервере в своих
+   таблицах. Снаружи это выглядело как «профиль обнулился, а Арена нет».
+
+   Сервер зовём ПЕРВЫМ и только потом чистим локальное. Наоборот было бы
+   опаснее: очищенное состояние тут же уехало бы обычным сохранением, а
+   серверный запрос мог не дойти — и человек остался бы с пустым профилем и
+   живым рейтингом, то есть ровно в том состоянии, которое мы чиним.
+   Не дошёл запрос — честно говорим и ничего не трогаем. */
 function resetProgress(){
-  sysConfirm('Сбросить весь прогресс охотника? Это действие необратимо.', ()=>{
+  sysConfirm('Сбросить весь прогресс охотника? Пропадут ранг, предметы, рейтинг Арены и место в гильдии. Это действие необратимо.', ()=>{
+    if(S.resetBusy) return;
+    S.resetBusy = true;
+    const local = ()=>{
+      S.resetBusy = false;
+      doLocalReset();
+    };
+    if(!TG || !TG.initData){ local(); return; }
+    showToast('Стираю прогресс…');
+    fetch(RESET_API_URL, { method:'POST', headers:{ 'X-Init-Data':TG.initData } })
+      .then(r=>{ if(!r.ok) throw new Error('bad'); return r.json(); })
+      .then(j=>{
+        if(j && j.error) throw new Error(j.error);
+        local();
+      })
+      .catch(()=>{
+        S.resetBusy = false;
+        showToast('Не получилось стереть прогресс на сервере — попробуй ещё раз');
+      });
+  });
+}
+function doLocalReset(){
+  {
     stopCombatTick();
     stopRaidCountdown();
     S.level=1; S.xp=0; S.streak=0; S.totalPush=0; S.pushToday=0; S.pushWeek=0;
@@ -8472,12 +8512,20 @@ function resetProgress(){
     S.raid=null; S.lastWinDate=null; S.todayDate=null; S.onboarded=false; S.step=0;
     S.titles=[]; S.bestiary={}; S.selectedTitle=null; S.contractSeen=[]; S.achievements=[]; S.everDied=false;
     S.sub={ subscribed:false, paidUntil:null, checkedAt:0 };
-    // сбрасываем и ответы квиза (имя/возраст/цель и т.д.) — иначе "сброс прогресса"
+    // сбрасываем и ответы квиза (имя, режим, время) — иначе "сброс прогресса"
     // на деле оставлял старый профиль нетронутым
     S.ans = { name:'', exp:null, goal:null, age:25, max:null, days:null, time:null };
+    S.guildSeenWeek = null;
+    /* Кэши, которые живут вне S и потому не сбрасывались вместе с ним. Без
+       этого экраны Арены, инвентаря и гильдии до перезапуска показывали
+       прежние данные поверх уже стёртого профиля. */
+    S.duel=null; S.duelState=null; S.duelResult=null; S.duelLoading=false; S.duelError=false; S.duelFinding=false;
+    Items.have=null; Items.equip={weapon:null,aura:null,frame:null}; Items.loading=false; Items.error=false; Items.seen=true;
+    Guild.data=null; Guild.meta=null; Guild.list=null; Guild.preview=null; Guild.previewId=null;
+    Guild.loading=false; Guild.error=false; Guild.listLoading=false; Guild.listError=false; Guild.busy=false;
     try{ localStorage.removeItem(SAVE_KEY); }catch(e){}
     go('splash');
-  });
+  }
 }
 
 function boot(){
