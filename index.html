@@ -140,7 +140,15 @@ html.tg-app body{ padding:0; background:var(--void); }
     radial-gradient(1px 1px at 35% 75%, rgba(76,201,255,.5), transparent),
     radial-gradient(1.5px 1.5px at 55% 45%, rgba(139,92,246,.5), transparent);
 }
-.screen{flex:1;display:flex;flex-direction:column;padding:22px 20px calc(20px + var(--sa-bottom));position:relative;z-index:1}
+/* Верхний отступ обязан учитывать --sa-top, а не быть просто 22px.
+   В обычном режиме шапку рисует сам Telegram НАД вебвью, инсет равен нулю и
+   ничего не меняется. А в полноэкранном режиме клиент рисует свои кнопки
+   («закрыть», «свернуть», «···») ПОВЕРХ нашей страницы — и наши собственные
+   иконки в правом верхнем углу оказывались под ними и переставали нажиматься.
+   Это недоделка правки безопасных отступов: тогда были переведены на
+   переменную все места, где уже стоял env(), но не найдены те, где отступ
+   был нужен, а env() там никогда и не было. */
+.screen{flex:1;display:flex;flex-direction:column;padding:calc(22px + var(--sa-top)) 20px calc(20px + var(--sa-bottom));position:relative;z-index:1}
 /* Фон сплэш-экрана/онбординга — картинка портала, см. rSplash(). Только на
    первом экране, не требует кросс-фейда (самостоятельный, не часть карты). */
 .screen-splash{
@@ -160,7 +168,7 @@ html.tg-app body{ padding:0; background:var(--void); }
 /* Малые экраны (iPhone SE и т.п.) — колесо и отступы компактнее, чтобы кнопка
    "Далее" на шаге времени не уезжала слишком далеко за пределы видимой области. */
 @media (max-height:700px){
-  .screen{padding:16px 20px calc(14px + var(--sa-bottom))}
+  .screen{padding:calc(16px + var(--sa-top)) 20px calc(14px + var(--sa-bottom))}
   .wheel-wrap{height:176px;margin:16px 0}
   .wheel-col{height:176px}
   .wheel-track{padding:66px 0}
@@ -389,13 +397,21 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
    .map-top-spacer резервирует под ним место в потоке .screen (высота
    выставляется из JS по факту отрисовки, см. requestAnimationFrame в rMap()) —
    без него первые врата на карте оказались бы под панелью. */
-.map-fixed-top{position:fixed;top:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;box-sizing:border-box;padding:22px 20px 10px;background:var(--void);border-bottom:1px solid var(--line);z-index:5}
+.map-fixed-top{position:fixed;top:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;box-sizing:border-box;padding:calc(22px + var(--sa-top)) 20px 10px;background:var(--void);border-bottom:1px solid var(--line);z-index:5}
 .map-fixed-top .icon-row,.map-fixed-top .hdr{margin-bottom:10px}
 .map-fixed-top .track-tag{margin-bottom:0}
 .map-top-spacer{height:0}
 .toggle-row{width:100%;display:flex;align-items:center;justify-content:space-between;padding:15px 16px;border-radius:14px;border:1px solid var(--line);background:var(--panel);color:var(--text);font-size:15px;font-weight:700;cursor:pointer;text-align:left;transition:border-color .2s ease, transform .12s ease}
 .toggle-row:active{transform:scale(.98)}
 .toggle-pill{padding:5px 12px;border-radius:8px;background:var(--line);color:var(--muted);font-family:'JetBrains Mono';font-size:12px;font-weight:700;transition:background .25s ease, color .25s ease}
+/* «Статус» в профиле. max-height, а не display:none — иначе раскрытие было бы
+   рывком. Значение с запасом: реальная высота трёх блоков около 300px, но
+   привязываться к точной цифре нельзя, она зависит от шрифта и ширины
+   экрана, а слишком маленькая молча обрежет третий блок. */
+.st-body{max-height:0;overflow:hidden;transition:max-height .3s ease}
+.st-body.open{max-height:900px}
+.st-chev{display:inline-block;transition:transform .25s ease}
+.st-chev.open{transform:rotate(90deg)}
 .toggle-pill.on{background:rgba(52,211,153,.18);color:var(--ok)}
 .pill{display:flex;align-items:center;gap:8px;padding:8px 14px;border-radius:12px;border:1px solid var(--line);background:var(--panel);font-family:'JetBrains Mono';font-size:12px}
 .pill b{color:var(--gold)}
@@ -1470,6 +1486,10 @@ const S = {
   // Date.now() последней успешной проверки. См. isSubActive() ниже.
   sub: { subscribed:false, paidUntil:null, checkedAt:0 },
   titlesTab: 'titles', // transient, не сохраняется — какая вкладка открыта на экране титулов
+  // Раскрыт ли «Статус» в профиле. Тоже transient: это положение одной
+  // кнопки, а не прогресс, и тащить его через облако и серверную копию
+  // означало бы утяжелять снимок ради ничего.
+  statusOpen: false,
   // Таблица лидеров — весь блок ниже transient, не сохраняется и не синкается:
   // это просто снимок последнего ответа сервера, каждый заход на экран рейтинга
   // запрашивает актуальные данные заново (см. loadLeaderboard()/rRank()).
@@ -8555,6 +8575,61 @@ function rVictory(){
 }
 
 /* ---- 6. Профиль ---- */
+/* «Статус» — три блока статистики под одной кнопкой.
+   Раньше девять карточек шли подряд и занимали почти весь экран профиля:
+   «Титулы», «Инвентарь» и «Друзья» уезжали за его пределы, и до них
+   доскролливал далеко не каждый. Цифры при этом смотрят редко, а входы в
+   разделы нужны постоянно — так что свёрнутым по умолчанию должно быть
+   именно то, что тяжелее и смотрится реже.
+   Чтобы кнопка не была просто дверью, на ней сразу видно главное число —
+   сумму всех повторов за всё время. */
+function statusRowHTML(iconKey, fallback, name, trackKey, trackName, today, week, total){
+  return `<div class="sub" style="margin-top:14px;font-size:12px;letter-spacing:1px;text-transform:uppercase;display:flex;justify-content:space-between"><span>${icon(iconKey,15,fallback)} ${name}</span><span class="gold">${trackName} — ${trackRankLabel(trackKey)}</span></div>
+    <div class="grid3">
+      <div class="gcard"><div class="v">${today}</div><div class="k">сегодня</div></div>
+      <div class="gcard"><div class="v">${week}</div><div class="k">за неделю</div></div>
+      <div class="gcard"><div class="v">${total}</div><div class="k">всего</div></div>
+    </div>`;
+}
+function statusBlockHTML(){
+  const total = (S.pushupsTotal|0) + (S.squatsTotal|0) + (S.situpsTotal|0);
+  const open = !!S.statusOpen;
+  /* Содержимое рисуем ВСЕГДА, а прячем высотой. Так раскрытие не дёргает
+     экран перерисовкой и работает плавно; на объём разметки это не влияет —
+     карточек девять. */
+  return `<button class="toggle-row" style="margin-top:18px" onclick="toggleStatus(this)" aria-expanded="${open}">
+      <span>${icon('ex_pushup',15,'👊')} Статус</span>
+      <span class="sub" style="font-size:12.5px;display:flex;align-items:center;gap:7px">
+        ${total} ${pluralRepsRu(total)}
+        <span class="st-chev ${open?'open':''}">›</span>
+      </span>
+    </button>
+    <div class="st-body ${open?'open':''}" id="statusBody">
+      ${statusRowHTML('ex_pushup','👊','Отжимания','strength','Сила', S.pushupsToday, S.pushupsWeek, S.pushupsTotal)}
+      ${statusRowHTML('ex_squat','🦵','Приседания','endurance','Выносливость', S.squatsToday, S.squatsWeek, S.squatsTotal)}
+      ${statusRowHTML('ex_situp','🛡️','Подъём корпуса','core','Стойкость', S.situpsToday, S.situpsWeek, S.situpsTotal)}
+    </div>`;
+}
+// Русские окончания: 1 повтор, 2 повтора, 5 повторов.
+function pluralRepsRu(n){
+  const n10 = n % 10, n100 = n % 100;
+  if(n10 === 1 && n100 !== 11) return 'повтор';
+  if(n10 >= 2 && n10 <= 4 && (n100 < 12 || n100 > 14)) return 'повтора';
+  return 'повторов';
+}
+/* Раскрытие БЕЗ перерисовки экрана: меняем только классы. Полный render()
+   здесь сбросил бы позицию прокрутки — человек нажал бы на кнопку внизу
+   экрана и оказался в начале списка. */
+function toggleStatus(btn){
+  S.statusOpen = !S.statusOpen;
+  const body = document.getElementById('statusBody');
+  if(body) body.classList.toggle('open', S.statusOpen);
+  if(btn){
+    btn.setAttribute('aria-expanded', String(S.statusOpen));
+    const ch = btn.querySelector('.st-chev');
+    if(ch) ch.classList.toggle('open', S.statusOpen);
+  }
+}
 function rProfile(){
   const a=S.ans;
   h(`<div class="screen">
@@ -8580,26 +8655,9 @@ function rProfile(){
     <div style="display:flex;justify-content:space-between;font-size:12px" class="mono"><span>УРОВЕНЬ ${S.level}</span><span>${S.xp}/100 XP</span></div>
     <div class="xpbar"><i style="width:${S.xp}%"></i></div>
 
-    <div class="sub" style="margin-top:18px;font-size:12px;letter-spacing:1px;text-transform:uppercase;display:flex;justify-content:space-between"><span>${icon('ex_pushup',15,'👊')} Отжимания</span><span class="gold">Сила — ${trackRankLabel('strength')}</span></div>
-    <div class="grid3">
-      <div class="gcard"><div class="v">${S.pushupsToday}</div><div class="k">сегодня</div></div>
-      <div class="gcard"><div class="v">${S.pushupsWeek}</div><div class="k">за неделю</div></div>
-      <div class="gcard"><div class="v">${S.pushupsTotal}</div><div class="k">всего</div></div>
-    </div>
-    <div class="sub" style="margin-top:14px;font-size:12px;letter-spacing:1px;text-transform:uppercase;display:flex;justify-content:space-between"><span>${icon('ex_squat',15,'🦵')} Приседания</span><span class="gold">Выносливость — ${trackRankLabel('endurance')}</span></div>
-    <div class="grid3">
-      <div class="gcard"><div class="v">${S.squatsToday}</div><div class="k">сегодня</div></div>
-      <div class="gcard"><div class="v">${S.squatsWeek}</div><div class="k">за неделю</div></div>
-      <div class="gcard"><div class="v">${S.squatsTotal}</div><div class="k">всего</div></div>
-    </div>
-    <div class="sub" style="margin-top:14px;font-size:12px;letter-spacing:1px;text-transform:uppercase;display:flex;justify-content:space-between"><span>${icon('ex_situp',15,'🛡️')} Подъём корпуса</span><span class="gold">Стойкость — ${trackRankLabel('core')}</span></div>
-    <div class="grid3">
-      <div class="gcard"><div class="v">${S.situpsToday}</div><div class="k">сегодня</div></div>
-      <div class="gcard"><div class="v">${S.situpsWeek}</div><div class="k">за неделю</div></div>
-      <div class="gcard"><div class="v">${S.situpsTotal}</div><div class="k">всего</div></div>
-    </div>
+    ${statusBlockHTML()}
 
-    <button class="toggle-row" style="margin-top:14px" onclick="S.prevScreen=S.screen;go('titles')">
+    <button class="toggle-row" style="margin-top:9px" onclick="S.prevScreen=S.screen;go('titles')">
       <span>🏵 Титулы и достижения</span>
       <span class="sub" style="font-size:12.5px">${S.titles.length + S.achievements.length}/${TITLES_LIST.length + ACHIEVEMENTS_LIST.length} →</span>
     </button>
