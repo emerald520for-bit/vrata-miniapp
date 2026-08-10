@@ -1843,6 +1843,9 @@ const Guild = {
   listError: false,
   busy: false,       // идёт действие — блокируем повторные нажатия
   form: { name:'', tag:'', error:'' },
+  // Какая вкладка открыта у того, кто СОСТОИТ в гильдии: своя или список
+  // всех. Transient: это положение переключателя, а не прогресс.
+  tab: 'mine',
   previewId: null,     // id гильдии, которую сейчас смотрим (без вступления)
   preview: null,       // данные просмотра — { guild, isMine, canJoin, cooldownUntil }
   previewLoading: false,
@@ -3075,7 +3078,11 @@ function buildGates(forcedExercise){
       // глобальный счётчик r — иначе все последующие ранги (D и выше) стали
       // бы на +1 HP на моба толще, а их договорились не трогать.
       if(!(def.rank==='E' && i===def.regularCount-1)) r++;
-      gates.push({ name:def.regularNames[i], rank:def.rank, stage:'regular', gateColor:'violet',
+      /* num — порядковый номер обычных врат внутри ранга, с единицы. Нужен
+         только телеметрии (см. gateTag): без него все шесть врат ранга E
+         шлют одну и ту же метку, и лестница «где именно люди останавливаются»
+         в данных не видна вовсе. */
+      gates.push({ name:def.regularNames[i], rank:def.rank, stage:'regular', num:i+1, gateColor:'violet',
         mobs:regularMobs(lo,hi,def.regularMobNames[i],def.regularKinds[i],forcedExercise) });
     }
     // Несколько Trial на ранг — точки привязки HP равномерно по длине ранга
@@ -4535,6 +4542,15 @@ function isSeqLocked(g,i,track){
 // Врата ранга E остаются бесплатными и бессрочными (см. п.2 оферты) — всё
 // остальное (D/C/B/A) требует активный "Контракт Охотника".
 function gateRequiresSub(g){ return g.rank !== 'E'; }
+/* Метка врат для телеметрии: 'E/1' … 'E/6', 'E/exam', 'D/trial'.
+   Одна функция на ОБА события — вход во врата и победу, — иначе метки
+   разъедутся и сравнить «сколько вошло» со «сколько закрыло» будет нельзя.
+   Номер есть только у обычных врат: испытание и экзамен в ранге по одному,
+   и различать их незачем. */
+function gateTag(g){
+  if(!g) return '';
+  return g.stage === 'regular' && g.num ? `${g.rank}/${g.num}` : `${g.rank}/${g.stage}`;
+}
 // Переключение направления — все три карты открыты и независимы с самого
 // начала (см. решение пользователя), это просто смена того, какую из GATES_*
 // показывает rMap() и с каким списком S.doneGates*/started считает прогресс.
@@ -6827,7 +6843,7 @@ function startRaid(track, id, resume){
     showPaywallModal();
     return;
   }
-  trackEvent('raid_start', g.rank + '/' + g.stage);
+  trackEvent('raid_start', gateTag(g));
   const mobs = g.mobs.map((m,i)=>({ ...m, n:i+1, hp:m.maxHp }));
   // Повторное прохождение уже закрытых врат не даёт НАГРАД (опыт, уровни) —
   // иначе можно фармить опыт бесконечно, просто переигрывая пройденный контент.
@@ -7416,7 +7432,16 @@ function rGuild(){
     body = `<div class="gd-empty">Не удалось загрузить.<br>Проверь связь и попробуй снова.
       <div style="margin-top:12px"><button class="btn ghost" onclick="loadGuild(true);loadGuildList(true)">Повторить</button></div></div>`;
   } else if(Guild.data){
-    body = guildMineHTML(Guild.data);
+    /* Состоящий в гильдии тоже может смотреть чужие. Раньше экран показывал
+       только его собственную и на этом заканчивался — зал гильдий был доступен
+       ровно до вступления и захлопывался навсегда. А смотреть есть зачем:
+       сравнить свою с другими, найти знакомых, решить, не перейти ли.
+       Переключатель показываем ТОЛЬКО членам: тому, у кого гильдии нет,
+       переключать не с чем. */
+    body = `<div class="fr-switch" style="margin-bottom:12px">
+        <button class="${Guild.tab!=='all'?'on':''}" onclick="setGuildTab('mine')">Моя гильдия</button>
+        <button class="${Guild.tab==='all'?'on':''}" onclick="setGuildTab('all')">Все гильдии</button>
+      </div>` + (Guild.tab==='all' ? guildBrowseHTML() : guildMineHTML(Guild.data));
   } else {
     body = guildBrowseHTML();
   }
@@ -7512,8 +7537,16 @@ function guildJoinFromPreview(id){
    создать гильдию смогут единицы, вступить может каждый. */
 function guildBrowseHTML(){
   const m = Guild.meta || {};
+  /* Тот, кто уже состоит в гильдии, попадает сюда через переключатель
+     «Все гильдии». Ему список показываем целиком, но без предложения
+     создать свою и без кнопки вступления: и то и другое сервер всё равно
+     отклонит, а неработающая кнопка хуже её отсутствия. */
+  const inGuild = !!Guild.data;
+  const myId = inGuild ? Number(Guild.data.id) : 0;
   let create;
-  if(m.canCreate){
+  if(inGuild){
+    create = '';
+  } else if(m.canCreate){
     create = `<button class="btn" style="margin-top:14px" onclick="openGuildCreate()">Создать гильдию</button>`;
   } else {
     const need = [];
@@ -7547,9 +7580,11 @@ function guildBrowseHTML(){
           <span>сегодня тренировалось <b>${g.todayActive}</b></span>
           <span>за неделю <b>${g.weekReps}</b></span>
         </div>
-        <button class="btn ${can?'':'ghost'}" style="margin-top:10px;padding:9px"
+        ${inGuild
+          ? `<div class="gd-lock" style="margin-top:10px">${Number(g.id)===myId ? 'Твоя гильдия' : 'Сначала нужно выйти из своей'}</div>`
+          : `<button class="btn ${can?'':'ghost'}" style="margin-top:10px;padding:9px"
           ${can && !Guild.busy ? '' : 'disabled'}
-          onclick="guildJoin(${g.id})">${full ? 'Мест нет' : (g.frozen ? 'Не принимает' : label)}</button>
+          onclick="guildJoin(${g.id})">${full ? 'Мест нет' : (g.frozen ? 'Не принимает' : label)}</button>`}
       </div>`;
     }).join('');
   }
@@ -7617,6 +7652,19 @@ function guildMineHTML(g){
           : 'Каждого нужно подтвердить. Если переключишь на свободный вход — те, кто уже подал заявку, войдут сами.'}
       </div>
     </div>
+    <div class="gd-card" style="margin-top:10px">
+      <div style="font-size:13px;color:var(--text)">Личное приглашение</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:6px;line-height:1.45">
+        По этой ссылке охотник войдёт сразу — мимо заявок и заморозки. Не сработает,
+        только если мест не осталось. Ссылка утекла — обнови, старая перестанет работать.
+      </div>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button class="btn" style="padding:9px;font-size:13px" ${g.inviteLink?'':'disabled'}
+          onclick="shareGuildInvite()">Пригласить</button>
+        <button class="btn ghost" style="padding:9px;font-size:13px" ${Guild.busy?'disabled':''}
+          onclick="rotateGuildInvite()">Обновить</button>
+      </div>
+    </div>
     <button class="btn ghost" style="margin-top:10px" ${Guild.busy?'disabled':''} onclick="openGuildRename()">Переименовать</button>
     <button class="btn ghost" style="margin-top:8px;color:var(--danger);border-color:rgba(255,59,92,.35)" ${Guild.busy?'disabled':''}
       onclick="confirmGuildDisband()">Распустить гильдию</button>`
@@ -7662,6 +7710,37 @@ function guildJoin(id){
   guildAction('/join', { guildId:id }, d=>{
     if(d.requested) showModal(guildNoteHTML('Заявка отправлена. Основатель гильдии её увидит.'));
   });
+}
+/* Приглашение отправляется штатным окном «поделиться» Telegram, а не копией в
+   буфер: внутри мессенджера человек и так выбирает адресата в один тап, а
+   буфер обмена в WebView работает не везде и молча. */
+function shareGuildInvite(){
+  const link = Guild.data && Guild.data.inviteLink;
+  if(!link){ showToast('Ссылка пока недоступна'); return; }
+  const name = (Guild.data && Guild.data.name) || 'гильдию';
+  const text = `Зову в гильдию «${name}» во ВРАТАХ. Общая цель на неделю — и награда всем, кто её тянул.`;
+  const share = 'https://t.me/share/url?url=' + encodeURIComponent(link) + '&text=' + encodeURIComponent(text);
+  if(TG && TG.openTelegramLink){ TG.openTelegramLink(share); return; }
+  showToast('Поделиться можно только внутри Telegram');
+}
+function rotateGuildInvite(){
+  guildAction('/invite', {}, d=>{
+    /* Ответ на обновление ссылки не содержит гильдии целиком — вписываем
+       новую ссылку в уже имеющуюся карточку. Иначе экран показывал бы старую
+       ссылку до следующей полной загрузки, и основатель дал бы кому-то
+       заведомо мёртвый адрес. */
+    if(d && d.inviteLink && Guild.data) Guild.data.inviteLink = d.inviteLink;
+    showToast('Ссылка обновлена');
+  });
+}
+
+/* Переключение «моя гильдия / все». Список подгружаем при первом открытии
+   вкладки: тому, кто в гильдии и туда не заходит, лишний запрос ни к чему. */
+function setGuildTab(tab){
+  if(Guild.tab === tab) return;
+  Guild.tab = tab;
+  if(tab === 'all') loadGuildList();
+  render();
 }
 function guildKick(chatId, name){
   sysConfirm(`Исключить ${name} из гильдии?`, ()=> guildAction('/kick', { chatId }));
@@ -8182,7 +8261,7 @@ function tickRest(){
 function winRaid(){
   stopCombatTick();
   const g=S.raid.gate;
-  trackEvent('gate_win', g.rank + '/' + g.stage);
+  trackEvent('gate_win', gateTag(g));
   const track = S.raid.track;
   clearRaidSave(track); // врата закрыты — продолжать больше нечего
   const wasReplay = S.raid.replay;
