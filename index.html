@@ -1048,6 +1048,7 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
   text-shadow:0 0 16px color-mix(in srgb, var(--rk) 70%, transparent);padding:0 18px;
 }
 .drop-flash-sub{font-size:11px;color:var(--muted);letter-spacing:1px;text-transform:uppercase}
+.drop-flash-pity{margin-top:6px;font-size:10px;letter-spacing:.5px;color:var(--gold);opacity:.9}
 @keyframes dropIn{0%{transform:scale(.55);opacity:0}100%{transform:scale(1);opacity:1}}
 /* Заглушка, если иконки предмета нет (частичный деплой каталога) — лучше
    пустая рамка нужного цвета, чем сломанная картинка. */
@@ -2048,7 +2049,7 @@ function rollDropFor(mob, gate){
       cur.loot = cur.loot || [];
       cur.loot.push(data.item);
       Items.seen = false;
-      showDropFlash(data.item);
+      showDropFlash(data.item, !!data.pity);
     })
     .catch(()=>{});
 }
@@ -6522,15 +6523,20 @@ function recipesUsing(trophyId){
    останавливать его модальным окном было бы издевательством.
    Ставится рядом с kill-banner, поверх той же камеры, и умирает вместе с ней
    при следующей перерисовке экрана. */
-function showDropFlash(item){
+function showDropFlash(item, pity){
   const wrap = document.getElementById('camWrap');
   if(!wrap) return;
   const el = document.createElement('div');
   el.className = 'drop-flash rank-' + (item.rank || 'E');
+  /* pity — находка после долгой пустой полосы (сервер держит счётчик). Строчку
+     показываем не ради красоты: человек, у которого двадцать мобов подряд не
+     дали ничего, успел решить, что дроп сломан. Один раз сказать «так и
+     задумано» дешевле, чем потом отвечать на это в поддержке. */
   el.innerHTML =
     `<div class="drop-flash-ico">${itemIcon(item.id, 72)}</div>` +
     `<div class="drop-flash-name">${escapeHtml(item.name || '')}</div>` +
-    `<div class="drop-flash-sub">${item.kind==='trophy' ? 'трофей' : 'находка'} · ранг ${escapeHtml(item.rank||'E')}</div>`;
+    `<div class="drop-flash-sub">${item.kind==='trophy' ? 'трофей' : 'находка'} · ранг ${escapeHtml(item.rank||'E')}</div>` +
+    (pity ? `<div class="drop-flash-pity">Врата задолжали тебе находку</div>` : '');
   wrap.appendChild(el);
   if(S.settings.vibration) hapticImpact('heavy');
   setTimeout(()=>{ el.classList.add('out'); }, 1200);
