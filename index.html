@@ -389,6 +389,12 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
 .track-cell.soon .track-box{background:transparent}
 .track-soon-ico{font-size:28px;line-height:1;color:var(--gold)}
 .track-tag{font-family:'JetBrains Mono';font-size:12px;letter-spacing:1.5px;text-transform:uppercase;color:var(--sys);text-align:center;margin-bottom:8px}
+/* Полоса «ранг E пройден» в шапке карты. Намеренно НЕ кричит: это не баннер
+   поверх экрана, а строка в том же ряду, что и название направления. Человек,
+   который дошёл до конца бесплатного, заслужил приглашение, а не засаду. */
+.map-offer{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;margin-top:8px;padding:10px 12px;border-radius:12px;border:1px solid rgba(245,194,66,.35);background:rgba(245,194,66,.07);color:var(--text);font:inherit;cursor:pointer;text-align:left;box-sizing:border-box}
+.map-offer-t{font-weight:800;font-size:13px;color:var(--gold)}
+.map-offer-s{font-size:11.5px;color:var(--muted);white-space:nowrap}
 /* Верхний блок карты врат (ранг/стрик/уровень + переключатель направления +
    профиль/настройки) — раньше просто скроллился вместе с картой, на 44
    вратах приходилось скроллить обратно наверх, чтобы дотянуться до иконок.
@@ -4212,9 +4218,40 @@ function wirePaywallStage(){
   };
   if(doneBtn) doneBtn.onclick = ()=>{ closePaywallModal(); render(); };
 }
-function showPaywallModal(){
-  trackEvent('paywall_view');
+/* ПРЕДЛОЖЕНИЕ ТЕМ, КТО ДОШЁЛ ДО СТЕНЫ.
+
+   Из воронки за 30 дней: 522 человека закрыли экзамен ранга E, то есть
+   прошли всё бесплатное до конца. Предложение увидел 311. Разницу — двести
+   с лишним человек — не остановила ни цена, ни текст: они просто не тапнули
+   в замок, потому что тапать в замок незачем, и так видно, что закрыто.
+
+   Отсюда две поверхности. Полоса на карте ловит ЗАПАС: тех, кто закончил
+   ранг E месяц назад и экрана победы больше никогда не увидит. Блок на
+   экране победы ловит ПОТОК: тех, кто доходит сейчас. Нужны обе — одна без
+   другой берёт половину задачи.
+
+   Показ считается отдельным событием (paywall_hint), а открытие окна —
+   прежним (paywall_view). Смешать их значило бы потерять возможность
+   сравнить с тем, что было до правки. */
+const paywallHinted = new Set();
+function paywallHint(where){
+  /* Один показ на место за сессию. Полоса на карте висит постоянно и
+     перерисовывается на каждый render — без этой отсечки одно и то же
+     предложение уехало бы в аналитику сотней «показов», и число перестало бы
+     что-либо означать. */
+  if(paywallHinted.has(where)) return;
+  paywallHinted.add(where);
+  trackEvent('paywall_hint', where);
+}
+
+/* from — откуда открыли: 'lock' (тап в закрытые врата), 'map' (полоса на
+   карте), 'exam' (экран победы над экзаменом), 'profile'. Метка нужна, чтобы
+   после правки было видно НЕ только «стало больше», но и за счёт чего. */
+function showPaywallModal(from){
   if(paywallWrap) return; // уже открыта
+  /* Событие ПОСЛЕ проверки, а не до: повторный вызов при уже открытом окне
+     засчитывал второй просмотр того же самого окна и завышал верх воронки. */
+  trackEvent('paywall_view', from || 'lock');
   modalOpenCount++;
   paywallWrap = document.createElement('div');
   paywallWrap.style.cssText = 'position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;background:rgba(2,3,10,.72);padding:24px';
@@ -4603,6 +4640,31 @@ function trackIconsHTML(){
     `<button class="icon-btn ${S.currentTrack===t.key?'on':''}" onclick="setTrack('${t.key}')" aria-label="${t.label}" title="${t.label}">${icon(t.iconKey,18,t.iconFallback)}</button>`
   ).join('');
 }
+/* Сколько врат ждёт за стеной. Считается по тем же GATES, из которых строится
+   карта, а не вписано числом: добавится ранг — строчка обновится сама, и никто
+   не пойдёт править текст, о котором давно забыл. */
+function gatesBehindWall(){
+  return gatesForTrack('strength').filter(g => !g.locked && g.mobs && gateRequiresSub(g)).length;
+}
+function pluralGatesRu(n){
+  const n10 = n % 10, n100 = n % 100;
+  if(n10 === 1 && n100 !== 11) return 'врата';
+  if(n10 >= 2 && n10 <= 4 && (n100 < 12 || n100 > 14)) return 'врат';
+  return 'врат';
+}
+/* Полоса живёт в ВЕРХНЕЙ закреплённой панели карты, а не внизу над навигацией.
+   Причина техническая и заодно удачная: высота этой панели измеряется после
+   отрисовки и подставляется в спейсер (см. конец rMap), поэтому лишняя строка
+   не ломает разметку сама собой. А карта после открытия прокручивается к
+   текущим вратам — то есть к самой стене, — и полоса остаётся перед глазами. */
+function mapOfferHTML(){
+  const n = gatesBehindWall();
+  return `<button class="map-offer" onclick="showPaywallModal('map')">
+    <span class="map-offer-t">Ранг E пройден</span>
+    <span class="map-offer-s">Дальше ${n} ${pluralGatesRu(n)} · ${SUBSCRIPTION_PRICE_RUB} ₽</span>
+  </button>`;
+}
+
 function rMap(){
   const track = S.currentTrack;
   const GATES = gatesForTrack(track);
@@ -4615,6 +4677,12 @@ function rMap(){
     const a=pos[i],b=pos[i+1];
     path += `M ${a.x} ${a.y} C ${a.x} ${a.y+60}, ${b.x} ${b.y-60}, ${b.x} ${b.y} `;
   }
+  /* Упёрся ли человек в платную стену ИМЕННО на этой карте. Отдельного
+     условия не завожу: стена — это ровно те врата, которые уже открылись бы
+     по прогрессу, но закрыты подпиской. Такой признак уже вычисляется ниже
+     для каждой ноды (paywalled), и второй, «похожий» способ то же самое
+     посчитать неминуемо разъехался бы с первым. */
+  let wallReached = false;
   const nodes = GATES.map((g,i)=>{
     const p=pos[i];
     const gDone = done.includes(g.id);
@@ -4624,6 +4692,7 @@ function rMap(){
     // прогрессионный замок (seqLocked) и нераскрытый контент (mystery)
     // важнее и показываются как обычно, подписка тут ни при чём.
     const paywalled = !mystery && !seqLocked && gateRequiresSub(g) && !isSubActive();
+    if(paywalled) wallReached = true;
     const locked = mystery || seqLocked || paywalled;
     const cls = `gate-node ${locked?'locked':''} ${paywalled?'paywalled':''} ${g.gateColor==='gold'?'gold':''} ${g.gateColor==='red'?'red':''} ${gDone?'done':''}`;
     // Заблокированные врата тоже кликабельны — но вместо боя показывают тултип
@@ -4674,6 +4743,7 @@ function rMap(){
       </div>
       ${trackRowHTML()}
       <div class="track-tag">${icon(TRACKS[track].iconKey,16,TRACKS[track].iconFallback)} ${TRACKS[track].label}</div>
+      ${wallReached ? mapOfferHTML() : ''}
     </div>
     <div class="map-top-spacer" id="mapTopSpacer"></div>
     <div class="map-wrap"><div class="map-inner" style="min-height:${70+GATES.length*115}px">
@@ -4688,6 +4758,7 @@ function rMap(){
   // Высота верхней панели (map-fixed-top) не константа — зависит от того,
   // сколько строк займут пилюли/иконки на узком экране, поэтому не хардкодим
   // пиксели, а меряем по факту отрисовки и подгоняем спейсер под неё.
+  if(wallReached) paywallHint('map');
   requestAnimationFrame(()=>{
     const topEl = document.querySelector('.map-fixed-top');
     const spacer = document.getElementById('mapTopSpacer');
@@ -8308,6 +8379,12 @@ function winRaid(){
   // Добыча за заход закрепляется. Список копируем в S.wonLoot ДО обнуления
   // S.raid — экран победы показывает его отдельной секцией: вспышку в бою
   // человек мог и пропустить, глядя в пол.
+  /* Первое в жизни прохождение экзамена ранга E — единственный момент, когда
+     «бесплатное кончилось» является новостью. Считаем здесь, а не на экране
+     победы: тут под рукой wasReplay, а повторное прохождение экзамена такой
+     новостью уже не является — тем, кто закончил ранг давно, предложение
+     показывает полоса на карте. */
+  S.justFinishedFree = !wasReplay && g.stage === 'exam' && g.rank === 'E' && !isSubActive();
   S.wonLoot = (S.raid && S.raid.loot) ? S.raid.loot.slice(0, 12) : [];
   endRaidItems(true);
   go('victory');
@@ -8998,8 +9075,28 @@ function rVictory(){
       <div style="display:flex;justify-content:space-between;font-size:12px" class="mono"><span>УРОВЕНЬ ${S.level}</span><span>${S.xp}/100 XP</span></div>
       <div class="xpbar"><i style="width:${S.xp}%"></i></div>
     </div>
-    <div class="bottom" style="width:100%"><button class="btn" onclick="S.justRanked=null;go('map')">Вернуться к карте</button></div>
+    ${examOfferHTML()}
+    <div class="bottom" style="width:100%"><button class="btn" onclick="S.justRanked=null;S.justFinishedFree=false;go('map')">Вернуться к карте</button></div>
   </div>`);
+  if(S.justFinishedFree && !isSubActive()) paywallHint('exam');
+}
+
+/* Блок на экране победы над экзаменом ранга E. Стоит ПОСЛЕ наград и ПЕРЕД
+   кнопкой возврата — то есть в конце списка того, что человек только что
+   заработал, а не поверх него. Модальным окном здесь быть нельзя: перекрыть
+   собой момент победы значит превратить награду в засаду, и первое, чему
+   человек научится, — закрывать это окно не читая. */
+function examOfferHTML(){
+  /* isSubActive проверяется ЗДЕСЬ, а не только в момент победы: человек может
+     оплатить прямо с этого экрана и остаться на нём — предложение обязано
+     исчезнуть само, без перехода куда-либо. */
+  if(!S.justFinishedFree || isSubActive()) return '';
+  const n = gatesBehindWall();
+  return `<div class="syswin" style="width:100%;border-color:rgba(245,194,66,.4)">
+    <div class="sys-tag" style="color:var(--gold)"><span class="bang" style="border-color:var(--gold)">!</span> РАНГ E ПРОЙДЕН</div>
+    <div style="font-size:14px;line-height:1.5">До вершины — <b class="gold">${n} ${pluralGatesRu(n)}</b>: ранги D, C, B и A.</div>
+    <button class="btn" style="margin:14px 0 0;width:100%" onclick="showPaywallModal('exam')">Открыть за ${SUBSCRIPTION_PRICE_RUB} ₽</button>
+  </div>`;
 }
 
 /* ---- 6. Профиль ---- */
