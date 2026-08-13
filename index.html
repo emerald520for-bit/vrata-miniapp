@@ -392,6 +392,11 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
 /* Полоса «ранг E пройден» в шапке карты. Намеренно НЕ кричит: это не баннер
    поверх экрана, а строка в том же ряду, что и название направления. Человек,
    который дошёл до конца бесплатного, заслужил приглашение, а не засаду. */
+/* Предупреждение «статус не проверен». Тон не тревожный: это не ошибка
+   человека и не его вина, а сообщение о том, что мы чего-то не знаем. */
+.sub-warn{margin-top:12px;padding:11px 12px;border-radius:12px;border:1px solid rgba(245,194,66,.3);background:rgba(245,194,66,.06);text-align:left}
+.sub-warn-t{font-size:12.5px;font-weight:800;color:var(--gold)}
+.sub-warn-b{font-size:11.5px;color:var(--muted);line-height:1.5;margin-top:5px}
 .map-offer{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;margin-top:8px;padding:10px 12px;border-radius:12px;border:1px solid rgba(245,194,66,.35);background:rgba(245,194,66,.07);color:var(--text);font:inherit;cursor:pointer;text-align:left;box-sizing:border-box}
 .map-offer-t{font-weight:800;font-size:13px;color:var(--gold)}
 .map-offer-s{font-size:11.5px;color:var(--muted);white-space:nowrap}
@@ -1663,17 +1668,75 @@ function setSubFromServer(data){
     checkedAt: Date.now(),
   };
 }
+/* ЧЕМ КОНЧИЛАСЬ ПОСЛЕДНЯЯ ПРОВЕРКА КОНТРАКТА.
+
+   Повод — живой случай в конце июля. Человек оплатил, в Prodamus «оплачено»,
+   в базе подписка лежит с верной датой, а в приложении у него только кнопка
+   «Оформить». Причина оказалась не в оплате: запрос к /api/me не доходил, и
+   клиент молча оставался на прежнем кэше, а прежний кэш — «не оплачено».
+   Ошибки на экране никакой: приложение выглядело исправным и утверждало, что
+   человек не платил. Разбирали это вдвоём полдня.
+
+   Молчание здесь и есть ошибка. Сбой сети — нормальная вещь, а вот сказать
+   заплатившему «у тебя нет контракта» и не дать никакой зацепки — нет.
+
+   Состояние транзиентное, в снимок не идёт: это результат последней попытки
+   в этой сессии, а не прогресс. */
+const SubCheck = { done:false, ok:false, reason:null };
 function checkSubscription(){
-  if(!TG || !TG.initData || !TG.initDataUnsafe || !TG.initDataUnsafe.user) return;
+  /* Приложение открыто не через Telegram — по сохранённой в браузере ссылке
+     или из истории. Тогда initData нет вовсе, спрашивать сервер не о чем и
+     нечем. Это самая частая причина из двух, и единственная, которую человек
+     может исправить сам.
+     Телеметрию отсюда не шлём и не можем: trackEvent тоже требует initData.
+     Такие заходы для нас невидимы по построению — тем важнее сказать о них
+     прямо на экране. */
+  if(!TG || !TG.initData || !TG.initDataUnsafe || !TG.initDataUnsafe.user){
+    SubCheck.done = true; SubCheck.ok = false; SubCheck.reason = 'no-telegram';
+    return;
+  }
   fetch(ME_API_URL, { headers:{ 'X-Init-Data':TG.initData } })
-    .then(r=>{ if(!r.ok) throw new Error('bad response'); return r.json(); })
+    .then(r=>{ if(!r.ok){ const e = new Error('bad response'); e.status = r.status; throw e; } return r.json(); })
     .then(data=>{
+      SubCheck.done = true; SubCheck.ok = true; SubCheck.reason = null;
       setSubFromServer(data);
       announceContractTitles();
       saveState();
       render();
     })
-    .catch(()=>{ /* сеть недоступна — оставляем прошлый кэш как есть, см. isSubActive() */ });
+    .catch(err=>{
+      /* Кэш намеренно НЕ трогаем: у подписчика с пропавшей сетью врата
+         остаются открытыми (см. isSubActive и запас в трое суток). Меняется
+         только то, что человек об этом узнает. */
+      SubCheck.done = true; SubCheck.ok = false;
+      SubCheck.reason = (err && err.status) ? ('http-' + err.status) : 'network';
+      trackEvent('me_fail', SubCheck.reason);
+      render();
+    });
+}
+
+/* Предупреждение о непроверенном статусе. Показывается ТОЛЬКО там, где
+   приложение утверждает «контракта нет», и только если последняя проверка
+   действительно провалилась. Тому, у кого контракта нет по-честному
+   (проверка прошла, ответ «не подписан»), никаких тревожных надписей. */
+function subCheckWarningHTML(){
+  if(!SubCheck.done || SubCheck.ok) return '';
+  const noTg = SubCheck.reason === 'no-telegram';
+  return `<div class="sub-warn">
+    <div class="sub-warn-t">Статус контракта не проверен</div>
+    <div class="sub-warn-b">${noTg
+      ? 'Приложение открыто не через Telegram, поэтому спросить сервер не получается. Открой его кнопкой у бота — если контракт есть, он появится сам.'
+      : 'Не удалось связаться с сервером. Если ты уже оплатил, доступ никуда не делся — нажми «Проверить снова».'}</div>
+    ${noTg ? '' : `<button class="btn ghost" style="margin:10px 0 0;width:100%;padding:8px;font-size:13px" onclick="retrySubCheck(this)">Проверить снова</button>`}
+  </div>`;
+}
+function retrySubCheck(btn){
+  if(btn){ btn.disabled = true; btn.textContent = 'Проверяю…'; }
+  checkSubscription();
+  /* Ответ приходит асинхронно и сам вызовет render(). Кнопку возвращаем в
+     строй через пару секунд на случай, если запрос завис совсем: замерший
+     «Проверяю…» без выхода — та же немота, от которой мы и уходим. */
+  setTimeout(()=>{ if(btn && btn.isConnected){ btn.disabled = false; btn.textContent = 'Проверить снова'; } }, 2500);
 }
 // Что считать "подписка активна прямо сейчас" — не только последний ответ
 // сервера, но и небольшой офлайн-грейс: если последняя УСПЕШНАЯ проверка
@@ -4131,6 +4194,7 @@ function paywallOfferHTML(){
     <div class="sys-tag" style="justify-content:center"><span class="bang">!</span> КОНТРАКТ ОХОТНИКА</div>
     <div style="font-size:14px;line-height:1.5;margin-bottom:10px">Врата рангов D, C, B и A — платный контент. Врата ранга E остаются бесплатными без ограничения по времени.</div>
     <div style="font-size:13px;line-height:1.5;color:var(--muted);margin-bottom:16px">${SUBSCRIPTION_PRICE_RUB} ₽ — доступ на 30 дней, без автопродления. Оплата на защищённой странице Prodamus, картой или через СБП.</div>
+    ${subCheckWarningHTML()}
     <button class="btn" id="paywallPayBtn" style="margin:0;width:100%">Оформить за ${SUBSCRIPTION_PRICE_RUB} ₽</button>
     <button class="btn ghost" id="paywallCloseBtn" style="margin:8px 0 0;width:100%">Позже</button>
     <div class="sub" style="font-size:11px;margin-top:10px;text-align:center"><a href="oferta.html" target="_blank" rel="noopener" style="color:var(--muted);text-decoration:underline">Оферта</a> · <a href="privacy.html" target="_blank" rel="noopener" style="color:var(--muted);text-decoration:underline">Политика конфиденциальности</a></div>
@@ -9443,7 +9507,8 @@ function rSettings(){
       ` : `
         <div class="sys-tag" style="justify-content:center;margin-top:8px"><span class="bang">!</span> КОНТРАКТА НЕТ</div>
         <div class="sub" style="font-size:13px">Врата рангов D, C, B и A закрыты. ${SUBSCRIPTION_PRICE_RUB} ₽ — доступ на 30 дней, без автопродления.</div>
-        <button class="btn" style="margin-top:12px;width:100%" onclick="showPaywallModal()">Оформить контракт</button>
+        ${subCheckWarningHTML()}
+        <button class="btn" style="margin-top:12px;width:100%" onclick="showPaywallModal('settings')">Оформить контракт</button>
       `}
       <div class="sub" style="font-size:11px;margin-top:10px"><a href="oferta.html" target="_blank" rel="noopener" style="color:var(--muted);text-decoration:underline">Оферта</a> · <a href="privacy.html" target="_blank" rel="noopener" style="color:var(--muted);text-decoration:underline">Политика конфиденциальности</a></div>
     </div>
