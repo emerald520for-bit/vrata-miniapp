@@ -4320,11 +4320,34 @@ function closePaywallModal(){
 function paywallEmblemHTML(){
   return `<div style="text-align:center;margin-bottom:8px"><span style="filter:drop-shadow(0 0 10px var(--gold))">${icon('badge_contract',76,'⚡')}</span></div>`;
 }
+/* ЧТО ИМЕННО ПОКУПАЮТ — зависит от того, кто смотрит.
+
+   Раньше здесь стояла одна строка на всех: «Врата ранга E остаются
+   бесплатными без ограничения по времени». Это было правдой ровно до
+   введения испытательного срока и осталось в коде после него — то есть
+   человек, минуту назад упёршийся в стену, читал бы в окне оплаты, что
+   ранг E бесплатен бессрочно. Расхождение между обещанием и экраном
+   читается как обман, даже когда обмана нет.
+
+   Три случая, и в каждом человек находится в разном положении:
+   — право по старой оферте: ему первый ранг и правда открыт навсегда;
+   — срок ещё идёт: honest «пока открыт, потом нет»;
+   — срок вышел: врата уже закрыты, и делать вид, что нет, поздно. */
+function paywallWhatYouGetHTML(){
+  const paid = 'Контракт открывает все врата: ранги D, C, B и A, испытания, экзамены и весь бестиарий.';
+  if(S.sub && S.sub.legacyFreeE){
+    return paid + ' Врата ранга E у тебя открыты бессрочно — по условиям, на которых ты оформлял контракт.';
+  }
+  if(gatesLockedNow()){
+    return 'Испытательные три дня закончились — врата закрыты. ' + paid + ' Первый ранг открывается вместе с ними.';
+  }
+  return paid + ' Врата ранга E открыты первые три дня после первого запуска, дальше — тоже по контракту.';
+}
 function paywallOfferHTML(){
   return `<div class="syswin" style="max-width:340px;width:100%;background:var(--panel-solid)">
     ${paywallEmblemHTML()}
     <div class="sys-tag" style="justify-content:center"><span class="bang">!</span> КОНТРАКТ ОХОТНИКА</div>
-    <div style="font-size:14px;line-height:1.5;margin-bottom:10px">Врата рангов D, C, B и A — платный контент. Врата ранга E остаются бесплатными без ограничения по времени.</div>
+    <div style="font-size:14px;line-height:1.5;margin-bottom:10px">${paywallWhatYouGetHTML()}</div>
     <div style="font-size:13px;line-height:1.5;color:var(--muted);margin-bottom:16px">${SUBSCRIPTION_PRICE_RUB} ₽ — доступ на 30 дней, без автопродления. Оплата на защищённой странице Prodamus, картой или через СБП.</div>
     ${subCheckWarningHTML()}
     <button class="btn" id="paywallPayBtn" style="margin:0;width:100%">Оформить за ${SUBSCRIPTION_PRICE_RUB} ₽</button>
@@ -4773,8 +4796,10 @@ function isSeqLocked(g,i,track){
   const gates = gatesForTrack(track);
   return !doneGatesForTrack(track).includes(gates[i-1].id);
 }
-// Врата ранга E остаются бесплатными и бессрочными (см. п.2 оферты) — всё
-// остальное (D/C/B/A) требует активный "Контракт Охотника".
+/* Врата рангов D/C/B/A требуют контракта всегда. Ранг E — отдельная история:
+   до 15.08.2026 он был бесплатен бессрочно, теперь открыт три дня с первого
+   запуска (см. п.2 оферты и gatesLockedNow ниже). Эта функция отвечает
+   только на вопрос «нужен ли тут контракт по рангу», а не «пустить ли». */
 function gateRequiresSub(g){ return g.rank !== 'E'; }
 /* ИСПЫТАТЕЛЬНЫЙ СРОК НА КЛИЕНТЕ.
 
