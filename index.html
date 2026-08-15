@@ -1702,6 +1702,7 @@ function setSubFromServer(data){
     paidUntil: data.paidUntil || null,
     payments: Number(data.payments) || 0,
     trialUntil: data.trialUntil || null,
+    legacyFreeE: !!data.legacyFreeE,
     checkedAt: Date.now(),
   };
 }
@@ -2843,7 +2844,7 @@ function applyStateFromRaw(raw){
          состояние незачем. */
       S.sub = { subscribed:!!data.sub.subscribed, paidUntil:data.sub.paidUntil||null,
                 payments:Number(data.sub.payments)||0, checkedAt:data.sub.checkedAt||0,
-                trialUntil:data.sub.trialUntil||null };
+                trialUntil:data.sub.trialUntil||null, legacyFreeE:!!data.sub.legacyFreeE };
     }
     return true;
   }catch(e){ return false; }
@@ -4816,6 +4817,14 @@ function gateBlocked(g){
    что-то сломалось. Одна функция на оба экрана — два «похожих» условия
    однажды разойдутся, и разойдутся молча. */
 function gatesLockedNow(){
+  /* Право по старой редакции оферты. До 15.08.2026 документ обещал первый
+     ранг бесплатно и без ограничения по времени, и люди платили, приняв
+     именно это. Новое правило действует только для тех, кто примет новую
+     редакцию сам; прежним подписчикам ранг E остаётся открытым навсегда,
+     в том числе после окончания оплаченного периода.
+     Признак приходит с сервера и стоит на строке подписки — при продлениях
+     он не двигается (см. add-legacy-e-column.sql). */
+  if(S.sub && S.sub.legacyFreeE) return false;
   return !isSubActive() && trialState() === 'over';
 }
 /* Метка врат для телеметрии: 'E/1' … 'E/6', 'E/exam', 'D/trial'.
