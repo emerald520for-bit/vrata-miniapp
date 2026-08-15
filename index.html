@@ -1624,13 +1624,18 @@ const TRACK_API_URL = 'https://vrata-bot.emerald520for.workers.dev/api/track';
    Зачем это вообще: до сих пор про путь пользователя было известно только
    «зашёл» и «оплатил», а всё между — вслепую. */
 const EVENT_API_URL = 'https://vrata-bot.emerald520for.workers.dev/api/event';
-function trackEvent(event, detail){
+/* Третий параметр — where — это метка врат ('E/1', 'E/exam'). Он появился
+   отдельным полем, а не приклеенным к detail, по конкретной причине: в /cam
+   причины сбоя камеры считаются группировкой ровно по detail, и стоило
+   дописать туда врата, как каждая причина рассыпалась бы на шесть штук с
+   единичными числами. Разные вопросы — разные поля. */
+function trackEvent(event, detail, where){
   if(!TG || !TG.initData || !TG.initDataUnsafe || !TG.initDataUnsafe.user) return;
   try{
     fetch(EVENT_API_URL, {
       method:'POST',
       headers:{'Content-Type':'application/json', 'X-Init-Data':TG.initData},
-      body: JSON.stringify({ event, detail: detail || '' }),
+      body: JSON.stringify({ event, detail: detail || '', where: where || '' }),
     }).catch(()=>{});
   }catch(e){}
 }
@@ -5892,7 +5897,7 @@ async function startCamera(){
     Cam.running = true;
     Cam.error = null;
     Cam._backendSince = performance.now();
-    trackEvent('cam_ok', Cam.backend || '');
+    trackEvent('cam_ok', Cam.backend || '', gateTag(S.raid && S.raid.gate));
     const readyEx = currentExercise();
     setCamStatus(readyEx==='squat' ? 'Готово — начинай приседать!' : readyEx==='situp' ? 'Готово — начинай поднимать корпус!' : 'Готово — начинай отжиматься!');
     camLoop();
@@ -5927,7 +5932,7 @@ async function startCamera(){
     } else {
       msg = 'Не удалось запустить камеру.';
     }
-    trackEvent('cam_fail', stage + ':' + name);
+    trackEvent('cam_fail', stage + ':' + name, gateTag(S.raid && S.raid.gate));
     showCamError(msg);
   }finally{
     Cam.initializing = false;
@@ -6798,7 +6803,7 @@ function playerDied(){
   stopCombatTick();
   stopRaidCountdown();
   const r = S.raid;
-  trackEvent('gate_lose', 'death');
+  trackEvent('gate_lose', 'death', gateTag(r && r.gate));
   // Смерть откатывает опыт и уровень захода — как и при ручном отступлении.
   // Отжимания/приседания, сделанные до этого момента, остаются в статистике
   // (см. комментарий у snapshot в startRaid()) — они реальные и честные
@@ -7314,7 +7319,7 @@ function retreatRaid(){
     endRaidItems(true);
     // "Разумное отступление" — отступление не проходит через экран победы,
     // поэтому новое достижение (если есть) объявляем через showToast().
-    trackEvent('gate_lose', 'retreat');
+    trackEvent('gate_lose', 'retreat', gateTag(r && r.gate));
     const wasNewRetreat = !S.achievements.includes('first_retreat');
     unlockAchievement('first_retreat');
     S.raid = null;
@@ -8249,7 +8254,7 @@ function registerPush(source){
   m.hp = Math.max(0, m.hp-1);
   // Первый засчитанный повтор захода — самый важный шаг воронки: он
   // отделяет «вошёл во врата» от «распознавание реально сработало».
-  if(!r.reps) trackEvent('rep_first', byCam ? 'cam' : 'manual');
+  if(!r.reps) trackEvent('rep_first', byCam ? 'cam' : 'manual', gateTag(r.gate));
   r.reps = (r.reps||0) + 1; // счётчик за весь заход — растёт независимо от replay/наград
   // Отдельный счётчик захода — понадобится режиму с призраком, где в зачёт
   // идут только камерные повторы.
