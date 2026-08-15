@@ -397,6 +397,26 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
 .sub-warn{margin-top:12px;padding:11px 12px;border-radius:12px;border:1px solid rgba(245,194,66,.3);background:rgba(245,194,66,.06);text-align:left}
 .sub-warn-t{font-size:12.5px;font-weight:800;color:var(--gold)}
 .sub-warn-b{font-size:11.5px;color:var(--muted);line-height:1.5;margin-top:5px}
+.trial-warn{width:100%;margin-top:8px;padding:10px 12px;border-radius:12px;border:1px solid rgba(245,194,66,.3);background:rgba(245,194,66,.06);box-sizing:border-box;text-align:left}
+.trial-warn-t{font-size:12.5px;font-weight:800;color:var(--gold)}
+.trial-warn-b{font-size:11.5px;color:var(--muted);line-height:1.5;margin-top:5px}
+.trial-wall{margin:14px 16px 24px;padding:18px 16px;border-radius:16px;border:1px solid var(--line);background:var(--panel);text-align:center}
+.trial-wall-ico{font-size:30px;line-height:1}
+.trial-wall-t{font-size:16px;font-weight:800;margin-top:8px}
+.trial-wall-b{font-size:12.5px;color:var(--muted);line-height:1.6;margin:12px 0;text-align:left}
+.trial-wall-stats{display:flex;justify-content:space-between;gap:8px;margin:14px 0;padding:12px;border-radius:12px;background:rgba(255,255,255,.03)}
+.trial-wall-stats div{flex:1}
+.trial-wall-stats b{display:block;font-size:20px;font-weight:800;color:var(--sys)}
+.trial-wall-stats span{display:block;font-size:11px;color:var(--muted);margin-top:2px}
+.trial-wall-sub{font-size:11px;color:var(--muted);margin-top:8px}
+.trial-wall-alt{font-size:12px;color:var(--muted);line-height:1.6;margin-top:12px}
+.trial-wall-link{color:var(--sys);font-weight:800;cursor:pointer}
+.hint-card{display:flex;gap:10px;align-items:flex-start;width:100%;margin-top:10px;padding:11px 12px;border-radius:12px;border:1px solid rgba(76,201,255,.3);background:rgba(76,201,255,.06);box-sizing:border-box;text-align:left}
+.hint-ico{font-size:17px;line-height:1.2;flex:0 0 auto}
+.hint-txt{font-size:12.5px;line-height:1.5;color:var(--text)}
+.hint-act{display:flex;gap:14px;margin-top:9px}
+.hint-go{font-size:12.5px;font-weight:800;color:var(--sys);cursor:pointer}
+.hint-ok{font-size:12.5px;color:var(--muted);cursor:pointer}
 .map-offer{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;margin-top:8px;padding:10px 12px;border-radius:12px;border:1px solid rgba(245,194,66,.35);background:rgba(245,194,66,.07);color:var(--text);font:inherit;cursor:pointer;text-align:left;box-sizing:border-box}
 .map-offer-t{font-weight:800;font-size:13px;color:var(--gold)}
 .map-offer-s{font-size:11.5px;color:var(--muted);white-space:nowrap}
@@ -1507,7 +1527,18 @@ const S = {
   // из квиза к самой камере: showTrackIntro сам по себе показывается
   // только при СМЕНЕ направления, а новичок направление не меняет и до боя
   // инструкции не увидел бы вовсе (см. startCameraWithIntro).
-  settings: { notifications:true, sound:true, vibration:true, stormMode:false, trackTips:true, camIntroSeen:false, poseIntroSeen:false },
+  settings: { notifications:true, sound:true, vibration:true, stormMode:false, trackTips:true, camIntroSeen:false, poseIntroSeen:false, hints:true },
+  /* Подсказки в момент первой встречи. Два списка, и оба едут в снимок.
+
+     queue — что случилось, но человеку ещё не показано. Заполняется в момент
+     самого события (упала находка, начислены эссенции), а показывается только
+     на экранах покоя. Поэтому подсказка физически не может всплыть посреди
+     отжиманий: экран боя её не рисует вовсе.
+
+     seen — что человек уже закрыл. Тоже в снимке, а не в localStorage: иначе
+     смена телефона проигрывала бы весь набор заново, причём человеку, который
+     давно всё знает. */
+  hints: { queue: [], seen: [] },
   prevScreen: 'map',
   _navDir: 0,
   onboarded: false,
@@ -1670,9 +1701,86 @@ function setSubFromServer(data){
     subscribed: !!data.subscribed,
     paidUntil: data.paidUntil || null,
     payments: Number(data.payments) || 0,
+    trialUntil: data.trialUntil || null,
     checkedAt: Date.now(),
   };
 }
+/* ПОДСКАЗКИ В МОМЕНТ ПЕРВОЙ ВСТРЕЧИ.
+
+   Зачем именно так, а не тур в начале. Тур показывает комнаты, в которые
+   человек ещё не собирался: в первый день инвентарь пуст, лавка не по
+   карману, гильдия без людей. Читать его в этот момент незачем, а время он
+   отнимает там, где его меньше всего.
+
+   Поэтому каждая подсказка привязана к событию, которое с человеком уже
+   случилось. Она отвечает на вопрос, который у него возник сам, — а такие
+   ответы читают.
+
+   Три правила, без которых это превратилось бы в назойливые всплывашки:
+   1. Не в бою. Событие только кладётся в очередь; рисуют её экраны покоя —
+      карта, победа, клан. Экран боя подсказок не рисует вовсе.
+   2. Один раз за всё время, и это переживает смену телефона: оба списка
+      лежат в снимке состояния, а не в localStorage.
+   3. Закрывается и выключается целиком — тумблер в Настройках рядом с
+      подсказками про раскладку камеры. */
+const HINTS = {
+  loot: {
+    icon: '🎒',
+    text: 'Первая находка лежит в Инвентаре — там её и надевают.',
+    go: 'inventory', goLabel: 'Открыть',
+  },
+  essence: {
+    icon: '💠',
+    text: 'За повторы каждый день копятся эссенции. В Лавке на них берут облик.',
+    go: 'shop', goLabel: 'В Лавку',
+  },
+  guild: {
+    icon: '⚔️',
+    text: 'Повторы всех участников идут в общий счёт. Взяли недельную цель — сундук каждому.',
+    go: null, goLabel: null,
+  },
+};
+/* Событие случилось. Кладём в очередь, но ничего не рисуем: человек прямо
+   сейчас может отжиматься. Показ произойдёт на ближайшем экране покоя. */
+function hintFire(id){
+  if(!HINTS[id]) return;
+  if(S.settings.hints === false) return;
+  if(S.hints.seen.includes(id) || S.hints.queue.includes(id)) return;
+  S.hints.queue.push(id);
+  saveState();
+}
+// Первая неувиденная подсказка из очереди. Разом показываем только одну:
+// две карточки подряд читаются как реклама, а не как помощь.
+function hintNext(){
+  if(S.settings.hints === false) return null;
+  const id = (S.hints.queue || []).find(x => HINTS[x] && !S.hints.seen.includes(x));
+  return id || null;
+}
+function hintHTML(){
+  const id = hintNext();
+  if(!id) return '';
+  const h = HINTS[id];
+  return `<div class="hint-card">
+    <div class="hint-ico">${h.icon}</div>
+    <div style="flex:1">
+      <div class="hint-txt">${h.text}</div>
+      <div class="hint-act">
+        ${h.go ? `<span class="hint-go" onclick="hintClose('${id}','${h.go}')">${h.goLabel}</span>` : ''}
+        <span class="hint-ok" onclick="hintClose('${id}')">Понятно</span>
+      </div>
+    </div>
+  </div>`;
+}
+/* Отмечаем показанной только по нажатию, а не по факту отрисовки. Человек
+   мог закрыть приложение, не дочитав, — тогда подсказка должна остаться. */
+function hintClose(id, goTo){
+  if(!S.hints.seen.includes(id)) S.hints.seen.push(id);
+  S.hints.queue = (S.hints.queue || []).filter(x => x !== id);
+  trackEvent('hint_shown', id);
+  saveState();
+  if(goTo) go(goTo); else render();
+}
+
 /* ЧЕМ КОНЧИЛАСЬ ПОСЛЕДНЯЯ ПРОВЕРКА КОНТРАКТА.
 
    Повод — живой случай в конце июля. Человек оплатил, в Prodamus «оплачено»,
@@ -2040,6 +2148,8 @@ function guildNoteHTML(text){
 }
 
 function openGuild(){
+  // Здесь подсказка и срабатывает, и тут же рисуется: экран покоя.
+  hintFire('guild');
   S.screen = 'guild'; render(); saveState();
   loadGuild(true);
   loadGuildList(true);
@@ -2124,6 +2234,9 @@ function rollDropFor(mob, gate){
       cur.loot.push(data.item);
       Items.seen = false;
       showDropFlash(data.item, !!data.pity);
+      // Находка упала прямо сейчас, но человек в бою — подсказка подождёт
+      // до карты или экрана победы (см. hintFire).
+      hintFire('loot');
     })
     .catch(()=>{});
 }
@@ -2631,7 +2744,7 @@ function saveState(){
     lastWinDate:S.lastWinDate, todayDate:S.todayDate, onboarded:S.onboarded,
     titles:S.titles, bestiary:S.bestiary, selectedTitle:S.selectedTitle, contractSeen:S.contractSeen,
     achievements:S.achievements, everDied:S.everDied, sub:S.sub, needWasm:S.needWasm,
-    raidSaves:S.raidSaves, guildSeenWeek:S.guildSeenWeek,
+    raidSaves:S.raidSaves, guildSeenWeek:S.guildSeenWeek, hints:S.hints,
     // Ревизия снимка. Лежит ВНУТРИ сохранения, а не рядом, чтобы переживать
     // и localStorage, и облако Telegram, и серверную копию: куда бы снимок
     // ни попал, номер едет вместе с ним. См. serverState/appliedRev.
@@ -2709,6 +2822,13 @@ function applyStateFromRaw(raw){
     // иначе первое же обращение к S.raidSaves[track] уронит карту.
     S.raidSaves = (data.raidSaves && typeof data.raidSaves==='object') ? data.raidSaves : {};
     S.guildSeenWeek = data.guildSeenWeek || null;
+    /* Оба списка восстанавливаем поимённо, а не целым объектом: снимок мог
+       быть записан версией, где полей ещё не было, и тогда первое же
+       обращение к S.hints.seen.includes() уронило бы экран победы. */
+    S.hints = {
+      queue: (data.hints && Array.isArray(data.hints.queue)) ? data.hints.queue : [],
+      seen:  (data.hints && Array.isArray(data.hints.seen))  ? data.hints.seen  : [],
+    };
     S.achievements = data.achievements || [];
     S.everDied = !!data.everDied;
     if(data.sub && typeof data.sub==='object'){
@@ -2716,8 +2836,14 @@ function applyStateFromRaw(raw){
       // него они исчезали после каждого восстановления из облака — до тех пор,
       // пока checkSubscription() не сходит на сервер. Без сети — не исчезали бы,
       // а просто пропадали.
+      /* trialUntil обязателен наравне с payments и по той же причине: без
+         него человек, восстановившийся из облака до ответа сервера, увидел
+         бы «срок неизвестен» — а по нашему правилу неизвестность врата не
+         запирает, и это верно, но лишний раз гонять человека через это
+         состояние незачем. */
       S.sub = { subscribed:!!data.sub.subscribed, paidUntil:data.sub.paidUntil||null,
-                payments:Number(data.sub.payments)||0, checkedAt:data.sub.checkedAt||0 };
+                payments:Number(data.sub.payments)||0, checkedAt:data.sub.checkedAt||0,
+                trialUntil:data.sub.trialUntil||null };
     }
     return true;
   }catch(e){ return false; }
@@ -4649,6 +4775,49 @@ function isSeqLocked(g,i,track){
 // Врата ранга E остаются бесплатными и бессрочными (см. п.2 оферты) — всё
 // остальное (D/C/B/A) требует активный "Контракт Охотника".
 function gateRequiresSub(g){ return g.rank !== 'E'; }
+/* ИСПЫТАТЕЛЬНЫЙ СРОК НА КЛИЕНТЕ.
+
+   Три состояния, и третье — не формальность. «Неизвестно» бывает, когда
+   сервер не ответил или ответил без даты: в этом случае врата НЕ запираются.
+   Направление выбрано осознанно. Ошибиться можно двумя способами: пустить
+   того, чей срок истёк, или запереть того, у кого всё в порядке. Первое
+   стоит нам нескольких бесплатных заходов, второе — человека, который решил,
+   что у него отняли оплаченное. Ровно этот случай мы разбирали в июле. */
+function trialState(){
+  const t = S.sub && S.sub.trialUntil;
+  if(!t) return 'unknown';
+  const ms = Date.parse(String(t).replace(' ','T')+'Z');
+  if(!Number.isFinite(ms)) return 'unknown';
+  return Date.now() < ms ? 'active' : 'over';
+}
+function trialEndsMs(){
+  const t = S.sub && S.sub.trialUntil;
+  const ms = t ? Date.parse(String(t).replace(' ','T')+'Z') : NaN;
+  return Number.isFinite(ms) ? ms : null;
+}
+// Последний день: срок ещё идёт, но кончится в ближайшие сутки.
+function trialLastDay(){
+  if(trialState() !== 'active' || isSubActive()) return false;
+  const ms = trialEndsMs();
+  return ms !== null && (ms - Date.now()) <= 86400000;
+}
+/* ЕДИНСТВЕННОЕ ПРАВИЛО ДОСТУПА К ВРАТАМ. Держим его одной функцией, потому
+   что проверок две — при отрисовке карты и при старте захода, — и они уже
+   один раз разъезжались: заход можно было начать в обход замка прямым
+   вызовом. Две копии условия однажды разойдутся снова, и разойдутся молча. */
+function gateBlocked(g){
+  if(!g) return false;
+  if(gateRequiresSub(g)) return !isSubActive();      // D и выше — только контракт
+  return gatesLockedNow();                            // ранг E — контракт или срок
+}
+/* «Врата закрыты вообще» — отдельное понятие, потому что о нём нужно знать
+   не только карте. Лавка обязана объяснить, почему перестали капать эссенции:
+   человек, который видит витрину и не понимает, куда делся доход, решит, что
+   что-то сломалось. Одна функция на оба экрана — два «похожих» условия
+   однажды разойдутся, и разойдутся молча. */
+function gatesLockedNow(){
+  return !isSubActive() && trialState() === 'over';
+}
 /* Метка врат для телеметрии: 'E/1' … 'E/6', 'E/exam', 'D/trial'.
    Одна функция на ОБА события — вход во врата и победу, — иначе метки
    разъедутся и сравнить «сколько вошло» со «сколько закрыло» будет нельзя.
@@ -4726,6 +4895,79 @@ function pluralGatesRu(n){
    отрисовки и подставляется в спейсер (см. конец rMap), поэтому лишняя строка
    не ломает разметку сама собой. А карта после открытия прокручивается к
    текущим вратам — то есть к самой стене, — и полоса остаётся перед глазами. */
+/* ПЛАШКА ПОСЛЕДНЕГО ДНЯ.
+
+   Предупреждение приходит за сутки, а не в момент замка. Человек, которому
+   закрыли доступ без предупреждения, злится на приложение; человек, который
+   знал и не успел, злится на себя — и чаще возвращается. */
+/* События срока шлём по одному разу за сессию. Дедупликация нужна не для
+   точности — сервер и так считает уникальных людей, — а чтобы не слать
+   запрос на каждую перерисовку карты. Тот же приём, что у paywallHinted. */
+const trialTold = new Set();
+function trialTell(ev, detail){
+  const key = ev + ':' + (detail || '');
+  if(trialTold.has(key)) return;
+  trialTold.add(key);
+  trackEvent(ev, detail);
+}
+function trialWarnHTML(){
+  if(!trialLastDay()) return '';
+  trialTell('trial_warn');
+  return `<div class="trial-warn">
+    <div class="trial-warn-t">⏳ Последний день доступа</div>
+    <div class="trial-warn-b">Завтра врата закроются. Контракт снимает ограничение.</div>
+  </div>`;
+}
+// Сколько врат ранга E человек ещё не закрыл — это и есть то, что он теряет.
+function eGatesLeft(){
+  const done = doneGatesForTrack(S.currentTrack) || [];
+  return gatesForTrack(S.currentTrack).filter(g => !g.locked && g.rank === 'E' && !done.includes(g.id)).length;
+}
+function repsEver(){
+  return (Number(S.pushupsTotal)||0) + (Number(S.squatsTotal)||0) + (Number(S.situpsTotal)||0);
+}
+/* СТЕНА ПОСЛЕ ТРЁХ ДНЕЙ.
+
+   Два разных экрана, и это не украшательство. Человек, у которого камера так
+   и не заработала, за три дня не сделал ни одного повтора — по нашим данным
+   это каждый пятый. Показать ему тот же счёт с тремя нулями и кнопку оплаты
+   значит взять деньги за то, что у него не запускалось. Ему нужен не
+   пейволл, а помощь с камерой; предложение остаётся, но вторым планом.
+
+   Врата запираются, приложение — нет: инвентарь, гильдия, профиль и
+   настройки остаются доступны. Иначе человек не сможет даже проверить
+   контракт, который, возможно, уже оплатил. */
+function trialWallHTML(){
+  const n = eGatesLeft();
+  const reps = repsEver();
+  // Метка разделяет два очень разных случая: упёрся тот, кто играл, и тот,
+  // у кого ничего не считалось. Смешав их в одно число, мы не увидим, что
+  // часть стены — это несработавшая камера, а не отказ платить.
+  trialTell('trial_end', reps === 0 ? 'nocam' : 'wall');
+  if(reps === 0){
+    return `<div class="trial-wall">
+      <div class="trial-wall-ico">📷</div>
+      <div class="trial-wall-t">Камера так и не заработала</div>
+      <div class="trial-wall-b">За три дня не засчитано ни одного повтора — похоже, дело не в тебе. Давай разберёмся: чаще всего помогает разрешить камеру в настройках Telegram или открыть приложение при хорошем свете.</div>
+      <button class="btn" style="width:100%" onclick="go('instructions')">Как настроить камеру</button>
+      <div class="trial-wall-alt">Если всё работает и хочется дальше — <span class="trial-wall-link" onclick="showPaywallModal('trial')">контракт за ${SUBSCRIPTION_PRICE_RUB} ₽</span></div>
+      ${subCheckWarningHTML()}
+    </div>`;
+  }
+  return `<div class="trial-wall">
+    <div class="trial-wall-ico">🔒</div>
+    <div class="trial-wall-t">Испытательный срок окончен</div>
+    <div class="trial-wall-stats">
+      <div><b>${(S.doneGates||[]).length + (S.doneGatesEndurance||[]).length + (S.doneGatesCore||[]).length}</b><span>врат</span></div>
+      <div><b>${reps}</b><span>повторов</span></div>
+      <div><b>${(S.titles||[]).length}</b><span>титулов</span></div>
+    </div>
+    <div class="trial-wall-b">Дальше — ещё <b class="gold">${n} ${pluralGatesRu(n)}</b> ранга E, потом ранги D, C, B и A. Прогресс сохранён, он никуда не денется.</div>
+    <button class="btn" style="width:100%" onclick="showPaywallModal('trial')">Заключить контракт · ${SUBSCRIPTION_PRICE_RUB} ₽</button>
+    <div class="trial-wall-sub">30 дней, без автопродления</div>
+    ${subCheckWarningHTML()}
+  </div>`;
+}
 function mapOfferHTML(){
   const n = gatesBehindWall();
   return `<button class="map-offer" onclick="showPaywallModal('map')">
@@ -4752,6 +4994,11 @@ function rMap(){
      для каждой ноды (paywalled), и второй, «похожий» способ то же самое
      посчитать неминуемо разъехался бы с первым. */
   let wallReached = false;
+  /* Срок истёк и контракта нет — вместо лестницы врат показываем стену.
+     Именно вместо: оставить карту под ней значило бы предложить человеку
+     потыкать в каждый замок по отдельности. Навигация при этом остаётся —
+     врата заперты, приложение нет. */
+  const trialOver = gatesLockedNow();
   const nodes = GATES.map((g,i)=>{
     const p=pos[i];
     const gDone = done.includes(g.id);
@@ -4760,7 +5007,7 @@ function rMap(){
     // Паёвол считаем только для врат, которые иначе были бы уже доступны —
     // прогрессионный замок (seqLocked) и нераскрытый контент (mystery)
     // важнее и показываются как обычно, подписка тут ни при чём.
-    const paywalled = !mystery && !seqLocked && gateRequiresSub(g) && !isSubActive();
+    const paywalled = !mystery && !seqLocked && gateBlocked(g);
     if(paywalled) wallReached = true;
     const locked = mystery || seqLocked || paywalled;
     const cls = `gate-node ${locked?'locked':''} ${paywalled?'paywalled':''} ${g.gateColor==='gold'?'gold':''} ${g.gateColor==='red'?'red':''} ${gDone?'done':''}`;
@@ -4813,15 +5060,18 @@ function rMap(){
       ${trackRowHTML()}
       <div class="track-tag">${icon(TRACKS[track].iconKey,16,TRACKS[track].iconFallback)} ${TRACKS[track].label}</div>
       ${wallReached ? mapOfferHTML() : ''}
+      ${trialWarnHTML()}
+      ${hintHTML()}
     </div>
     <div class="map-top-spacer" id="mapTopSpacer"></div>
+    ${trialOver ? trialWallHTML() : `
     <div class="map-wrap"><div class="map-inner" style="min-height:${70+GATES.length*115}px">
       <svg class="map-svg" viewBox="0 0 100 ${70+GATES.length*115}" preserveAspectRatio="none">
         <path d="${path}" fill="none" stroke="#2A3560" stroke-width="7" stroke-linecap="round" vector-effect="non-scaling-stroke"/>
         <path d="${path}" fill="none" stroke="#8B5CF6" stroke-width="2.5" stroke-dasharray="1 10" stroke-linecap="round" vector-effect="non-scaling-stroke"/>
       </svg>
       ${nodes}
-    </div></div>
+    </div></div>`}
     ${navBar('map')}
   </div>`);
   // Высота верхней панели (map-fixed-top) не константа — зависит от того,
@@ -5145,7 +5395,9 @@ function rShop(){
       </div>
       ${sections}
       <div class="sub" style="font-size:11.5px;margin-top:16px;text-align:center;line-height:1.5">
-        Эссенции приходят только за тренировки: 1 за каждые ${(w.perUnit||10)} повторов.<br>Купить их за деньги нельзя.
+        Эссенции приходят за повторы <b>во вратах</b>: 1 за каждые ${(w.perUnit||10)}.<br>
+        Бой на Арене в счёт не идёт. Купить эссенции за деньги нельзя.
+        ${gatesLockedNow() ? '<br><span class="gold">Сейчас врата закрыты — эссенции не начисляются.</span>' : ''}
       </div>`;
   }
   h(`<div class="screen">
@@ -6984,8 +7236,8 @@ function startRaid(track, id, resume){
   const g = GATES.find(x=>x.id===id);
   // Защита от прямого вызова startRaid() в обход замка в rMap() (например,
   // из старого кэша экрана или ручного вызова из консоли) — тот же самый
-  // paywall-чек, что и при построении карты, см. gateRequiresSub()/isSubActive().
-  if(g && gateRequiresSub(g) && !isSubActive()){
+  // paywall-чек, что и при построении карты, — одной функцией, см. gateBlocked().
+  if(gateBlocked(g)){
     showPaywallModal();
     return;
   }
@@ -7596,6 +7848,7 @@ function rGuild(){
       <h2 style="margin:0;font-size:20px">Гильдия</h2>
       ${profileIconHTML()}
     </div>
+    ${hintHTML()}
     ${body}
     ${navBar('guild')}
   </div>`);
@@ -8408,6 +8661,10 @@ function winRaid(){
   stopCombatTick();
   const g=S.raid.gate;
   trackEvent('gate_win', gateTag(g));
+  /* Эссенции начисляются за повторы, а не за победу, — но узнать о них
+     человеку негде: баланс он увидит, только открыв Лавку. Поэтому говорим
+     здесь, после первого закрытого захода, когда они уже начислены. */
+  hintFire('essence');
   const track = S.raid.track;
   clearRaidSave(track); // врата закрыты — продолжать больше нечего
   const wasReplay = S.raid.replay;
@@ -9112,6 +9369,16 @@ function rDuelResult(){
 }
 /* Вход в режим: обновляем состояние с сервера при каждом открытии — лимиты и
    рейтинг могли измениться на другом устройстве или после прошлого захода. */
+/* АРЕНА ОСТАЁТСЯ ОТКРЫТОЙ И ПОСЛЕ ИСПЫТАТЕЛЬНОГО СРОКА — это решение, а не
+   недосмотр. Проверки контракта здесь нет и не должно быть.
+
+   Почему так. Дуэльные повторы живут отдельно: они не идут ни в scores, ни в
+   счёт гильдии, ни в эссенции, ни в ранг (см. onCameraRep — во время дуэли
+   повтор не доходит до registerPush). Значит открытая Арена не отдаёт даром
+   ничего из платного продукта. Плюс число попыток в день ограничено сервером.
+
+   Что она даёт: человеку со стены остаётся живой повод вернуться. Запертое
+   наглухо приложение удаляют, а удалённое не покупают. */
 function openDuelHome(){
   go('duelHome');
   loadDuelState();
@@ -9145,6 +9412,7 @@ function rVictory(){
       <div class="xpbar"><i style="width:${S.xp}%"></i></div>
     </div>
     ${examOfferHTML()}
+    ${hintHTML()}
     <div class="bottom" style="width:100%"><button class="btn" onclick="S.justRanked=null;S.justFinishedFree=false;go('map')">Вернуться к карте</button></div>
   </div>`);
   if(S.justFinishedFree && !isSubActive()) paywallHint('exam');
@@ -9535,6 +9803,10 @@ function rSettings(){
       <button class="toggle-row" onclick="toggleSetting('trackTips',this)">
         <span>Подсказки про раскладку камеры</span>
         <span class="toggle-pill ${st.trackTips!==false?'on':''}">${st.trackTips!==false?'ВКЛ':'ВЫКЛ'}</span>
+      </button>
+      <button class="toggle-row" onclick="toggleSetting('hints',this)">
+        <span>Подсказки о находках и гильдиях</span>
+        <span class="toggle-pill ${st.hints!==false?'on':''}">${st.hints!==false?'ВКЛ':'ВЫКЛ'}</span>
       </button>
       <button class="toggle-row" onclick="S.prevScreen='settings';go('instructions')">
         <span>Инструкции</span>
