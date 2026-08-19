@@ -4312,6 +4312,12 @@ function openExternalLink(url){
   try{ window.open(url, '_blank'); }catch(e){}
 }
 let paywallWrap = null;
+/* Откуда открыли окно оплаты. Живёт рядом с самим окном, а не передаётся в
+   обработчик кнопки: кнопка рисуется заново на каждой стадии (offer →
+   checking → …), и замыкание с источником потерялось бы при перерисовке.
+   Нужен, чтобы «нажал Оформить» можно было отличить по месту — иначе клики
+   со стены после испытательного срока смешаны с кликами из настроек. */
+let paywallFrom = 'lock';
 let paywallPollT = null;
 let paywallPollDeadline = 0;
 function stopPaywallPoll(){
@@ -4431,7 +4437,7 @@ function wirePaywallStage(){
     // Именно здесь человек уходит на страницу оплаты — это и есть последний
     // шаг воронки, который мы контролируем. Всё, что дальше, знает только
     // Prodamus (и вебхук, пишущий 'sub_active').
-    trackEvent('paywall_click');
+    trackEvent('paywall_click', paywallFrom);
     openExternalLink(url);
     renderPaywallStage('checking');
     paywallPollDeadline = Date.now() + 3*60000; // 3 минуты автополлинга после оплаты
@@ -4478,7 +4484,8 @@ function showPaywallModal(from){
   if(paywallWrap) return; // уже открыта
   /* Событие ПОСЛЕ проверки, а не до: повторный вызов при уже открытом окне
      засчитывал второй просмотр того же самого окна и завышал верх воронки. */
-  trackEvent('paywall_view', from || 'lock');
+  paywallFrom = from || 'lock';
+  trackEvent('paywall_view', paywallFrom);
   modalOpenCount++;
   paywallWrap = document.createElement('div');
   paywallWrap.style.cssText = 'position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;background:rgba(2,3,10,.72);padding:24px';
@@ -6873,31 +6880,36 @@ function whereToFarm(trophyId){
   if(!def || !def.mob) return null;
   return whereMobLives(def.mob);
 }
-/* Где водится вид мобов. Отделено от whereToFarm() ради бестиария: там мы
-   идём от МОБА к вратам, а не от трофея, — но связка «вид → врата» одна и та
-   же, и разводить её на две копии значило бы завести две правды. Ровно тот же
-   приём, что с guildWeekContributions на сервере. */
+/* Где водится вид мобов. Одна функция и для подсказки «где добыть», и для
+   бестиария: связка «вид → врата» одна, и разводить её на две копии значило
+   бы завести две правды.
+
+   ИЩЕМ ПО УЖЕ ПОСТРОЕННОЙ КАРТЕ, а не собираем имена заново из RANK_DEFS.
+   Раньше было наоборот, и это стоило нам живого бага. Карта называет экзамен
+   «Красные врата II», а здесь имя собиралось как «Экзамен: Пепельный Страж».
+   Кнопка «Показать на карте» ищет врата точным совпадением имени, не находила
+   и молча выходила — ни перехода, ни подсветки, ни объяснения. Задеты были
+   все пять экзаменов, а через них добываются пепельная пыль, филактерия лича
+   и печать архидемона: три рецепта из четырнадцати нельзя было найти.
+
+   Испытания при этом работали — но только потому, что обе формулы оказались
+   написаны дословно одинаково. Это было совпадение, а не защита.
+
+   Теперь имя не «такое же», а ТО ЖЕ САМОЕ: расходиться нечему. */
 function whereMobLives(mobKind){
   if(!mobKind) return null;
   const out = { mobName:'', gates:[] };
-  for(const rd of RANK_DEFS){
-    const locked = gateRankRequiresSub(rd.rank);
-    (rd.regularKinds||[]).forEach((kind, i)=>{
-      if(kind !== mobKind) return;
-      out.mobName = out.mobName || (rd.regularMobNames && rd.regularMobNames[i]) || '';
-      const nm = (rd.regularNames && rd.regularNames[i]) || ('Врата ' + rd.rank);
-      if(!out.gates.some(g=>g.name===nm)) out.gates.push({ name:nm, rank:rd.rank, locked });
-    });
-    for(const tr of (rd.trials||[])){
-      if(tr.kind !== mobKind) continue;
-      out.mobName = out.mobName || tr.bossName || tr.trashName || '';
-      const nm = 'Испытание: ' + (tr.gateName || tr.bossName);
-      if(!out.gates.some(g=>g.name===nm)) out.gates.push({ name:nm, rank:rd.rank, locked });
-    }
-    if(rd.exam && rd.exam.kind === mobKind){
-      out.mobName = out.mobName || rd.exam.bossName || rd.exam.trashName || '';
-      const nm = 'Экзамен: ' + rd.exam.bossName;
-      if(!out.gates.some(g=>g.name===nm)) out.gates.push({ name:nm, rank:rd.rank, locked });
+  /* Направление берём любое: карта во всех трёх строится из одной
+     конфигурации, различается только упражнение (см. buildGates). Имена врат
+     и виды мобов везде одинаковые. */
+  for(const g of gatesForTrack('strength')){
+    if(g.locked || !g.mobs) continue;
+    const mine = g.mobs.filter(m => m.kind === mobKind);
+    if(!mine.length) continue;
+    // Имя моба: у боссовых врат предпочитаем босса — его человек и запомнил.
+    if(!out.mobName) out.mobName = (mine.find(m => m.isBoss) || mine[0]).name || '';
+    if(!out.gates.some(x => x.name === g.name)){
+      out.gates.push({ name:g.name, rank:g.rank, locked:gateRankRequiresSub(g.rank) });
     }
   }
   return out.gates.length ? out : null;
