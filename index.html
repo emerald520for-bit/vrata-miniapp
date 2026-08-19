@@ -1547,6 +1547,8 @@ const S = {
      смена телефона проигрывала бы весь набор заново, причём человеку, который
      давно всё знает. */
   hints: { queue: [], seen: [] },
+  // Отметка «ушёл платить»: { from, at }. null — никто никуда не уходил.
+  payIntent: null,
   prevScreen: 'map',
   _navDir: 0,
   onboarded: false,
@@ -1713,6 +1715,30 @@ function setSubFromServer(data){
     legacyFreeE: !!data.legacyFreeE,
     checkedAt: Date.now(),
   };
+  payIntentSettle();
+}
+
+/* Замыкает воронку оплаты: намерение, отмеченное при уходе на оплату,
+   превращается в событие, как только сервер подтвердил подписку.
+   Живёт внутри setSubFromServer, а не в двух местах вызова: статус приходит и
+   из опроса открытого окна, и с обычного запуска приложения, и событие обязано
+   уйти в обоих случаях ровно один раз.
+   PAY_INTENT_TTL — потому что метка переживает закрытие приложения. Без срока
+   годности человек, нажавший «Оформить» в августе и оплативший в ноябре, дал
+   бы событие с источником трёхмесячной давности, и воронка стены посчитала бы
+   его своей заслугой. Сутки с запасом покрывают и «оплатил и вернулся через
+   час», и банковскую задержку. */
+const PAY_INTENT_TTL = 36*3600*1000;
+function payIntentSettle(){
+  const p = S.payIntent;
+  if(!p) return;
+  const stale = !Number.isFinite(p.at) || (Date.now() - p.at) > PAY_INTENT_TTL;
+  // Метку снимаем в обоих случаях: и когда сработала, и когда протухла.
+  // Иначе она осталась бы навсегда и однажды выстрелила бы не туда.
+  if(!stale && S.sub && S.sub.subscribed) trackEvent('paywall_paid', p.from || 'lock');
+  else if(!stale) return;         // ещё не оплатил — метка ждёт
+  S.payIntent = null;
+  saveState();
 }
 /* ПОДСКАЗКИ В МОМЕНТ ПЕРВОЙ ВСТРЕЧИ.
 
@@ -2753,7 +2779,7 @@ function saveState(){
     lastWinDate:S.lastWinDate, todayDate:S.todayDate, onboarded:S.onboarded,
     titles:S.titles, bestiary:S.bestiary, selectedTitle:S.selectedTitle, contractSeen:S.contractSeen,
     achievements:S.achievements, everDied:S.everDied, sub:S.sub, needWasm:S.needWasm,
-    raidSaves:S.raidSaves, guildSeenWeek:S.guildSeenWeek, hints:S.hints,
+    raidSaves:S.raidSaves, guildSeenWeek:S.guildSeenWeek, hints:S.hints, payIntent:S.payIntent,
     // Ревизия снимка. Лежит ВНУТРИ сохранения, а не рядом, чтобы переживать
     // и localStorage, и облако Telegram, и серверную копию: куда бы снимок
     // ни попал, номер едет вместе с ним. См. serverState/appliedRev.
@@ -2838,6 +2864,11 @@ function applyStateFromRaw(raw){
       queue: (data.hints && Array.isArray(data.hints.queue)) ? data.hints.queue : [],
       seen:  (data.hints && Array.isArray(data.hints.seen))  ? data.hints.seen  : [],
     };
+    /* Намерение заплатить восстанавливаем так же осторожно: снимок мог быть
+       записан версией без этого поля, а битую метку лучше выбросить, чем
+       позволить ей отправить событие с мусорным источником. */
+    S.payIntent = (data.payIntent && typeof data.payIntent === 'object'
+                   && Number.isFinite(data.payIntent.at)) ? data.payIntent : null;
     S.achievements = data.achievements || [];
     S.everDied = !!data.everDied;
     if(data.sub && typeof data.sub==='object'){
@@ -4438,6 +4469,16 @@ function wirePaywallStage(){
     // шаг воронки, который мы контролируем. Всё, что дальше, знает только
     // Prodamus (и вебхук, пишущий 'sub_active').
     trackEvent('paywall_click', paywallFrom);
+    /* Запоминаем НАМЕРЕНИЕ заплатить вместе с источником. Событие об успехе
+       шлёт клиент, а не сервер: вебхук Prodamus знает, что оплата прошла, но
+       не знает, что человек пришёл со стены, — а без источника четвёртый шаг
+       воронки не с чем сравнивать.
+       Метка нужна потому, что оплата уходит НАРУЖУ: половина людей платит и
+       закрывает Telegram, не дождавшись, пока опрос увидит подписку. Без
+       метки такие оплаты в воронку не попадали бы вовсе, и последний шаг
+       выглядел бы вдвое хуже, чем есть. */
+    S.payIntent = { from: paywallFrom, at: Date.now() };
+    saveState();
     openExternalLink(url);
     renderPaywallStage('checking');
     paywallPollDeadline = Date.now() + 3*60000; // 3 минуты автополлинга после оплаты
