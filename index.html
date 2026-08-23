@@ -782,6 +782,14 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
   display:flex;align-items:flex-start;justify-content:center;gap:14px;padding:0 20px;
 }
 .raid-counter-row .rep-counter{position:static;width:74px;height:74px;font-size:28px}
+/* Счётчик времени в планке. Круг на 74px под «2:04» не годится — либо цифра
+   ужимается до нечитаемой, либо переносится. Поэтому здесь скруглённая
+   плашка по содержимому и шрифт вдвое крупнее: её надо прочесть одним косым
+   взглядом из позы, в которой голова смотрит в пол. */
+.raid-counter-row .rep-counter.hold{width:auto;min-width:132px;height:64px;border-radius:16px;font-size:40px;padding:0 12px;letter-spacing:1px}
+/* Колонка счётчика в планке перестаёт держать фиксированные 80px — иначе
+   широкая плашка вылезала бы за свою колонку и рвала симметрию ряда. */
+.raid-counter-col:has(.rep-counter.hold){width:auto;min-width:132px}
 /* Ширина 80px приравнивает колонку счётчика к боковым — только так ряд
    остаётся симметричным: три равные колонки центрируются относительно
    середины экрана независимо от длины подписей под кнопками. */
@@ -1504,6 +1512,12 @@ const S = {
   pushupsCamTotal: 0, pushupsCamToday: 0, pushupsCamWeek: 0,
   squatsCamTotal: 0, squatsCamToday: 0, squatsCamWeek: 0,
   situpsCamTotal: 0, situpsCamToday: 0, situpsCamWeek: 0,
+  /* Планка копится в СЕКУНДАХ, и поля названы так, чтобы это нельзя было не
+     заметить. Назови мы их plankTotal — рано или поздно кто-нибудь сложил бы
+     четыре счётчика в одну цифру «всего сделано», а там три в повторах и один
+     во времени. Перевод в общий счёт — только через PLANK_SEC_PER_UNIT. */
+  plankSecTotal: 0, plankSecToday: 0, plankSecWeek: 0,
+  plankSecCamTotal: 0, plankSecCamToday: 0, plankSecCamWeek: 0,
   // Какое направление сейчас открыто на карте — 'strength' (Врата Силы,
   // отжимания) или 'endurance' (Врата Выносливости, приседания), см. TRACKS.
   currentTrack: 'strength',
@@ -1514,6 +1528,7 @@ const S = {
   doneGates: [],
   doneGatesEndurance: [],
   doneGatesCore: [],
+  doneGatesStamina: [],
   raid: null,
   justRanked: null,
   justStreakInc: false,
@@ -2313,6 +2328,11 @@ function sendScore(){
       body: JSON.stringify({
         name:S.ans.name, rank:S.rank,
         pushupsToday:S.pushupsToday, squatsToday:S.squatsToday, situpsToday:S.situpsToday,
+        /* Планка уходит СЕКУНДАМИ, а не уже переведённой в единицы. Перевод
+           делает сервер — иначе старый клиент, не знающий про множитель,
+           слал бы в то же поле другие числа, и в одной колонке смешались бы
+           две шкалы без всякой возможности разделить их потом. */
+        plankSecToday:S.plankSecToday, plankSecCamToday:S.plankSecCamToday,
         // Камерные — отдельными полями. Нынешняя таблица лидеров их не
         // использует и не меняется; они копятся для режима с призраком.
         pushupsCamToday:S.pushupsCamToday, squatsCamToday:S.squatsCamToday, situpsCamToday:S.situpsCamToday,
@@ -2382,7 +2402,11 @@ let scorePushAt = 0;
 let scorePushInFlight = false;
 
 function sendScoreThrottled(force){
-  const todayReps = (S.pushupsToday|0) + (S.squatsToday|0) + (S.situpsToday|0);
+  /* Планка обязана попадать в это условие. Забудь мы её здесь — человек,
+     который весь день держал планку и ничего больше, не отправил бы серверу
+     ничего вовсе: ни счёта, ни серии. Он бы тренировался, а таблица лидеров и
+     напоминания бота вели бы себя так, будто его не было. */
+  const todayReps = (S.pushupsToday|0) + (S.squatsToday|0) + (S.situpsToday|0) + (S.plankSecToday|0);
   if(todayReps <= 0) return;
   if(scorePushInFlight){
     /* Форсированную отправку (конец захода) нельзя просто выбросить: другого
@@ -2441,6 +2465,11 @@ const RANK_TABS = [
   { id:'pushups', label:'👊 Отжимания' },
   { id:'squats',  label:'🦵 Приседания' },
   { id:'situps',  label:'🛡 Пресс' },
+  /* Планка стоит в общем ряду и меряется теми же единицами, что и соседи:
+     сервер делит секунды на PLANK_SEC_PER_UNIT ещё до сортировки. Покажи мы
+     здесь секунды — планка возглавила бы список просто потому, что её единица
+     мельче, и сравнивать столбцы стало бы нельзя. */
+  { id:'plank',   label:'🔥 Планка' },
   { id:'duel',    label:'⚔ Арена' },
 ];
 function togglePeriodMenu(){
@@ -2670,6 +2699,57 @@ function playHitSound(heavy){
   osc.connect(gain); gain.connect(ctx.destination);
   osc.start(now); osc.stop(now+(heavy?0.24:0.15));
 }
+/* ---- ЗВУК ВЕДЁТ БОЙ В ПЛАНКЕ ----
+   В планке голова опущена в пол. Человек не видит ни полосок мобов, ни
+   таймера, ни подсказок — экран физически вне поля зрения, и повернуть к нему
+   голову значит сломать позу. Поэтому звук здесь не украшение, а единственный
+   канал связи, и построен он на трёх разных сигналах, которые нельзя спутать:
+
+   тихий тик раз в пять секунд — «вижу тебя, время идёт»;
+   тяжёлый удар (playHitSound, из registerPush) — «моб пал»;
+   двойной низкий сигнал — «поза сломалась, время встало».
+
+   Обычный удар в планке заглушен намеренно, см. registerPush: он звучал бы
+   каждую секунду, 64 раза за первые врата, и в этом треске нельзя было бы
+   расслышать единственное, что важно вслепую. */
+const PLANK_TICK_EVERY_SEC = 5;
+function plankSecondSound(){
+  const r = S.raid;
+  const sec = r ? (r.reps || 0) : 0;
+  /* Тик привязан к общему счётчику секунд захода, а не к своему: так он не
+     может разъехаться с тем временем, которое человек потом увидит в итогах. */
+  if(!sec || sec % PLANK_TICK_EVERY_SEC !== 0) return;
+  if(!S.settings.sound) return;
+  const ctx = ensureAudioCtx(); if(!ctx) return;
+  const now = ctx.currentTime;
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(880, now);
+  gain.gain.setValueAtTime(0.05, now);
+  gain.gain.exponentialRampToValueAtTime(0.0001, now+0.08);
+  osc.connect(gain); gain.connect(ctx.destination);
+  osc.start(now); osc.stop(now+0.09);
+}
+/* Сигнал «поза сломалась». Низкий и двойной — чтобы его нельзя было принять ни
+   за тик, ни за удар по мобу. Вибрация идёт вместе со звуком: человек мог
+   выключить звук в настройках, а сказать ему всё равно надо. */
+function plankAlarmSound(){
+  if(S.settings.vibration) hapticImpact('heavy');
+  if(!S.settings.sound) return;
+  const ctx = ensureAudioCtx(); if(!ctx) return;
+  const t0 = ctx.currentTime;
+  for(const at of [0, 0.16]){
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(200, t0+at);
+    gain.gain.setValueAtTime(0.10, t0+at);
+    gain.gain.exponentialRampToValueAtTime(0.001, t0+at+0.11);
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.start(t0+at); osc.stop(t0+at+0.12);
+  }
+}
 function tgInit(){
   if(!TG) return;
   try{
@@ -2773,8 +2853,11 @@ function saveState(){
     pushupsCamTotal:S.pushupsCamTotal, pushupsCamToday:S.pushupsCamToday, pushupsCamWeek:S.pushupsCamWeek,
     squatsCamTotal:S.squatsCamTotal, squatsCamToday:S.squatsCamToday, squatsCamWeek:S.squatsCamWeek,
     situpsCamTotal:S.situpsCamTotal, situpsCamToday:S.situpsCamToday, situpsCamWeek:S.situpsCamWeek,
+    plankSecTotal:S.plankSecTotal, plankSecToday:S.plankSecToday, plankSecWeek:S.plankSecWeek,
+    plankSecCamTotal:S.plankSecCamTotal, plankSecCamToday:S.plankSecCamToday, plankSecCamWeek:S.plankSecCamWeek,
     currentTrack:S.currentTrack,
     doneGates:S.doneGates, doneGatesEndurance:S.doneGatesEndurance, doneGatesCore:S.doneGatesCore,
+    doneGatesStamina:S.doneGatesStamina,
     settings:S.settings,
     lastWinDate:S.lastWinDate, todayDate:S.todayDate, onboarded:S.onboarded,
     titles:S.titles, bestiary:S.bestiary, selectedTitle:S.selectedTitle, contractSeen:S.contractSeen,
@@ -2840,10 +2923,17 @@ function applyStateFromRaw(raw){
     S.pushupsCamTotal = data.pushupsCamTotal || 0; S.pushupsCamToday = data.pushupsCamToday || 0; S.pushupsCamWeek = data.pushupsCamWeek || 0;
     S.squatsCamTotal = data.squatsCamTotal || 0; S.squatsCamToday = data.squatsCamToday || 0; S.squatsCamWeek = data.squatsCamWeek || 0;
     S.situpsCamTotal = data.situpsCamTotal || 0; S.situpsCamToday = data.situpsCamToday || 0; S.situpsCamWeek = data.situpsCamWeek || 0;
-    S.currentTrack = (data.currentTrack==='endurance' || data.currentTrack==='core') ? data.currentTrack : 'strength';
+    S.plankSecTotal = data.plankSecTotal || 0; S.plankSecToday = data.plankSecToday || 0; S.plankSecWeek = data.plankSecWeek || 0;
+    S.plankSecCamTotal = data.plankSecCamTotal || 0; S.plankSecCamToday = data.plankSecCamToday || 0; S.plankSecCamWeek = data.plankSecCamWeek || 0;
+    /* Проверяем по самому списку направлений, а не перечислением ключей: раньше
+       здесь стояло сравнение с 'endurance' и 'core', и любой новый трек молча
+       откатывался бы в «Силу» при первой же перезагрузке — человек выбрал бы
+       Выдержку, вышел, вернулся и оказался в другом месте карты. */
+    S.currentTrack = TRACKS[data.currentTrack] ? data.currentTrack : 'strength';
     S.doneGates = data.doneGates || [];
     S.doneGatesEndurance = data.doneGatesEndurance || [];
     S.doneGatesCore = data.doneGatesCore || [];
+    S.doneGatesStamina = data.doneGatesStamina || [];
     Object.assign(S.settings, data.settings||{});
     S.lastWinDate = data.lastWinDate || null;
     S.todayDate = data.todayDate || null;
@@ -3215,8 +3305,17 @@ function currentExercise(){
 function exerciseLabel(ex){
   if(ex==='squat') return { icon:icon('ex_squat',16,'🦵'), name:'Приседания', verb:'приседания' };
   if(ex==='situp') return { icon:icon('ex_situp',16,'🛡️'), name:'Подъём корпуса', verb:'подъёмы корпуса' };
+  /* У планки verb стоит в единственном числе не по недосмотру: во всех местах,
+     где verb подставляется, у остальных упражнений идёт счётный оборот
+     («ещё 5 отжиманий»), а планка не считается штуками — её держат. */
+  if(ex==='plank') return { icon:icon('ex_plank',16,'🔥'), name:'Планка', verb:'планку' };
   return { icon:icon('ex_pushup',16,'👊'), name:'Отжимания', verb:'отжимания' };
 }
+/* Меряется ли упражнение временем, а не повторами. Одна проверка на весь
+   проект вместо россыпи сравнений с 'plank': когда появится второе временнОе
+   упражнение (присед у стены, вис на турнике), достаточно будет дописать его
+   сюда, а не искать все места, где планка была захардкожена. */
+function isHoldExercise(ex){ return ex === 'plank'; }
 
 /* ---- конфигурация рангов: сколько обычных врат, кем населены, кто на Trial/Exam ---- */
 const RANK_DEFS = [
@@ -3293,6 +3392,75 @@ const RANK_DEFS = [
 ];
 const ROMAN = ['I','II','III','IV','V'];
 
+/* ---- планка: единственный переводчик между секундами и повторами ----
+   Планка меряется временем, а не повторами: одна секунда правильного удержания
+   снимает у моба единицу здоровья. PLANK_SEC_PER_UNIT работает в обе стороны —
+   здоровье мобов в секундах = здоровье в повторах × 4, а вклад в общий счёт =
+   секунды ÷ 4. Из-за этого врата одного ранга весят в общем счёте одинаково на
+   всех треках: Сила E-1 — это 16 повторов, Выдержка E-1 — 64 секунды, и то и
+   другое даёт ровно 16 единиц.
+
+   Само число выбрано не на глаз, а по ранге E: 16/18/21/23/26/31 повтора
+   превращаются в 64/72/84/92/104/124 секунды — ту самую лестницу, на которой мы
+   остановились (первые врата держит почти каждый, шестые — уже достижение).
+
+   ВАЖНО: множитель должен остаться ровно один на весь проект. Стоит завести
+   второе число для общего счёта — и два мира начнут расходиться молча, ровно
+   так же, как уже расходились дублированные формулы окна и вклада в гильдию. */
+const PLANK_SEC_PER_UNIT = 4;
+/* ЕДИНСТВЕННЫЙ перевод секунд удержания в единицы общего счёта. Через него
+   обязаны идти все до одного: гильдейская цель, эссенции, таблица лидеров,
+   дневник, стена испытательного срока. Появится второе место, где секунды
+   делятся на число, — эти два места разойдутся, и разойдутся молча. */
+function plankUnits(sec){ return Math.round((Number(sec) || 0) / PLANK_SEC_PER_UNIT); }
+/* Время удержания человеку показываем всегда как «2:04», а не «124 сек»:
+   секундами он мерить себя не умеет, а минутами — умеет. */
+function fmtHold(sec){
+  const s = Math.max(0, Math.round(Number(sec) || 0));
+  return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+}
+/* Выше двух минут время перестаёт быть честной мерой сложности.
+   Мобы в планке идут без отдыха, одной непрерывной полосой, и при честном ×4
+   ранг D потребовал бы трёх минут подряд, а ранг A — семи. Это уже не
+   упражнение: форма разваливается задолго до конца, и человек соревнуется не в
+   силе, а в упрямстве, зарабатывая травму спины.
+
+   Первое, что я тут написал, было простым потолком в 180 секунд. Проверка на
+   реальной карте показала, почему так нельзя: 67 врат из 75 упирались в
+   потолок и становились неотличимы друг от друга — от D до A одна и та же
+   цифра. Прогрессии в треке не оставалось вовсе.
+
+   Поэтому не потолок, а перегиб. До двух минут время растёт один к одному
+   (весь ранг E живёт здесь и получает ровно ×4). Выше — каждое удвоение
+   исходной сложности добавляет минуту, а не удваивает время. Врата остаются
+   различимы до самого конца карты, но семь минут не наступают никогда.
+
+   Настоящая прогрессия в планке — это варианты потяжелее (с поднятой ногой,
+   боковая), а не бесконечное время. Когда до них дойдут руки, перегиб можно
+   будет поднять или убрать; сейчас в треке ноль человек, и городить
+   распознавание четырёх поз ради ранга A, до которого за неделю добрался один
+   охотник, — не то, на что стоит тратить неделю. */
+const PLANK_KNEE_SEC = 120;
+const PLANK_DOUBLING_SEC = 60;
+function plankGateSeconds(repHp){
+  const raw = repHp * PLANK_SEC_PER_UNIT;
+  if(raw <= PLANK_KNEE_SEC) return raw;
+  return Math.round(PLANK_KNEE_SEC + PLANK_DOUBLING_SEC * Math.log2(raw / PLANK_KNEE_SEC));
+}
+function toPlankSeconds(mobs){
+  const repTotal = mobs.reduce((s, m) => s + m.maxHp, 0);
+  if(!repTotal) return mobs.map(m => ({ ...m }));
+  /* Сжатие считается по вратам целиком и раскладывается на мобов долями — так
+     соотношение «первый моб слабее последнего» переживает перегиб. Считай мы
+     каждого моба отдельно, кривая съедала бы разницу между ними, и к рангу A
+     все пятеро стали бы одинаковыми. */
+  const k = plankGateSeconds(repTotal) / (repTotal * PLANK_SEC_PER_UNIT);
+  /* Не меньше четырёх секунд на моба даже после сжатия: иначе моб гибнет
+     раньше, чем человек успевает расслышать удар по предыдущему, и бой
+     вслепую превращается в неразборчивую очередь звуков. */
+  return mobs.map(m => ({ ...m, maxHp: Math.max(4, Math.round(m.maxHp * PLANK_SEC_PER_UNIT * k)) }));
+}
+
 /* ---- сборка полной карты врат по конфигурации рангов ----
    Параметризовано упражнением: раньше была одна общая GATES со смешанными
    мобами, теперь строим её дважды — целиком отжиманиями (Врата Силы) и
@@ -3300,6 +3468,9 @@ const ROMAN = ['I','II','III','IV','V'];
    (ранги, названия, HP, число мобов) у обеих карт идентична — отличается
    только то, каким упражнением бьём. */
 function buildGates(forcedExercise){
+  /* Планка получает ту же карту, что и остальные треки — те же ранги, названия
+     врат и мобов, — но здоровье пересчитывается в секунды удержания. */
+  const wave = forcedExercise === 'plank' ? toPlankSeconds : (m => m);
   const gates=[]; let r=0;
   RANK_DEFS.forEach((def,rankIdx)=>{
     const hiList=[];
@@ -3324,7 +3495,7 @@ function buildGates(forcedExercise){
          шлют одну и ту же метку, и лестница «где именно люди останавливаются»
          в данных не видна вовсе. */
       gates.push({ name:def.regularNames[i], rank:def.rank, stage:'regular', num:i+1, gateColor:'violet',
-        mobs:regularMobs(lo,hi,def.regularMobNames[i],def.regularKinds[i],forcedExercise) });
+        mobs:wave(regularMobs(lo,hi,def.regularMobNames[i],def.regularKinds[i],forcedExercise)) });
     }
     // Несколько Trial на ранг — точки привязки HP равномерно по длине ранга
     // (для 1 Trial — середина, как раньше; для 3 — на ~25%/50%/75%).
@@ -3333,7 +3504,7 @@ function buildGates(forcedExercise){
       const idx = Math.min(def.regularCount, Math.max(1, Math.round(frac*def.regularCount)));
       const Htrial = hiList[idx-1];
       gates.push({ name:'Испытание: '+(trial.gateName || trial.bossName), rank:def.rank, stage:'trial', gateColor:'gold',
-        mobs:bossMobs(Htrial+2,Htrial+4,Htrial+4+2, trial.trashName, trial.bossName, trial.kind, forcedExercise) });
+        mobs:wave(bossMobs(Htrial+2,Htrial+4,Htrial+4+2, trial.trashName, trial.bossName, trial.kind, forcedExercise)) });
     });
     const Hexam = hiList[hiList.length-1];
     // Явные HP экзамена (trashLo/trashHi/bossHp в def.exam) перекрывают
@@ -3342,7 +3513,7 @@ function buildGates(forcedExercise){
     const exTrashHi = def.exam.trashHi != null ? def.exam.trashHi : Hexam+7;
     const exBossHp  = def.exam.bossHp  != null ? def.exam.bossHp  : Hexam+7+4;
     gates.push({ name:'Красные врата '+ROMAN[rankIdx], rank:def.rank, stage:'exam', gateColor:'red', red:true,
-      mobs:bossMobs(exTrashLo,exTrashHi,exBossHp, def.exam.trashName, def.exam.bossName, def.exam.kind, forcedExercise) });
+      mobs:wave(bossMobs(exTrashLo,exTrashHi,exBossHp, def.exam.trashName, def.exam.bossName, def.exam.kind, forcedExercise)) });
   });
   gates.push({ name:'Бесконечные врата', rank:'S', locked:true });
   return gates.map((g,i)=>({ id:i, ...g }));
@@ -3350,13 +3521,18 @@ function buildGates(forcedExercise){
 const GATES_STRENGTH = buildGates('pushup');
 const GATES_ENDURANCE = buildGates('squat');
 const GATES_CORE = buildGates('situp');
+const GATES_STAMINA = buildGates('plank');
 // Общий конфиг направлений — единая точка правды для UI (иконки, подписи,
 // какая карта/список закрытых врат сейчас активны) вместо GATES/S.doneGates
 // напрямую. key совпадает с S.currentTrack.
 const TRACKS = {
-  strength:  { key:'strength',  label:'Врата Силы',         short:'Сила',        iconKey:'ex_pushup', iconFallback:'👊', gates:GATES_STRENGTH,  exercise:'pushup' },
-  endurance: { key:'endurance', label:'Врата Выносливости',  short:'Выносливость', iconKey:'ex_squat', iconFallback:'🦵', gates:GATES_ENDURANCE, exercise:'squat'  },
-  core:      { key:'core',      label:'Врата Стойкости',    short:'Стойкость',   iconKey:'ex_situp', iconFallback:'🛡️', gates:GATES_CORE,     exercise:'situp'  },
+  strength:  { key:'strength',  label:'Врата Силы',         short:'Сила',        iconKey:'ex_pushup', iconFallback:'👊', gates:GATES_STRENGTH,  exercise:'pushup', combined:true },
+  endurance: { key:'endurance', label:'Врата Выносливости',  short:'Выносливость', iconKey:'ex_squat', iconFallback:'🦵', gates:GATES_ENDURANCE, exercise:'squat',  combined:true },
+  core:      { key:'core',      label:'Врата Стойкости',    short:'Стойкость',   iconKey:'ex_situp', iconFallback:'🛡️', gates:GATES_CORE,     exercise:'situp',  combined:true },
+  /* «Выдержка», а не «Выносливость» — последняя уже занята приседаниями, и
+     «Стойкость» тоже занята подъёмом корпуса. Здоровье мобов здесь измеряется
+     в секундах удержания, см. PLANK_SEC_PER_UNIT. */
+  stamina:   { key:'stamina',   label:'Врата Выдержки',     short:'Выдержка',    iconKey:'ex_plank', iconFallback:'🔥', gates:GATES_STAMINA,  exercise:'plank',  combined:false },
 };
 // Список закрытых врат для трека — Сила использует то же поле S.doneGates,
 // что и раньше (это была единственная карта до появления направлений, так
@@ -3365,6 +3541,7 @@ const TRACKS = {
 function doneGatesForTrack(track){
   if(track==='endurance') return S.doneGatesEndurance;
   if(track==='core') return S.doneGatesCore;
+  if(track==='stamina') return S.doneGatesStamina;
   return S.doneGates;
 }
 // Буквенный ранг НАПРАВЛЕНИЯ для профиля (Сила/Выносливость/Стойкость) —
@@ -3400,9 +3577,24 @@ function trackRankIndex(track){ return RANK_ORDER.indexOf(trackRankLabel(track))
 // медиана трёх текущих рангов направлений (trackRankIndex): при сортировке
 // трёх чисел по возрастанию средний элемент — это как раз наибольший ранг,
 // до которого дотянули минимум 2 направления из 3 (см. winRaid()).
+/* Направления перечислялись здесь руками, и на четвёртом это стало опасно:
+   медиана считается как idxs[1], то есть «ранг, до которого дотянули минимум
+   два направления из трёх». Добавь в этот список Выдержку — и тот же idxs[1]
+   начнёт означать «минимум три из четырёх». У каждого действующего охотника
+   новый трек стартует с ранга E, то есть с нуля, и общий ранг рухнул бы до
+   минимума прежних трёх в тот самый вечер, когда трек выйдет. Люди потеряли бы
+   ранг ни за что.
+
+   Поэтому список берётся из TRACKS по флагу combined — тому же самому, что
+   решает участие в сводных титулах. Включать Выдержку в оба — отдельным
+   решением и вместе с объявлением игрокам, а не тихой правкой. */
+function combinedTrackKeys(){
+  return Object.values(TRACKS).filter(t => t.combined).map(t => t.key);
+}
 function computeOverallRankIndex(){
-  const idxs = [trackRankIndex('strength'), trackRankIndex('endurance'), trackRankIndex('core')].sort((a,b)=>a-b);
-  return idxs[1];
+  const idxs = combinedTrackKeys().map(trackRankIndex).sort((a,b)=>a-b);
+  if(!idxs.length) return 0;
+  return idxs[Math.floor((idxs.length - 1) / 2)];
 }
 
 /* ============ ТИТУЛЫ И БЕСТИАРИЙ ============
@@ -3696,12 +3888,34 @@ function checkTitles(event, payload){
 // GATES_STRENGTH/GATES_ENDURANCE — GATES_CORE (Стойкость/пресс) был добавлен
 // в игру позже и эту проверку не затрагивал, так что все перечисленные
 // звания технически можно было получить, ни разу не сделав пресс. Починено.
+/* Перечисление направлений вручную и было причиной той самой поломки, которая
+   описана выше: Стойкость добавили в игру, а сюда её вписать забыли. Теперь
+   список берётся из TRACKS, и забыть направление физически негде.
+
+   Выдержка (планка) в сводные показатели ПОКА не входит — см. combined в
+   TRACKS. Причина не техническая: включи мы её сразу, у каждого действующего
+   охотника прогресс «Пробуждённого» и «Элитного охотника» откатился бы на
+   четверть в тот вечер, когда трек выйдет. Человек ничего не терял, но увидел
+   бы «20/32» там, где вчера было «20/24», и прочитал бы это как отобранный
+   прогресс. Включать — отдельным решением и вместе с объявлением игрокам. */
 function countDoneAcrossTracks(filterFn){
-  const s = GATES_STRENGTH.filter(filterFn), e = GATES_ENDURANCE.filter(filterFn), c = GATES_CORE.filter(filterFn);
-  const done = s.filter(x=>S.doneGates.includes(x.id)).length
-    + e.filter(x=>S.doneGatesEndurance.includes(x.id)).length
-    + c.filter(x=>S.doneGatesCore.includes(x.id)).length;
-  return { done, total: s.length + e.length + c.length };
+  let done = 0, total = 0;
+  for(const t of Object.values(TRACKS)){
+    if(!t.combined) continue;
+    const list = t.gates.filter(filterFn);
+    const closed = doneGatesForTrack(t.key) || [];
+    done += list.filter(x=>closed.includes(x.id)).length;
+    total += list.length;
+  }
+  return { done, total };
+}
+/* Сколько врат закрыто во всех направлениях вместе — включая те, что не идут в
+   сводные титулы. Эта сумма была выписана вручную в трёх местах (стена
+   испытательного срока, ачивка «первые в жизни врата», первый путь), и каждое
+   новое направление требовало найти все три. Пропусти хоть одно — и охотник с
+   закрытыми вратами Выдержки получил бы «Первый шаг» повторно. */
+function allDoneGatesCount(){
+  return Object.keys(TRACKS).reduce((a, k) => a + (doneGatesForTrack(k) || []).length, 0);
 }
 function rankStageAllDone(rank, stage){
   const { done, total } = countDoneAcrossTracks(x=>x.rank===rank && x.stage===stage);
@@ -3901,6 +4115,7 @@ const ICON_IMAGES = {
   nav_profile: 'data:image/webp;base64,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',
   settings_gear: 'data:image/webp;base64,UklGRlARAABXRUJQVlA4WAoAAAAQAAAAfwAAfwAAQUxQSLwEAAABBmq0bR2SpO993xeZWa5q27atsW3btm3btu1p2xzbZls5FT8KnRHx4uesdW9ETAD+v9UVA+JrIo0sGbQBSmohBUA6lR1wHXltzwAuZQTt9iJ7LiDDmjMHZwCfKhaLvgR+Duve+DX5ZhOBagLUQ6z79k+Em7qsSbFLjwDfhpue/+piZxWzncmsoBaLoN+PBQAurnIGEMAIoJMjxQgq9+f9YWHfdWJAMsiRVjFW7h8WerxjPRzFAAJAgxKgxZ4XPfMicERzFyCCBY4WVfscd8k95GnOwghgPZk0Ke0JXBXWfmimcbvO+xXsU9eAPD6s/bwWjmzSDcgkSwA02W7nezfU8chQ8iVsKNTGqRf1fWZ5HfjjLD+RPCZpAbKVTT4M63v3A/gvjLD6z7Dery8nj+mWkST5ACWHPBUmeeWLhzSrKMomReADHLsxTPquCbLOt9w8TP6uFcVZSUoWh6/ToLJYEjQ+TP6ag7slKHfhfwrgk145a5Jp0S1UcUMfmxTHfXXA5VmmXQUlEcIm++ardWjJhNgmvT8MVbwqMWjSe5YaJvZFpBhkchcr4ZgBbKykG5AxkBzf1uDpAKgiET/nqcNHRazN2/htQ16pQH7hsA5bk2PKvUVcXIBGV88hn5kaAiuTB3ywPATwwbHbNBDEJIM+ocprG8foXaXaVCIWATKbrdSqij4WzTAr1Ln6gHjYYPCzq5XCg/FwweBQ7QlZxMBxs0/1wsP9Y/FcqPl4b6OyrsNq1X5uYyWyTrrhaM+ooN090blOy3V7JTJh0Y/KBd5FA8+XUi6D63S7Lw4Xq7bIMwY3qPaUp4ma1O361NuJNjKxrc/Sa9ql3bxEBovG7wAqTdgiAGhiaHOVwESFZpZmPcXEUdAIg1YqhOOK4QXxaPbWX6HKdzeNhSN9s7dCpb85uIxRCRqQJUdu0AoYP8QiBqesrNbr3zgMmBeqfmVUsMFma3T7JGcl5coYlU878cErul1WRpNynhGBvDj1ztNtT8eoyN10u9YzKkGwIN0grnJxNdIMjrfo9cvjAwTRWdcuXw2lDvDOxFBY9JpWj5TGA+SBeZ0u8QITT+t22ajRTE8xcXWVh9bxuwL5uo73NPGtxK7v/AI8OfgABXbf4aS564HJ9wXOxJrsTJa4AQos2inHcUBTAeJGGwAnKZCf0CaXtRCY2FsUo0deAeCUrE8GUIzLQi1MQotxsxKZxDivw+rRlRWCxGzU4Pd2yRHf7HsNPk4QXPZlDeZ6ikmqRYdfFLgkSRD0f3RadbKWH+KsmASLZ5dNWx6re/t7Mckmu3xE1u+T9vsVbMWZW/1br48eIz1pku/I3X+px2eb5Qq3cftmL9brouZVjjQKCiw7XsDpNT69qjgXxenNhk5e+HdtX93eqXmVwOgAxwBDHwHOLckxcDtGUAyUtx9++6/kPhVOABg1JUBHwDNHejduVTUKs/D0bAaQ4DBghCPF6CqwnhQDsY1HrwkLmT+5TRZGgABwpBi1xTbuP74gX1fRW1NTLGAUr/FWQZZW0Zl0lAw2e4pcW7/3bzlss6qitAAsSHZ49Ttg3l8ryM/nXuYdrUlTIUlbRlZ0BZplXM10qWkBkgSEJEwqCwALCMz/OgNWUDggbgwAANAuAJ0BKoAAgAA+USKORKOiIRYMVLQ4BQSyAGr45l8vklWr/UeRzp36H8nzmznU+YB+t3Sy8wv7eerv6Rf7R6gH9S6jr0APLk/cX4Q/7P/3vSfrE3Pj79/WuKJ0t5k/UL+H67/5fv94AXsndvbTd+v/b+IBqR5AH5hcbt6H7AH6R9Dn/x/1f5M+1z6c/ZL4B/5x/bP+3673sp/cv2Wv2iZUqb7qSHVZ5A/HdV1vxmcBegiyuU8HrYvIBahNpp/ZOlKI1z2p3S5C3tUNYTnXODeNF77KaRX40XEtBxxQku3ZSoehEWjXFlDZsQ35tR2H3kEj9QnXHvJWKScASFB96N0ZFfnBDIA2UX+oex3dRqpUUZhEGsFtUQeT69o7idYOqZtif6SEIQIiS9Z1NMI+Akwjkl6yDKsfo3pYj6Q7ccxLHN1jmqesb8Mqsi456D/f5Ehw4WWv0WIDJa6ib/EYE5g39wSpGSSzQpTjWnKXnog9I0SJK/ZuFiF/t3agKVEwAP7+7qorET2f3RzNkKRviirkXYAqKmpvdi9PwTk48n0XoDANNfPrB5m1vw96DwOD/xXQHF8dZiqOfz2FliJODNIjMp+1E5sw6X+W7Sl4lReLMw6k/9IwqcP9qZhS6oLM+9fJqNOdbXlf85AV7CXlqFrl9timwHGSJK8tAyZef+6+KuL8CY7GhTkh+yNv7s+5ldY7/SPrlzTjKOzftMd5vvNj9rsCvVmdVVq8H5Ethp0vLepaFGqPyiIEBM1pktUWuHTcyhYSncmHgUv4l4AR1Ae6py4CFrNbgsMeo/H1//SyrnbALfdl2YkB2uNkpDHfBBuaZeRL8xrnGOmiITZuV36ovV54vKp+ufKZRM54/jmxWEv5YvhkTwNdLMqD9JYmUuBUzCo9McZhk0nDBD6vt6o2E4miCIuBaXkSXt9hwpE97eo7VShK3WBb+dTIwWt0TQSGbHd4ve8bo762xE9ysPAszmQ3fOreFGjweyCtGM9PCRKlnpYB8rQxx4er4ZPM+9ATlp1gdo3fCOqwkFEJotwIG2/n/4PtjSY9eX+pdXg+qua1HQPidhmBG92KdA7FMlW6J1FXDV4ZmuDpDL6iGvkEDbS0NHuHMy8t1oFBu+oHKfF1pjNXeWM8x6MZsEGrYScfP4pcTVN1PVCSJ72hGMDxZjc1ZZb1LfzIgae2AM6x9vOTDcdepV8dTB1eKaoO1OAbIzSZUDeAYpE4NcOMOTDdF3yF5Vuzl8qhysjfGfj0GkMYArq25mPpnyqXLcn5wS4IHyl2DOBZQMdKF3Ho7frYTFijtgrInaZZF1oEex5xOgDiSDATIJ1zzg3o+kewEN1vKwh4kxbQTht9v1df1iszRlU0FK3Ifn7Ynhma+Ub1FB2nq4tSZlUvucInjkjYmOnmv94QBmeN6dc+KkhBsPKJ/VD2+bQSMXKAOSpREqtWdKEtfCIvGtzniLvjJhRj4C6Z1Mes7SRwc82YuvRCLW4ZDBRxwHObFK0clzxyFtB+k/R5D65JICT20DizVgI5OYybrCd+m7t7Y+oppJMgor84DJdDOVIm6dHy6ctGbuch1yflwDLzdzN+EH1fJboEMZoJl3bQA9OanFqDX9o0KKCH2ZcXuBP+RD8rxr4Nxqaso6eqBU+pZjowY+DdPvbYo5N0w+8GaOXADvvKMqSP5DvlLSRiq//QGJV8lLnnSPn2zU9ZB9lbPXupa7RuEgDpL7G+sPeA+UqJC78HwxsHr679qwgEV8iO+m8F4916vGhoGjDy/thxtjF4EGM/uhGXYoVKGd8kvTKWRNwzl2QJ8nA/CL1cOegpK44rbSPb5bzHIJEovbHbzjLQEny8wvAdMFYH4emQPNKlgJ69cSxJ11sDotu22vWaiDoCNzKJWqZ4V6UWbfCCbvv6tU30h1XnaOoWn37Bf/684oGddcmvm1nFAXNpvhb13jZSFNS8vmMTv3naxXFFxPCzXZH6RzUchigRtD4pjtzEpviB7vFbpr+wKP2r+la6wRSkepq2+ILYUz/W/KnhU57qTVxE9L2k2mdF8rOHYZGxMwFthqSN2UiDFjsLhz5dzzG1sivCq1HgHI4/7BgLbwndPRgfwMjzR+p+Blm6oCIJ2nFhhUtY1yq+cYfBUy5Gh1+Gpf6EjjeAQXfev3g97yGvHs75QW/Vhba3xhFhMUw0dvYQO/upnUeAlZSeLMpU6SJfLLw73vRtPRpQD8DvRCwAraM0swRDZefcBfp7lS/zo6cP5YXesw7+b86aE7z7Luyc4ysqoeEDaPAFUhGYZu3IUuHSFAUcblqVCY6ezDCM65XFoDVESJOrh9HVas339S+98PNcpZhXD78bN2mNf79IkhksanGiFxy6CbZ7kSgi+JpE0KOn3AuPnsJrXL96fapeDRPmGPI7REFm6kuW6kOB2XrWrn9BAxR6DeRIbBrMxXKG7aLAfW2w5I3iONzYYlQf7bLPponT/8/l5YuuXIr/RB8F/EX/D/HLZejsJiaxX+NytXOjhfLMhL2HQBEP45cTcM7py1PlQ+M2BayFf8HvuzhDUPU7CT3StGeHZZwwu7F69Opaz+Xa+bCt9wFSATDMbXezbgNFMF6A/8PMgnL1qUE3e0EEXvwfpix7pff+QCXxx2jUCe+6V63ceQRM9J8bGE/wDTVf1QhvQittw7/zTilFiIGok3a8qa6SYu9q3AdCicMefVDBPs7MQ+EA7KxpbtnEq5pRiOiZPGXY+QvyOIl/Y0GKFuYY5YABVnge1MdXvYb7fw+taCGoA7tYAE/+CPbMQ0FYkXrWxEFQlexbu8JTWXWS6qI9e3IlaVnsqFB+ervD2usVFhWxoNiY4K4RnBXEqDWE5A6CF7OC5O9CkwT4/feu0s6G0gxCDNrvg4I1iJieBLBp06InuJKAw3KLOpmfGzMI4m8msJSGREPCeDEylK9M+4hejZ4k0s7DYuP/BFdJMINS3jHh2sYGCilOmk8vJWEUdeJSfVBv8QYsQQYcL4XiW40N4+e/WLIW/WyFqvcRPPNl2nF2gkzha3RRp0wYBOXLCqXAebzl667nXcMJ2cq9pR52eXdB+rzh1y88mDJRIpJfNQCdlgf5oAJTBuPADfIjHCEaBA6bBEMYlt4OXuC22fXOUT2N7jdskCAdpIQMpb0G9gbHap+EH5T5Eo/TZZHuxdlc8EuqY0VH4W7PNTp461rlnJE1j70Ck54DRv0lnzZMuLXrrewufGLj7ttL4qDbiskc0yAC1V4QSQQJQ4I090zWy3ckeQnNBFEDb/STMuz6ncoijqSL9R6q2hBs0+ibEyaitU47UDW3L3oOTBJV8VrG7r7cqZyWBZdeyKWTxINdCv8qwMVrUZUy9s7Pz4JzfjFKIZD7/ro46Wr4wVD3eC6YEwp/auWVEalZBf/a4Ryew6dDDcX+xxqIqkRT0ZoX8PdpmGLbKA9GAlZb0dlT5X1mRdT4Zbnko/zXNvenkd5/EFkdCwBRJ0Zlh2d6/4Tp6BQ4hvRIF+ghALlkOQnmfGTyPUvP461wjypJ1QgPP0GhoQRMgpXZl/bcqdME81+jD5YzOKH1UpkProBlU+W/SdZm9JGo9isdNJQAPfJgYBBGxNryMTr9lP6sckOp9oVg1Bdl0mA/Zm9if5+7UHqhHzWTK0AwNBGSAcJHMCQYRwnSfp2A3djUpyXE0f+VrNhvsrgK5OHFMM7SRX7EFcVcfl4RDyir+ZpP5oeZEgk0jLIyUIUYJXDIsZbxnAPqsxYSX/IWpoMzEoYOTVPZSeRQ9VLuVOZ1UspLAOzCKnnjsgOvD7+Rjrse3VwOv2RJZEb9gKFv++FiScqJh93Gdyu+hbJkNbuAuqA+FtptoaE2XgvQxmqieZxqvm81Rtopo0+ETVXnW/ou0x00rS3wVoTVAUlNvo3OfMXoFJ9rVWRADDA5dvWSys++DwSOWuf3zg6iyfrFXCC+8hKsMQbrjrj1LSEPqM/Z85VJKghMtd8HlgTPStWecW+qhGd8xSwdUShmNA8gqPP4CfwzkNXLBmBEmIs7PM3D3DvIkeMo2CuVv6lD/ZmqcVwRYhpzKAUJcNungufsgqbD/gZiY4JMO6Uh+f4vmw5Dl3y20Bdtf899uljIaYw3+2YpM5BsGHb3gcBk+cI2XGxJDhPpM+urwdfwH8jwnoxUKae9U0rXlLIlZn7xNQtjl4NsjnKcwf8yR6jQe13UFY8qVrhMbTfemadFH0GTshE+5seiQAAAAAAA',
   lock: 'data:image/webp;base64,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',
+  ex_plank: 'data:image/webp;base64,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',
   ex_pushup: 'data:image/webp;base64,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',
   ex_squat: 'data:image/webp;base64,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',
   ex_situp: 'data:image/webp;base64,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',
@@ -4259,6 +4474,16 @@ const TRACK_TIPS = {
       '<b>Это упражнение снимается сбоку, не спереди.</b>',
       '1. Положи телефон на пол сбоку от себя и <b>подопри его на ребро</b> (прислони к стене, книге или обуви) — экраном на себя. Плашмя камера будет смотреть в потолок.',
       '2. Ляг так, чтобы в кадре было видно тебя целиком — от плеч до колен.',
+    ],
+  },
+  stamina: {
+    tag: 'ВРАТА ВЫДЕРЖКИ',
+    lines: [
+      '<b>Планка снимается сбоку — так же, как подъём корпуса.</b>',
+      '1. Положи телефон на пол сбоку от себя и <b>подопри его на ребро</b> (прислони к стене, книге или обуви) — экраном на себя. Плашмя камера будет смотреть в потолок.',
+      '2. Встань в планку <b>на локтях</b> так, чтобы в кадре было видно тебя целиком — от плеч до стоп.',
+      '<b>Как считается урон:</b> здесь нет повторов. Каждая секунда, что ты держишь тело прямой линией, снимает мобу единицу здоровья. Упал — время встаёт на паузу, встал обратно — продолжается с того же места. Сделанное не сгорает.',
+      '<b>Экран смотреть не нужно.</b> Голова в планке опущена, и следить за полосками невозможно — поэтому бой ведёт звук. Удар и вибрация значат, что моб пал; тревожный сигнал — что таз провис и надо выровняться.',
     ],
   },
 };
@@ -4915,7 +5140,21 @@ function gatesLockedNow(){
    и различать их незачем. */
 function gateTag(g){
   if(!g) return '';
-  return g.stage === 'regular' && g.num ? `${g.rank}/${g.num}` : `${g.rank}/${g.stage}`;
+  const base = g.stage === 'regular' && g.num ? `${g.rank}/${g.num}` : `${g.rank}/${g.stage}`;
+  /* Выдержка помечается в метке, остальные три — нет, и это осознанная
+     асимметрия, а не недоделка.
+
+     Метки врат существуют с 15.08, и по ним уже прочитана вся лестница
+     обрывов — это те самые данные, из которых видно, что E-1 теряет половину
+     вошедших. Начни мы сейчас помечать треком все четыре — прежние записи и
+     новые перестали бы складываться в один ряд, и лестница разорвалась бы
+     ровно там, где мы её изучаем.
+
+     У Выдержки истории нет, ломать нечего. Зато первый же /gate покажет её
+     отдельно, а это единственный вопрос, который будет важен сразу после
+     выхода: считает ли планка вообще у живых людей на живых телефонах. */
+  const ex = g.mobs && g.mobs[0] && g.mobs[0].exercise;
+  return isHoldExercise(ex) ? 'plank:' + base : base;
 }
 // Переключение направления — все три карты открыты и независимы с самого
 // начала (см. решение пользователя), это просто смена того, какую из GATES_*
@@ -4942,10 +5181,11 @@ function setTrack(track){
    замок: тот же значок, что на вратах по подписке, поэтому читается как
    «придёт с контрактом», а не как «недоступно навсегда». Замок в приложении
    уже занят другим смыслом — прогрессионным (предыдущие врата не закрыты). */
-const SOON_TRACKS = [{ cap:'Скоро' }, { cap:'Скоро' }];
+// Было два «Скоро» — одно из них стало Выдержкой.
+const SOON_TRACKS = [{ cap:'Скоро' }];
 // Короткие подписи под ячейками. Отдельно от TRACKS.short («Выносливость»),
 // потому что то слово в ячейку шириной ~51px на узком экране не помещается.
-const TRACK_CAPS = { strength:'Сила', endurance:'Выносл.', core:'Стойкость' };
+const TRACK_CAPS = { strength:'Сила', endurance:'Выносл.', core:'Стойкость', stamina:'Выдержка' };
 
 /* Ряд выбора направления для карты врат. На экране профиля остаётся компактный
    trackIconsHTML() — там это служебный переключатель в шапке, а не главный
@@ -5029,8 +5269,13 @@ function trialDaysLeft(){
   if(ms === null) return null;
   return Math.max(1, Math.ceil((ms - Date.now()) / 86400000));
 }
+/* Планка входит сюда переведённой в единицы, а не сырыми секундами. Иначе
+   человек, который всё это время держал планку и ни разу не отжимался, увидел
+   бы на стене испытательного срока честный ноль повторов — и решил бы, что
+   приложение не засчитало ему ничего. */
 function repsEver(){
-  return (Number(S.pushupsTotal)||0) + (Number(S.squatsTotal)||0) + (Number(S.situpsTotal)||0);
+  return (Number(S.pushupsTotal)||0) + (Number(S.squatsTotal)||0) + (Number(S.situpsTotal)||0)
+    + plankUnits(S.plankSecTotal);
 }
 /* СТЕНА ПОСЛЕ ТРЁХ ДНЕЙ.
 
@@ -5046,25 +5291,25 @@ function repsEver(){
 function trialWallHTML(){
   const n = eGatesLeft();
   const reps = repsEver();
-  // Метка разделяет два очень разных случая: упёрся тот, кто играл, и тот,
-  // у кого ничего не считалось. Смешав их в одно число, мы не увидим, что
-  // часть стены — это несработавшая камера, а не отказ платить.
+  /* Метка разделяет два очень разных случая: упёрся тот, кто играл, и тот, у
+     кого ничего не считалось. Смешав их в одно число, мы не увидим, что часть
+     стены — это несработавшая камера, а не отказ платить.
+     Метку оставляем, а вот ЭКРАН про камеру убран.
+
+     Почему. Условие было `repsEver() === 0`, и оно не означает «камера не
+     работала» — оно означает «повторов нет». Сюда же попадал всякий, кто
+     открыл приложение, посмотрел и не стал тренироваться: ему сообщали о
+     поломке, которой не было. Приложение врало человеку про его же телефон, и
+     это хуже, чем не сказать ничего.
+     Отличить одно от другого по этому числу нельзя — нужен факт сбоя камеры,
+     а он живёт в сессии, а не в сохранении. Пока такого признака нет, честнее
+     показывать всем один экран: срок кончился, вот что дальше. */
   trialTell('trial_end', reps === 0 ? 'nocam' : 'wall');
-  if(reps === 0){
-    return `<div class="trial-wall">
-      <div class="trial-wall-ico">📷</div>
-      <div class="trial-wall-t">Камера так и не заработала</div>
-      <div class="trial-wall-b">За три дня не засчитано ни одного повтора — похоже, дело не в тебе. Давай разберёмся: чаще всего помогает разрешить камеру в настройках Telegram или открыть приложение при хорошем свете.</div>
-      <button class="btn" style="width:100%" onclick="go('instructions')">Как настроить камеру</button>
-      <div class="trial-wall-alt">Если всё работает и хочется дальше — <span class="trial-wall-link" onclick="showPaywallModal('trial')">контракт за ${SUBSCRIPTION_PRICE_RUB} ₽</span></div>
-      ${subCheckWarningHTML()}
-    </div>`;
-  }
   return `<div class="trial-wall">
     <div class="trial-wall-ico">🔒</div>
     <div class="trial-wall-t">Испытательный срок окончен</div>
     <div class="trial-wall-stats">
-      <div><b>${(S.doneGates||[]).length + (S.doneGatesEndurance||[]).length + (S.doneGatesCore||[]).length}</b><span>врат</span></div>
+      <div><b>${allDoneGatesCount()}</b><span>врат</span></div>
       <div><b>${reps}</b><span>повторов</span></div>
       <div><b>${(S.titles||[]).length}</b><span>титулов</span></div>
     </div>
@@ -5076,8 +5321,25 @@ function trialWallHTML(){
 }
 function mapOfferHTML(){
   const n = gatesBehindWall();
+  /* Заголовок обязан описывать ПРОГРЕСС ЧЕЛОВЕКА, а не факт наличия замка.
+
+     Здесь стояло безусловное «Ранг E пройден» — наследство прежней модели, где
+     ранг E был открыт навсегда, и полоса появлялась только у того, кто его
+     действительно закрыл. С трёхдневным сроком врата запираются независимо от
+     пройденного, и человек, не сделавший ни одного повтора, читал поздравление
+     с достижением, которого не совершал. Хуже пустоты: приложение врёт в лицо
+     на первом же экране, и дальше ему не верят ни в чём.
+
+     Три состояния вместо одного. Считаем по фактически закрытым вратам ранга E
+     той же функцией, что и всё остальное. */
+  const left = eGatesLeft();
+  const head = left === 0
+    ? 'Ранг E пройден'
+    : (left === gatesForTrack(S.currentTrack).filter(g => !g.locked && g.rank === 'E').length
+        ? 'Врата закрыты'
+        : `Пройди ранг E · осталось ${left} ${pluralGatesRu(left)}`);
   return `<button class="map-offer" onclick="showPaywallModal('map')">
-    <span class="map-offer-t">Ранг E пройден</span>
+    <span class="map-offer-t">${head}</span>
     <span class="map-offer-s">Дальше ${n} ${pluralGatesRu(n)} · ${SUBSCRIPTION_PRICE_RUB} ₽</span>
   </button>`;
 }
@@ -5730,6 +5992,10 @@ const Cam = {
   stream:null, detector:null, videoEl:null, canvasEl:null,
   running:false, initializing:false, error:null,
   armState:'up', emaAngle:null, lastRepAt:0, rafId:null, downStreak:0, upStreak:0,
+  /* Планка: накопленный хвост удержания меньше секунды, отметка предыдущего
+     кадра, начало провиса и последнее известное состояние позы (нужно, чтобы
+     тревожный сигнал прозвучал ОДИН раз на срыв, а не на каждом кадре). */
+  _plankHeldMs:0, _plankLastAt:null, _plankSagSince:0, _plankOk:null,
   // Поиск случая «двигается, а мы не считаем» — см. noteAngleSwing().
   _poseSince:null, uncountedSwings:0, _swExtreme:null, _swPhase:'up', repStuckSent:null,
   // Какое упражнение отслеживалось в предыдущем кадре — при смене (новый моб
@@ -6400,6 +6666,10 @@ function stopCamera(){
   Cam.stream = null; Cam.detector = null; Cam.videoEl = null; Cam.canvasEl = null;
   Cam.running = false; Cam.initializing = false; Cam.error = null;
   Cam.armState = 'up'; Cam.emaAngle = null; Cam._lastPoseAt = null; Cam.downStreak = 0; Cam.upStreak = 0;
+  /* Хвост удержания сбрасывается ВМЕСТЕ со сменой упражнения. Оставь мы его —
+     недодержанные полсекунды из планки перетекли бы в следующий трек, а при
+     возврате в планку подарили бы секунду, которой не было. */
+  Cam._plankHeldMs = 0; Cam._plankLastAt = null; Cam._plankSagSince = 0; Cam._plankOk = null;
   Cam._poseSince = null; Cam.uncountedSwings = 0; Cam._swExtreme = null; Cam._swPhase = 'up'; Cam.repStuckSent = null;
   Cam.depthBaseline = null; Cam.depthDisplaced = false;
   Cam.smoothPts = {}; Cam.lastKeypoints = null; Cam.lastExercise = null;
@@ -6773,6 +7043,146 @@ const REP_THRESH = {
   situp:  { down:90,  up:150 },
 };
 const REP_CONFIRM_FRAMES = 3;
+/* ---- планка: не повтор, а удержание ----
+   Порогов «вниз/вверх» здесь нет и быть не может: у планки одно состояние —
+   «поза верна», и пока оно держится, время капает уроном. Поэтому и живёт она
+   отдельной функцией, а не ещё одной строкой в REP_THRESH.
+
+   PLANK_LINE_MIN_DEG — насколько прямой должна быть линия плечо-бедро-лодыжка.
+   180° — идеал, 160° — принятый нами допуск в ±20°. Жёстче ставить нельзя:
+   скелет дрожит на слабых чипах, и счётчик начал бы мигать у человека, который
+   стоит неподвижно.
+
+   PLANK_ELBOW_MAX_DEG отличает планку на локтях (~90°) от планки на прямых
+   руках (~180°). Это ВТОРОЙ повод не засчитать удержание, и вводим мы его в
+   приложении, где по данным 136 человек в неделю уже не могут получить ни
+   одного повтора при работающей камере. Поэтому проверка срабатывает только
+   когда локоть реально ВИДЕН и явно прям: не видно рук — засчитываем. Молчать
+   про причину тоже нельзя, отказ обязан называть себя (см. plankHint). */
+const PLANK_LINE_MIN_DEG = 160;
+const PLANK_ELBOW_MAX_DEG = 110;
+/* Сколько прощаем провис таза, прежде чем остановить урон. Провисание — самая
+   частая ошибка в планке, и обрывать время сразу значило бы наказывать за то,
+   чему мы взялись научить: сперва подсказка, и только если человек не
+   выровнялся — пауза. */
+const PLANK_SAG_GRACE_MS = 2000;
+
+function getPlankHold(keypoints){
+  const pts = {}; keypoints.forEach(k => pts[k.name] = k);
+  function readSide(s){
+    const sh = pts[s+'_shoulder'], hp = pts[s+'_hip'], an = pts[s+'_ankle'];
+    if(!sh || !hp || !an || sh.score < 0.3 || hp.score < 0.3 || an.score < 0.3) return null;
+    const line = angleAt(sh, hp, an);
+    if(line == null) return null;
+    /* Куда именно ушёл таз. Прогиб («таз вниз») и «домик» («таз вверх») дают
+       одинаково малый угол, но это разные ошибки с разными подсказками, а
+       прогиб ещё и опасен для поясницы — их нельзя путать. Считаем, где
+       проходила бы прямая плечо-лодыжка над тазом, и смотрим, с какой стороны
+       таз оказался. Телефон в этом упражнении стоит на ребре, значит в кадре
+       низ — это всегда бОльшая y, независимо от того, с какой стороны от
+       человека он лежит и зеркалит ли предпросмотр: зеркало переворачивает x,
+       но не y. */
+    const dx = an.x - sh.x;
+    const onLineY = Math.abs(dx) < 1 ? (sh.y + an.y) / 2
+      : sh.y + (hp.x - sh.x) * (an.y - sh.y) / dx;
+    const span = Math.hypot(an.x - sh.x, an.y - sh.y) || 1;
+    return { line, sag: (hp.y - onLineY) / span };
+  }
+  const L = readSide('left'), R = readSide('right');
+  const body = (L && R) ? { line:(L.line + R.line) / 2, sag:(L.sag + R.sag) / 2 } : (L || R);
+  const elbow = getElbowAngle(keypoints);
+  if(!body) return { held:false, why:'nobody', line:null, elbow };
+  if(elbow != null && elbow > PLANK_ELBOW_MAX_DEG)
+    return { held:false, why:'straightarm', line:body.line, elbow };
+  if(body.line < PLANK_LINE_MIN_DEG)
+    return { held:false, why:(body.sag > 0 ? 'sag' : 'pike'), line:body.line, elbow };
+  return { held:true, why:null, line:body.line, elbow };
+}
+/* Отказ обязан называть причину. Молчащий отказ в планке хуже, чем в повторах:
+   человек лежит лицом в пол и не видит ни скелета, ни статуса — если Система
+   просто перестанет засчитывать время, он решит, что она сломалась. */
+function plankHint(why){
+  if(why === 'straightarm') return 'Встань на локти — сейчас руки прямые';
+  if(why === 'sag') return 'Таз вниз — выровняй спину в линию';
+  if(why === 'pike') return 'Таз вверх — опусти его в линию';
+  return 'Не вижу тебя целиком — нужны плечи, таз и стопы в кадре';
+}
+/* Больше этого времени один кадр подарить не может. Детектор идёт примерно
+   20 кадров в секунду, то есть разрывы в норме около 50 мс. Полсекунды —
+   заведомо больше нормы и заведомо меньше того, что набегает, когда вкладку
+   свернули или чип захлебнулся: без этой границы возврат в приложение разом
+   засчитал бы минуты «удержания», которых не было. */
+const PLANK_MAX_FRAME_MS = 500;
+
+/* Один кадр планки. Возвращает true, пока время идёт.
+
+   Секунда удержания списывается через тот же registerPush, что и повтор в
+   остальных треках, — и это не хитрость, а ровно та механика, о которой
+   договорились: секунда снимает единицу здоровья. Заодно бесплатно достаются
+   гибель моба, звук, вибрация, опыт, добыча, бестиарий и отправка счёта,
+   которые иначе пришлось бы дублировать во второй ветке и потом годами
+   следить, чтобы две ветки не разошлись. */
+function plankTick(res){
+  const now = performance.now();
+  const soft = res.why === 'sag' || res.why === 'pike';
+
+  /* Провис таза прощается ровно PLANK_SAG_GRACE_MS: сперва подсказка, и только
+     если человек не выровнялся — пауза. Прямые руки и потерянного из виду
+     человека не прощаем: там нечего исправлять постепенно, там либо не та
+     поза, либо нам её не видно. */
+  if(soft && !Cam._plankSagSince) Cam._plankSagSince = now;
+  if(!soft) Cam._plankSagSince = 0;
+  const forgiven = soft && (now - Cam._plankSagSince) < PLANK_SAG_GRACE_MS;
+
+  if(!(res.held || forgiven)){
+    /* Разрыв. Обнуляем ТОЛЬКО отметку последнего кадра, чтобы пропущенное
+       время не подарилось при возврате. Накопленный хвост меньше секунды
+       НЕ трогаем: обещано, что сделанное не сгорает, а скелет подрагивает
+       даже у неподвижного человека — обнуляй мы хвост на каждом мигании,
+       система систематически недосчитывала бы честно отстоянное время. */
+    Cam._plankLastAt = null;
+    if(Cam._plankOk !== false){
+      Cam._plankOk = false;
+      plankAlarmSound();
+    }
+    setCamStatus(plankHint(res.why));
+    return false;
+  }
+
+  /* Сравнение с null, а не проверка на истинность: performance.now() может
+     вернуть ровно ноль, и тогда `if(Cam._plankLastAt)` прочитало бы «кадра ещё
+     не было» у кадра, который был. В жизни это стоило бы одной потерянной
+     секунды в начале захода, но нашёл это тест, а не человек. */
+  if(Cam._plankLastAt !== null){
+    const gap = now - Cam._plankLastAt;
+    /* Слишком большой разрыв не даёт НИЧЕГО — ни целиком, ни в размере
+       границы. Раньше здесь стоял Math.min, и десять минут свёрнутой вкладки
+       превращались в подаренные полсекунды: немного, но это подарок за время,
+       которого не было, а весь трек держится ровно на обратном. */
+    if(gap >= 0 && gap <= PLANK_MAX_FRAME_MS) Cam._plankHeldMs = (Cam._plankHeldMs || 0) + gap;
+  }
+  Cam._plankLastAt = now;
+  Cam._plankOk = true;
+
+  /* Именно if, а не while. Сначала здесь стоял цикл — на случай, если кадр
+     принесёт сразу несколько секунд, — и внутри него жила защита «заход мог
+     кончиться победой прямо сейчас». Мутации показали, что убрать эту защиту
+     можно совершенно безнаказанно, и это было верно: один кадр не может
+     принести больше PLANK_MAX_FRAME_MS, а каждый кадр списывает накопленное,
+     поэтому второй виток не наступал никогда. Ветка, которую нельзя проверить,
+     — это не страховка, а место, где однажды заведётся ошибка. Остаток меньше
+     секунды спокойно переезжает в следующий кадр. */
+  if(Cam._plankHeldMs >= 1000){
+    Cam._plankHeldMs -= 1000;
+    registerPush('cam');
+    plankSecondSound();
+  }
+
+  const r = S.raid;
+  setCamStatus(forgiven ? plankHint(res.why)
+    : 'Держишь · ' + fmtHold(r ? (r.reps || 0) : 0));
+  return true;
+}
 // Пороги для второго сигнала (getDepthSignal) — отклонение носа от линии плеч,
 // в единицах ширины плеч. Не завязаны на конкретное направление (см. комментарий
 // у getDepthSignal) — считаем только величину смещения от "домашней" позы.
@@ -6869,7 +7279,16 @@ function camLoop(){
       return;
     }
     Cam._noPoseSince = 0;
-    const angle = ex==='squat' ? getKneeAngle(pose.keypoints)
+    /* Планка считается один раз на кадр и дальше используется дважды: сперва
+       как признак «поза верна» для калибровки, потом как вход для тика
+       удержания. Считать её дважды за кадр — заметная лишняя работа на тех
+       самых слабых телефонах, ради которых мы боремся за каждый кадр. */
+    const plank = isHoldExercise(ex) ? getPlankHold(pose.keypoints) : null;
+    /* Для калибровки планка отдаёт угол ТОЛЬКО когда поза действительно верна.
+       Отдай мы линию всегда — у стоящего человека плечо-таз-лодыжка тоже почти
+       прямая, и отсчёт 3-2-1 запустился бы, пока он ещё ходит по комнате. */
+    const angle = plank ? (plank.held ? plank.line : null)
+      : ex==='squat' ? getKneeAngle(pose.keypoints)
       : ex==='situp' ? getSitupAngle(pose.keypoints)
       : getElbowAngle(pose.keypoints);
     // Второй сигнал (наклон носа к линии плеч) откалиброван под движение
@@ -6877,7 +7296,7 @@ function camLoop(){
     // ни подъёму корпуса (лежачая боковая поза, нос почти не смещается
     // относительно плеч так, как в отжимании), поэтому для обоих используем
     // только угол в суставе.
-    const depth = (ex==='squat' || ex==='situp') ? null : getDepthSignal(pose.keypoints);
+    const depth = (ex==='squat' || ex==='situp' || ex==='plank') ? null : getDepthSignal(pose.keypoints);
     Cam.lastKeypoints = pose.keypoints; Cam.lastExercise = ex;
     // Сколько точек прошло порог уверенности. Это решающая цифра для разбора
     // жалоб «скелета нет»: если модель работает, но уверенных точек ноль —
@@ -6905,6 +7324,29 @@ function camLoop(){
       // В дуэли до старта минуты идёт своя калибровка, после — только счёт.
       if(S.duel && S.duel.phase !== 'fight'){ duelCalibration(angle); return; }
     } else if(S.raid && !S.raid.started){ updateCalibration(angle, depth); return; }
+    /* Планка уходит своей дорогой и до счётчика повторов не доходит вовсе:
+       порогов «вниз/вверх» у неё нет, качков нет, второго сигнала по носу
+       нет — есть только удержание и время. */
+    if(plank){
+      /* Cam._lastPoseAt ставится ТОЛЬКО пока время реально идёт, и это
+         осознанно. Через него работает NO_POSE_DAMAGE_PAUSE_MS — пауза урона
+         МОБА по человеку. Значит сорвался с планки — и бой замирает целиком:
+         ты не бьёшь и тебя не бьют.
+
+         Иначе вышло бы жестоко: отдыха между мобами в планке нет, а моб лупил
+         бы всё время, пока упавший человек переводит дух и заново встаёт. Он
+         умирал бы не от сложности врат, а от механики, которую мы только что
+         придумали. Застоять что-то этим нельзя: урон в планке берётся ровно из
+         удержания, и стоя на паузе не продвинешься ни на секунду. */
+      if(plankTick(plank)){
+        Cam._lastPoseAt = performance.now();
+        if(!Cam._poseSince) Cam._poseSince = performance.now();
+      }
+      /* maybeShowRepStuckHint здесь не зовём: та подсказка построена на
+         качках угла («двигается, но не считается»), а в планке движения нет
+         вовсе. Всё, что нужно сказать, уже сказано в plankHint. */
+      return;
+    }
     let tracked = false;
     const th = REP_THRESH[ex];
 
@@ -7068,8 +7510,20 @@ function manualPush(){
   if(now - manualPushLastAt < MANUAL_PUSH_COOLDOWN_MS) return;
   manualPushLastAt = now;
   markManualBtnCooling();
-  registerPush('manual');
+  /* В планке одно нажатие даёт MANUAL_HOLD_STEP_SEC секунд, а не одну.
+     Ручной счёт — запасной выход для того, у кого распознавание не завелось, и
+     он обязан оставаться проходимым: одна секунда за нажатие означала бы 64
+     тычка по кнопке на первых вратах и 152 на экзамене. Такой запасной выход
+     не выход, а издевательство, и человек просто ушёл бы. */
+  const step = isHoldExercise(currentExercise()) ? MANUAL_HOLD_STEP_SEC : 1;
+  for(let i = 0; i < step; i++){
+    /* Моб мог пасть на любой из секунд, и заход мог кончиться победой —
+       досыпать остаток в закрытые врата нельзя. */
+    if(i && (!S.raid || !S.raid.started)) break;
+    registerPush('manual');
+  }
 }
+const MANUAL_HOLD_STEP_SEC = 5;
 /* Гасим кнопку на время паузы. Без этого нажатие просто молча не срабатывает,
    и человек решает, что приложение зависло, — а так видно, что идёт откат. */
 function markManualBtnCooling(){
@@ -7084,11 +7538,21 @@ function markManualBtnCooling(){
 /* Счётчик отжиманий за текущий заход во врата (сумма по всем мобам, включая
    уже убитых) — золотой бейдж снизу слева поверх камеры, живёт и на рейде,
    и на отдыхе (камера/бейдж не пересоздаются между ними, см. rRest()). */
-function repCounterHTML(){ return `<div class="rep-counter" id="repCounter">${(S.raid&&S.raid.reps)||0}</div>`; }
+/* В планке счётчик показывает ВРЕМЯ и делается заметно крупнее.
+   Причина не в красоте: человек в планке смотрит в пол, и единственный взгляд,
+   который он может себе позволить не ломая позу, — короткий косой вниз-вбок.
+   Цифру за этот взгляд надо успеть прочитать целиком, поэтому она крупная,
+   широкая и одна. Всё остальное ему в этот момент рассказывает звук. */
+function repCounterHTML(){
+  const hold = isHoldExercise(currentExercise());
+  const v = (S.raid && S.raid.reps) || 0;
+  return `<div class="rep-counter${hold?' hold':''}" id="repCounter">${hold ? fmtHold(v) : v}</div>`;
+}
 function updateRepCounterDOM(){
   const el = document.getElementById('repCounter');
   if(!el) return;
-  el.textContent = (S.raid&&S.raid.reps)||0;
+  const v = (S.raid && S.raid.reps) || 0;
+  el.textContent = isHoldExercise(currentExercise()) ? fmtHold(v) : v;
   // Пульс на каждый засчитанный повтор — снять/reflow/добавить, тот же приём,
   // что и у .mob-art.hit, иначе повторное добавление того же класса подряд
   // не ре-триггерит CSS-анимацию у браузера.
@@ -7637,7 +8101,10 @@ const CALIB_STABLE_MS = 1500;
 // Для подъёма корпуса настройка камеры (положить телефон на пол сбоку, на
 // ребро) объективно дольше, чем "поставь телефон перед собой" — даём больше
 // времени на калибровку, прежде чем откроем ручной счёт как запасной вариант.
-const CALIB_MAX_MS = { pushup:15000, squat:15000, situp:25000 };
+/* У планки тот же срок, что у подъёма корпуса: раскладка камеры у них
+   одинаковая (телефон на полу сбоку, на ребро), и она объективно дольше, чем
+   «поставь телефон перед собой». Плюс в планку ещё надо встать. */
+const CALIB_MAX_MS = { pushup:15000, squat:15000, situp:25000, plank:25000 };
 /* Раньше здесь был слепой таймер на 10 секунд. Теперь только следит за
    Cam.error (если камера так и не завелась — сразу открываем ручной счёт,
    ждать смысла нет) — а сама калибровка по позе идёт из camLoop() через
@@ -7710,15 +8177,18 @@ function calibOverlayHTML(r){
   const ex = mobExercise(r.mobs[r.idx]);
   const jointsHint = ex==='squat' ? 'Встань так, чтобы бёдра, колени и лодыжки были в кадре'
     : ex==='situp' ? 'Ляг боком к телефону — видно должно быть плечи, бёдра и колени'
+    /* У планки в кадре обязаны быть СТОПЫ, а не колени: линия, по которой мы
+       судим о позе, идёт плечо-таз-лодыжка, и без лодыжки судить не по чему. */
+    : ex==='plank' ? 'Встань в планку на локтях боком к телефону — видно должно быть плечи, таз и стопы'
     : 'Встань так, чтобы плечи и локти были в кадре';
-  const exName = ex==='squat' ? 'приседания' : ex==='situp' ? 'подъёмы корпуса' : 'отжимания';
+  const exName = ex==='squat' ? 'приседания' : ex==='situp' ? 'подъёмы корпуса' : ex==='plank' ? 'планку' : 'отжимания';
   // Подсказка про дистанцию/раскладку — разная по упражнениям: приседу нужно
   // отойти (видно всё тело спереди), отжиманию — положить телефон близко и
   // спереди, а подъёму корпуса — вообще другой ракурс: телефон лежит СБОКУ
   // от человека, а не спереди (см. брейншторм про ракурс и showTrackIntro()).
   const distanceHint = ex==='squat'
     ? 'Отойди от телефона на 1.5–2 метра'
-    : ex==='situp'
+    : (ex==='situp' || ex==='plank')
     ? 'Телефон лежит на полу сбоку от тебя, на ребро — не спереди, как в остальных упражнениях'
     : 'Положи телефон на пол экраном на себя, на уровне груди';
   return `<div class="raid-calib" id="raidCalib" data-state="${r.calibState}">
@@ -7947,7 +8417,7 @@ function rRaid(){
         ${repCounterHTML()}
       </div>
       <div class="raid-side-col">
-        <button class="raid-side-btn manual" onclick="manualPush()" aria-label="Засчитать вручную">+</button>
+        <button class="raid-side-btn manual" onclick="manualPush()" aria-label="${isHoldExercise(mobExercise(m)) ? `Засчитать ${MANUAL_HOLD_STEP_SEC} секунд вручную` : 'Засчитать вручную'}">${isHoldExercise(mobExercise(m)) ? '+'+MANUAL_HOLD_STEP_SEC+'с' : '+'}</button>
         <span class="raid-side-label gold">Не считает?</span>
       </div>
     </div>
@@ -8791,12 +9261,14 @@ function ensureDay(){
   if(S.todayDate !== today){
     S.pushToday = 0;
     S.pushupsToday = 0; S.squatsToday = 0; S.situpsToday = 0;
+    S.plankSecToday = 0; S.plankSecCamToday = 0;
     // Камерные счётчики сбрасываются вместе с обычными — иначе «за сегодня»
     // у них означало бы разные периоды, и сравнивать их было бы нельзя.
     S.pushupsCamToday = 0; S.squatsCamToday = 0; S.situpsCamToday = 0;
     if(new Date().getDay()===1){
       S.pushWeek = 0; S.pushupsWeek = 0; S.squatsWeek = 0; S.situpsWeek = 0;
       S.pushupsCamWeek = 0; S.squatsCamWeek = 0; S.situpsCamWeek = 0;
+      S.plankSecWeek = 0; S.plankSecCamWeek = 0;
     } // понедельник — новая неделя
     S.todayDate = today;
   }
@@ -8836,7 +9308,15 @@ function registerPush(source){
   S.totalPush++; S.pushToday++; S.pushWeek++;
   // Та же сумма, но раздельно по упражнению — см. "Прогресс повторений" в
   // профиле (rProfile()), где отжимания и приседания считаются отдельно.
-  if(mobExercise(m)==='squat'){
+  if(isHoldExercise(mobExercise(m))){
+    /* В планке один вызов registerPush — это одна СЕКУНДА удержания, а не
+       повтор (см. plankTick). Урон при этом снимается ровно такой же, единица
+       здоровья: на том и построен весь трек. А вот в дневник это попадает в
+       свою колонку и в своих единицах — сложить секунды с повторами нельзя,
+       поэтому и поле называется plankSec, а не plank. */
+    S.plankSecTotal++; S.plankSecToday++; S.plankSecWeek++;
+    if(byCam){ S.plankSecCamTotal++; S.plankSecCamToday++; S.plankSecCamWeek++; }
+  } else if(mobExercise(m)==='squat'){
     S.squatsTotal++; S.squatsToday++; S.squatsWeek++;
     if(byCam){ S.squatsCamTotal++; S.squatsCamToday++; S.squatsCamWeek++; }
   } else if(mobExercise(m)==='situp'){
@@ -8847,8 +9327,14 @@ function registerPush(source){
     if(byCam){ S.pushupsCamTotal++; S.pushupsCamToday++; S.pushupsCamWeek++; }
   }
   updateRaidDOM();
-  if(S.settings.vibration) hapticImpact(m.hp<=0 ? 'heavy' : 'medium');
-  playHitSound(m.hp<=0);
+  /* В планке звучит и ощущается только ДОБИВАЮЩИЙ удар. Обычный приходился бы
+     на каждую секунду — 64 раза за первые врата, — и превратил бы бой вслепую
+     в сплошной треск, в котором не расслышать единственное, что человеку с
+     опущенной головой действительно нужно знать: что моб пал и полоса пошла
+     дальше. Тихий тик раз в пять секунд вместо этого даёт plankSecondSound. */
+  const quietTick = isHoldExercise(mobExercise(m)) && m.hp > 0;
+  if(S.settings.vibration && !quietTick) hapticImpact(m.hp<=0 ? 'heavy' : 'medium');
+  if(!quietTick) playHitSound(m.hp<=0);
   if(m.hp<=0){
     if(!r.replay){
       const xpGain = Math.round(m.maxHp * xpMultiplierFor(r.gate));
@@ -8877,7 +9363,13 @@ function registerPush(source){
     setTimeout(()=>{
       r.idx++;
       if(r.idx >= r.mobs.length){ winRaid(); }
-      else if(S.settings.stormMode){
+      /* Планка идёт БЕЗ ОТДЫХА между мобами — одной непрерывной полосой, так
+         решено по механике. Экран отдыха с таймером тут не просто лишний: он
+         прервал бы удержание, ради которого весь трек и существует.
+         Пользуемся готовым путём штурмового режима, включая мгновенное
+         лечение: без него отсутствие передышки означало бы ещё и отсутствие
+         восстановления, и врата стали бы смертельными сверх задуманного. */
+      else if(S.settings.stormMode || isHoldExercise(mobExercise(m))){
         // Штурмовой режим: без экрана-таймера отдыха — сразу следующий моб.
         // Лечим мгновенно на ту же сумму, что набежала бы за весь таймер
         // отдыха (heal-за-тик × длительность) — суммарный урон за заход не
@@ -8982,7 +9474,7 @@ function winRaid(){
   // Первые в жизни закрытые врата — считаем по ОБОИМ направлениям сразу, а не
   // только по тому, в котором сейчас играем (иначе ачивка "Первый шаг" могла
   // бы выпасть повторно, если начать сперва Выносливость, а потом Силу).
-  const isFirstGateEver = S.doneGates.length===0 && S.doneGatesEndurance.length===0 && S.doneGatesCore.length===0;
+  const isFirstGateEver = allDoneGatesCount() === 0;
   const done = doneGatesForTrack(track);
   if(!done.includes(g.id)) done.push(g.id);
   checkTitles('win', { gate:g }); // после push в done — видит только что закрытые врата
@@ -9812,7 +10304,7 @@ function rVictory(){
    навсегда, и хранить ничего не нужно. Меньше состояния — меньше того, что
    разъедется между устройствами. */
 function firstWinPathHTML(){
-  const closed = (S.doneGates||[]).length + (S.doneGatesEndurance||[]).length + (S.doneGatesCore||[]).length;
+  const closed = allDoneGatesCount();
   if(closed !== 1) return '';
   const n = eRegularLeft();
   const days = trialDaysLeft();
@@ -9874,20 +10366,27 @@ function examOfferHTML(){
    именно то, что тяжелее и смотрится реже.
    Чтобы кнопка не была просто дверью, на ней сразу видно главное число —
    сумму всех повторов за всё время. */
-function statusRowHTML(iconKey, fallback, name, trackKey, trackName, today, week, total){
+function statusRowHTML(iconKey, fallback, name, trackKey, trackName, today, week, total, fmt){
+  /* fmt — как показывать цифры. У трёх счётных упражнений это просто число, у
+     планки — время вида «12:40». Без этого секунды удержания встали бы в один
+     ряд с повторами и читались бы как «сегодня 760 раз». */
+  const f = fmt || (v => v);
   return `<div class="sub" style="margin-top:14px;font-size:12px;letter-spacing:1px;text-transform:uppercase;display:flex;justify-content:space-between"><span>${icon(iconKey,15,fallback)} ${name}</span><span class="gold">${trackName} — ${trackRankLabel(trackKey)}</span></div>
     <div class="grid3">
-      <div class="gcard"><div class="v">${today}</div><div class="k">сегодня</div></div>
-      <div class="gcard"><div class="v">${week}</div><div class="k">за неделю</div></div>
-      <div class="gcard"><div class="v">${total}</div><div class="k">всего</div></div>
+      <div class="gcard"><div class="v">${f(today)}</div><div class="k">сегодня</div></div>
+      <div class="gcard"><div class="v">${f(week)}</div><div class="k">за неделю</div></div>
+      <div class="gcard"><div class="v">${f(total)}</div><div class="k">всего</div></div>
     </div>`;
 }
 function statusBlockHTML(){
-  const total = (S.pushupsTotal|0) + (S.squatsTotal|0) + (S.situpsTotal|0);
+  /* Планка приходит сюда переведённой в единицы (plankUnits), а не секундами:
+     в заголовке стоит слово «повторов», и подмешать туда 760 секунд значило бы
+     соврать в четыре раза. */
+  const total = (S.pushupsTotal|0) + (S.squatsTotal|0) + (S.situpsTotal|0) + plankUnits(S.plankSecTotal);
   const open = !!S.statusOpen;
   /* Содержимое рисуем ВСЕГДА, а прячем высотой. Так раскрытие не дёргает
      экран перерисовкой и работает плавно; на объём разметки это не влияет —
-     карточек девять. */
+     карточек двенадцать. */
   return `<button class="toggle-row" style="margin-top:18px" onclick="toggleStatus(this)" aria-expanded="${open}">
       <span>${icon('ex_pushup',15,'👊')} Статус</span>
       <span class="sub" style="font-size:12.5px;display:flex;align-items:center;gap:7px">
@@ -9899,6 +10398,7 @@ function statusBlockHTML(){
       ${statusRowHTML('ex_pushup','👊','Отжимания','strength','Сила', S.pushupsToday, S.pushupsWeek, S.pushupsTotal)}
       ${statusRowHTML('ex_squat','🦵','Приседания','endurance','Выносливость', S.squatsToday, S.squatsWeek, S.squatsTotal)}
       ${statusRowHTML('ex_situp','🛡️','Подъём корпуса','core','Стойкость', S.situpsToday, S.situpsWeek, S.situpsTotal)}
+      ${statusRowHTML('ex_plank','🔥','Планка','stamina','Выдержка', S.plankSecToday, S.plankSecWeek, S.plankSecTotal, fmtHold)}
     </div>`;
 }
 // Русские окончания: 1 повтор, 2 повтора, 5 повторов.
@@ -9983,10 +10483,14 @@ function rProfile(){
     </div>
 
     <div class="sub" style="margin-top:18px;font-size:12px;letter-spacing:1px;text-transform:uppercase">Врат закрыто</div>
-    <div class="grid3">
-      <div class="gcard"><div class="v">${icon('ex_pushup',15,'👊')} ${S.doneGates.length}</div><div class="k">Врата Силы</div></div>
-      <div class="gcard"><div class="v">${icon('ex_squat',15,'🦵')} ${S.doneGatesEndurance.length}</div><div class="k">Врата Выносливости</div></div>
-      <div class="gcard"><div class="v">${icon('ex_situp',15,'🛡️')} ${S.doneGatesCore.length}</div><div class="k">Врата Стойкости</div></div>
+    <!-- Карточки рисуются из TRACKS, а не перечислением: направлений стало
+         четыре, и раскладка ушла с трёх колонок на две. Захардкоженный список
+         пришлось бы править при каждом новом треке — и он бы забылся, как уже
+         забывался в countDoneAcrossTracks. -->
+    <div class="grid3" style="grid-template-columns:repeat(2,1fr)">
+      ${Object.values(TRACKS).map(t =>
+        `<div class="gcard"><div class="v">${icon(t.iconKey,15,t.iconFallback)} ${(doneGatesForTrack(t.key)||[]).length}</div><div class="k">${t.label}</div></div>`
+      ).join('')}
     </div>
 
     ${rankProgressHTML()}
@@ -10302,6 +10806,7 @@ function rInstructions(){
     ${instructionBlockHTML('strength','pushup','👊','Отжимания')}
     ${instructionBlockHTML('endurance','squat','🦵','Приседания')}
     ${instructionBlockHTML('core','situp','🛡','Подъём корпуса')}
+    ${instructionBlockHTML('stamina','plank','🔥','Планка')}
 
     <div class="sub" style="margin-top:18px;font-size:12.5px;line-height:1.4">⚠️ Если Система долго не видит тебя в кадре — попробуй немного отодвинуть или развернуть телефон, подсказка на экране калибровки подскажет, чего именно не хватает.</div>
 
@@ -10353,7 +10858,9 @@ function doLocalReset(){
     S.situpsCamTotal=0; S.situpsCamToday=0; S.situpsCamWeek=0;
     S.pushupsTotal=0; S.pushupsToday=0; S.pushupsWeek=0; S.squatsTotal=0; S.squatsToday=0; S.squatsWeek=0;
     S.situpsTotal=0; S.situpsToday=0; S.situpsWeek=0;
-    S.currentTrack='strength'; S.doneGates=[]; S.doneGatesEndurance=[]; S.doneGatesCore=[];
+    S.plankSecTotal=0; S.plankSecToday=0; S.plankSecWeek=0;
+    S.plankSecCamTotal=0; S.plankSecCamToday=0; S.plankSecCamWeek=0;
+    S.currentTrack='strength'; S.doneGates=[]; S.doneGatesEndurance=[]; S.doneGatesCore=[]; S.doneGatesStamina=[];
     S.rank='E'; S.justRanked=null; S.justStreakInc=false;
     S.raid=null; S.lastWinDate=null; S.todayDate=null; S.onboarded=false; S.step=0;
     S.titles=[]; S.bestiary={}; S.selectedTitle=null; S.contractSeen=[]; S.achievements=[]; S.everDied=false;
