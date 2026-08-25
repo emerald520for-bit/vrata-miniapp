@@ -1132,6 +1132,103 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
   border-bottom:2px solid transparent;margin-bottom:-1px;cursor:pointer;font-family:inherit;
 }
 .inv-tab.on{color:var(--text);border-bottom-color:var(--mana)}
+
+/* ---- Полка сундуков ----
+   Стоит над вкладками и существует, только когда есть что открывать. */
+.chest-shelf{
+  border:1px solid color-mix(in srgb, var(--gold) 40%, transparent);
+  background:linear-gradient(180deg, color-mix(in srgb, var(--gold) 12%, transparent), transparent);
+  border-radius:12px;padding:12px;margin-bottom:14px;
+}
+.chest-shelf-head{font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--gold);margin-bottom:10px}
+.chest-shelf-row{display:flex;gap:10px;flex-wrap:wrap}
+.chest-shelf-sub{font-size:11px;color:var(--muted);margin-top:9px;line-height:1.4}
+.chest-shelf-err{font-size:12px;color:var(--danger);margin-top:8px}
+.chest-cell{
+  position:relative;width:66px;height:66px;border-radius:10px;padding:0;cursor:pointer;font-family:inherit;
+  border:1.5px solid color-mix(in srgb, var(--gold) 55%, transparent);
+  background:rgba(10,13,31,.6);display:flex;align-items:center;justify-content:center;
+  transition:transform .12s ease;
+}
+.chest-cell:active{transform:scale(.94)}
+/* Пока запрос в пути — кнопка гасится: второй тап съел бы второй сундук. */
+.chest-cell.busy{opacity:.45;pointer-events:none}
+.chest-cell-rank{position:absolute;top:3px;left:5px;font-size:10px;color:var(--gold);letter-spacing:.5px}
+.chest-cell-n{position:absolute;bottom:3px;right:5px;font-size:11px;color:var(--text)}
+/* Лёгкое покачивание на полке — сундук сам просится в руки. */
+@keyframes chestIdle{0%,88%,100%{transform:rotate(0)}92%{transform:rotate(-4deg)}96%{transform:rotate(4deg)}}
+.chest-cell .chest-svg,.chest-cell .chest-img{animation:chestIdle 3.4s ease-in-out infinite}
+
+/* ---- Сцена открытия ----
+   Живёт отдельным узлом в body (см. chestSceneOpen): внутри экрана её DOM
+   пересоздавался бы каждым render(), и анимация начиналась бы заново. */
+.chest-scene{
+  position:fixed;inset:0;z-index:60;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:18px;padding:24px;
+  background:radial-gradient(circle at 50% 45%, rgba(24,18,4,.92), rgba(2,3,10,.97));
+  animation:chestSceneIn .22s ease both;
+}
+@keyframes chestSceneIn{from{opacity:0}to{opacity:1}}
+.chest-scene-box{display:flex;align-items:center;justify-content:center}
+.chest-big{filter:drop-shadow(0 0 18px color-mix(in srgb, var(--gold) 45%, transparent))}
+/* Тряска: крышка ходит сильнее корпуса — будто её распирает изнутри. */
+@keyframes chestShake{
+  0%,100%{transform:translateX(0) rotate(0)}
+  20%{transform:translateX(-3px) rotate(-2deg)}
+  40%{transform:translateX(3px) rotate(2deg)}
+  60%{transform:translateX(-2px) rotate(-1.4deg)}
+  80%{transform:translateX(2px) rotate(1.4deg)}
+}
+.ph-shake .chest-big,.ph-await .chest-big{animation:chestShake .34s ease-in-out infinite}
+.ph-await .chest-big{opacity:.85}
+/* Крышка откидывается назад — только у вектора: у картинки отдельной крышки
+   нет, там за момент вскрытия отвечает вспышка (см. chestIcon). */
+.chest-svg .chest-lid{transform-origin:24px 22px;transition:transform .34s cubic-bezier(.3,-0.4,.5,1.6)}
+.ph-flash .chest-big.chest-svg .chest-lid,.ph-loot .chest-big.chest-svg .chest-lid{transform:rotate(-108deg) translateY(-2px)}
+/* Картинке в момент вспышки добавляем свечение изнутри: на арте уже нарисована
+   светящаяся щель под крышкой, и разгорается именно она. */
+.chest-img{transition:filter .3s ease, transform .3s ease, opacity .3s ease}
+.ph-flash .chest-big.chest-img{
+  filter:drop-shadow(0 0 26px color-mix(in srgb, var(--gold) 85%, transparent)) brightness(1.5);
+  transform:scale(1.06);
+}
+/* Отработав, сундук отступает на второй план — на сцену выходит добыча. */
+.ph-loot .chest-big{opacity:.5;transform:scale(.82) translateY(6px);transition:all .3s ease}
+.chest-scene-flash{
+  position:absolute;left:50%;top:45%;width:10px;height:10px;border-radius:50%;
+  background:var(--gold);opacity:0;pointer-events:none;
+}
+@keyframes chestFlash{
+  from{opacity:.95;transform:translate(-50%,-50%) scale(1)}
+  to{opacity:0;transform:translate(-50%,-50%) scale(46)}
+}
+.ph-flash .chest-scene-flash{animation:chestFlash .5s ease-out both}
+/* Добыча появляется только на последней фазе — до неё её попросту нет. */
+.chest-scene-loot{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;min-height:0}
+.chest-scene-done{
+  opacity:0;pointer-events:none;transition:opacity .2s ease .35s;
+  background:none;border:1px solid var(--gold);color:var(--gold);font-family:inherit;
+  font-size:13px;padding:9px 26px;border-radius:9px;cursor:pointer;
+}
+.ph-loot .chest-scene-done{opacity:1;pointer-events:auto}
+.chest-loot-card{
+  width:92px;padding:12px 8px;border-radius:11px;text-align:center;
+  border:1px solid color-mix(in srgb, var(--gold) 45%, transparent);
+  background:rgba(10,13,31,.75);
+  display:flex;flex-direction:column;align-items:center;gap:7px;
+  animation:chestLootIn .34s cubic-bezier(.2,.9,.3,1.4) both;
+}
+@keyframes chestLootIn{from{opacity:0;transform:translateY(16px) scale(.8)}to{opacity:1;transform:none}}
+.chest-loot-name{font-size:11px;color:var(--text);line-height:1.25}
+.chest-loot-n{font-size:11px;color:var(--gold)}
+/* Уважаем системную настройку: кого укачивает от анимаций, тому сразу итог. */
+@media (prefers-reduced-motion: reduce){
+  .chest-cell .chest-svg,.chest-cell .chest-img,.ph-shake .chest-big,.ph-await .chest-big{animation:none}
+  .ph-flash .chest-scene-flash{animation:none}
+  .chest-loot-card{animation:none}
+  .chest-svg .chest-lid,.chest-img{transition:none}
+}
+
 /* Сетка предметов */
 .inv-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
 .inv-cell{
@@ -2017,6 +2114,7 @@ const GUILD_API_URL  = 'https://vrata-bot.emerald520for.workers.dev/api/guild';
 const GUILDS_API_URL = 'https://vrata-bot.emerald520for.workers.dev/api/guilds';
 const FRIENDS_API_URL = 'https://vrata-bot.emerald520for.workers.dev/api/friends';
 const SHOP_API_URL = 'https://vrata-bot.emerald520for.workers.dev/api/shop';
+const CHEST_OPEN_API_URL = 'https://vrata-bot.emerald520for.workers.dev/api/chest/open';
 
 /* ============ ПРЕДМЕТЫ ============
    Инвентарь, в отличие от врат и уровня, живёт НА СЕРВЕРЕ — иначе его не
@@ -2028,18 +2126,49 @@ const SHOP_API_URL = 'https://vrata-bot.emerald520for.workers.dev/api/shop';
 const Items = {
   have: null,      // { item_id: count } — null пока не загружено
   equip: { weapon:null, aura:null, frame:null },
-  catalog: null,   // { trophies:[], gear:[], recipes:[] }
+  catalog: null,   // { trophies:[], gear:[], recipes:[], chests:[] }
   loading: false,
   error: false,
   seen: false,     // смотрел ли инвентарь после последней находки (красная точка)
+};
+
+/* Сцена открытия сундука. Отдельный объект, а не поля в S, по той же причине,
+   что и Items: это не состояние игрока, которое надо сохранять между
+   запусками, а состояние секундного показа. Попади оно в saveState — человек,
+   закрывший приложение на середине анимации, при следующем входе снова увидел
+   бы вскрытый сундук и решил, что получил вторую награду.
+
+   busy — щеколда против двойного нажатия. Без неё второй тап по сундуку уходит
+   на сервер вторым запросом, тот честно списывает ВТОРОЙ сундук, и человек
+   теряет его, не увидев ни анимации, ни содержимого: сцена-то одна. Сервер от
+   удвоения награды защищён (см. openChest), а вот от потери сундука защищает
+   только эта щеколда. */
+const Chest = {
+  busy: false,     // запрос в пути — новые нажатия игнорируем
+  open: null,      // { id, rank, loot:[{id,name,count}], phase } пока идёт сцена
+  error: null,
 };
 function itemDef(id){
   if(!Items.catalog) return null;
   return Items.catalog.trophies.find(t=>t.id===id)
       || Items.catalog.gear.find(g=>g.id===id)
+      /* Сундуки лежат отдельным списком, но по идентификатору искать их надо
+         здесь же: их имена показывает та же сцена открытия, что и трофеи.
+         Список появился позже остальных, поэтому проверяем его наличие — у
+         человека с закешированным клиентом ответ сервера может быть старым. */
+      || ((Items.catalog.chests || []).find(c=>c.id===id))
       || null;
 }
 function itemCount(id){ return (Items.have && Items.have[id]) || 0; }
+/* Сундуки игрока: только те, что реально лежат, и в порядке рангов — сначала
+   старшие. Порядок важен: если сундуков несколько, первым открывать интереснее
+   тот, что ценнее. */
+const CHEST_RANK_ORDER = ['S','A','B','C','D','E'];
+function myChests(){
+  const defs = (Items.catalog && Items.catalog.chests) || [];
+  return defs.filter(c=>itemCount(c.id)>0)
+             .sort((a,b)=>CHEST_RANK_ORDER.indexOf(a.rank)-CHEST_RANK_ORDER.indexOf(b.rank));
+}
 
 function loadItems(force){
   if(!TG || !TG.initData || !rankChatId()) return Promise.resolve();
@@ -2057,6 +2186,146 @@ function loadItems(force){
     })
     .catch(()=>{ Items.loading = false; Items.error = true;
       if(S.screen==='inventory') render({ keepScroll:true }); });
+}
+
+/* Открыть сундук. Порядок здесь обратный привычному: сцена запускается СРАЗУ,
+   не дожидаясь ответа сервера, и лишь потом в неё подставляется добыча.
+
+   Причина простая: ответ идёт десятые доли секунды, а на плохой связи —
+   секунды. Показывать всё это время неподвижную кнопку значит превратить
+   награду в ожидание, и человек успевает нажать ещё раз. Тряска сундука
+   занимает ровно то время, которое всё равно уходит на запрос, и к моменту
+   вспышки ответ обычно уже здесь.
+
+   Если ответ не пришёл к концу тряски — сцена ждёт на нём, а не показывает
+   пустоту: phase остаётся 'shake' до тех пор, пока не появится loot. */
+const CHEST_SHAKE_MS = 1100;   // тряска крышки
+const CHEST_FLASH_MS = 320;    // вспышка между тряской и добычей
+function openChest(id){
+  if(Chest.busy) return;                       // щеколда: см. комментарий у Chest
+  if(itemCount(id) <= 0) return;               // нечего открывать — кнопки быть не должно
+  if(!TG || !TG.initData) return;
+  Chest.busy = true; Chest.error = null;
+  Chest.open = { id, rank:(itemDef(id)||{}).rank || '', loot:null, phase:'shake' };
+  chestSceneOpen();
+  render();
+  if(S.settings.vibration) hapticImpact('medium');
+  fetch(CHEST_OPEN_API_URL, {
+    method:'POST',
+    headers:{ 'Content-Type':'application/json', 'X-Init-Data':TG.initData },
+    body: JSON.stringify({ item_id:id }),
+  })
+    .then(r=>r.json().then(d=>({ ok:r.ok, status:r.status, d })))
+    .then(({ ok, status, d })=>{
+      if(!ok){
+        /* 409 — «открывать нечего»: сундук уже вскрыт вторым запросом или его
+           не было. Ошибкой это не показываем, просто закрываем сцену и
+           перечитываем инвентарь: правда о том, что у человека есть, лежит на
+           сервере, и спорить с ней клиенту незачем. */
+        Chest.open = null; Chest.busy = false;
+        chestSceneClose();
+        if(status !== 409) Chest.error = 'Не удалось открыть сундук. Проверь связь.';
+        loadItems(true).then(()=>render());
+        render();
+        return;
+      }
+      /* Инвентарь правим локально, чтобы полка обновилась сразу: ждать
+         повторной загрузки значит на секунду показать уже открытый сундук. */
+      if(Items.have){
+        Items.have[id] = Number(d.left) || 0;
+        if(!Items.have[id]) delete Items.have[id];
+        for(const [tid, n] of Object.entries(d.loot || {})){
+          Items.have[tid] = (Items.have[tid] || 0) + n;
+        }
+      }
+      Chest.open.loot = Object.entries(d.loot || {}).map(([tid, n])=>({
+        id: tid, count: n, name: (itemDef(tid) || {}).name || tid,
+      }));
+      /* Если тряска уже кончилась и сцена ждала ответа — открываем сразу. */
+      if(Chest.open.phase === 'await') chestReveal();
+    })
+    .catch(()=>{
+      Chest.open = null; Chest.busy = false;
+      chestSceneClose();
+      Chest.error = 'Не удалось открыть сундук. Проверь связь.';
+      render();
+    });
+  // Тряска идёт фиксированное время, дальше — вспышка (или ожидание ответа).
+  setTimeout(()=>{
+    if(!Chest.open) return;
+    if(Chest.open.loot) chestReveal();
+    else chestPhase('await');
+  }, CHEST_SHAKE_MS);
+}
+
+/* ---- Сцена живёт СВОИМ узлом в body, а не внутри экрана ----
+
+   Это не вкусовщина. render() перерисовывает root целиком через innerHTML, и
+   любой элемент внутри него создаётся заново — вместе со всеми CSS-анимациями,
+   которые начинаются с нуля. А render() во время сцены зовётся обязательно:
+   на приход добычи, на обновление полки, на любой фоновый запрос. Сундук
+   дёргался бы с начала при каждом таком вызове и никогда не открылся.
+
+   Здесь узел создаётся один раз, а фазы переключаются классом — DOM остаётся
+   тем же, анимации не перезапускаются. */
+let _chestEl = null;
+function chestPhase(phase){
+  if(!Chest.open) return;
+  Chest.open.phase = phase;
+  if(_chestEl) _chestEl.className = 'chest-scene ph-' + phase;
+}
+function chestSceneOpen(){
+  chestSceneClose();
+  const el = document.createElement('div');
+  el.className = 'chest-scene ph-shake';
+  el.innerHTML = `
+    <div class="chest-scene-flash"></div>
+    <div class="chest-scene-box">${chestIcon(132, 'chest-big')}</div>
+    <div class="chest-scene-loot" id="chestLoot"></div>
+    <button class="chest-scene-done" id="chestDone" type="button">Забрать</button>`;
+  /* Тап по фону закрывает — но только когда добыча уже на экране (см.
+     closeChest): сундук к этому моменту уже списан на сервере, и уйти, не
+     увидев содержимого, значит потерять его без следа. */
+  el.addEventListener('click', e=>{ if(e.target === el) closeChest(); });
+  el.querySelector('#chestDone').onclick = closeChest;
+  document.body.appendChild(el);
+  _chestEl = el;
+}
+function chestSceneClose(){
+  if(_chestEl){ _chestEl.remove(); _chestEl = null; }
+}
+function chestReveal(){
+  if(!Chest.open) return;
+  chestPhase('flash');
+  if(S.settings.vibration) hapticImpact('heavy');
+  playHitSound(true);
+  setTimeout(()=>{
+    if(!Chest.open || !_chestEl) return;
+    const box = _chestEl.querySelector('#chestLoot');
+    if(box){
+      box.innerHTML = (Chest.open.loot || []).map((it, i)=>
+        /* Задержка на каждую карточку — не украшение: три трофея, влетевшие
+           одновременно, читаются как одна вспышка, и человек не успевает
+           понять, что именно получил. */
+        `<div class="chest-loot-card" style="animation-delay:${i*140}ms">
+           ${itemIcon(it.id, 46)}
+           <div class="chest-loot-name">${escapeHtml(it.name)}</div>
+           ${it.count>1 ? `<div class="chest-loot-n">×${it.count}</div>` : ''}
+         </div>`).join('');
+    }
+    chestPhase('loot');
+    Chest.busy = false;      // щеколду снимаем только когда добыча на экране
+    Items.seen = true;
+    render();
+  }, CHEST_FLASH_MS);
+}
+/* Закрыть сцену. Пока добыча не показана, закрывать нельзя: сундук уже списан
+   на сервере, и человек ушёл бы, не увидев, что получил. */
+function closeChest(){
+  if(!Chest.open || Chest.open.phase !== 'loot') return;
+  Chest.open = null;
+  chestSceneClose();
+  render();
 }
 
 /* ============ ГИЛЬДИИ ============
@@ -4135,6 +4404,11 @@ const ICON_IMAGES = {
    которых в каталоге воркера (TROPHY_DEFS/GEAR_DEFS) пока нет: картинка
    лежит наготове, а покажется, когда предмет заведут в каталоге. */
 const ITEM_IMAGES = {
+  /* Сундук гильдии. Один арт на все ранги: букву ранга полка и сцена рисуют
+     поверх сами, а шесть почти одинаковых картинок весили бы в шесть раз
+     больше ради разницы, которую никто не заметит. */
+  chest: 'data:image/webp;base64,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',
+
   /* КОСМЕТИКА — АУРЫ */
   acid_halo: 'data:image/webp;base64,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',
   ash_vortex: 'data:image/webp;base64,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',
@@ -4242,6 +4516,38 @@ function itemIcon(id, size=44){
   return img
     ? `<img src="${img}" width="${size}" height="${size}" alt="" style="display:block">`
     : `<span class="item-noimg" style="width:${size}px;height:${size}px"></span>`;
+}
+
+/* Сундук: рисованный арт, если он вшит, и вектор — если нет.
+
+   Вектор появился раньше картинки и остаётся не «на всякий случай», а как
+   рабочая замена: картинки предметов вшиваются в файл по мере готовности арта,
+   и пока их нет, itemIcon отдаёт пустой серый квадрат. Трофею такой квадрат
+   простителен — их сорок четыре, и один без картинки теряется в сетке. Но
+   сундук на экране один, он и есть вся награда за неделю: серый квадрат на его
+   месте читается как ошибка загрузки, а не как предмет.
+
+   У вектора крышка вынесена отдельной группой (.chest-lid) и откидывается при
+   открытии. У картинки отдельной крышки нет и быть не может — там вместо
+   поворота работает вспышка из светящейся щели, которая на арте уже нарисована
+   (см. .ph-flash в стилях). Обе ветки дают один и тот же смысл: сундук
+   вскрылся. */
+function chestIcon(size=44, cls=''){
+  const img = ITEM_IMAGES.chest;
+  if(img) return `<img class="chest-img ${cls}" src="${img}" width="${size}" height="${size}" alt="" style="display:block">`;
+  return `<svg class="chest-svg ${cls}" width="${size}" height="${size}" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+    <defs><linearGradient id="chg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f0c85a"/><stop offset="1" stop-color="#a97a1e"/>
+    </linearGradient></defs>
+    <g class="chest-body">
+      <rect x="7" y="22" width="34" height="18" rx="2.5" fill="#5a3a18" stroke="url(#chg)" stroke-width="2"/>
+      <rect x="21" y="26" width="6" height="10" rx="1.5" fill="url(#chg)"/>
+    </g>
+    <g class="chest-lid">
+      <path d="M7 22V16a17 17 0 0 1 34 0v6z" fill="#6b4520" stroke="url(#chg)" stroke-width="2" stroke-linejoin="round"/>
+      <rect x="21" y="18" width="6" height="6" rx="1.5" fill="url(#chg)"/>
+    </g>
+  </svg>`;
 }
 
 /* Картинка аватара. AVATAR_IMAGES наполняется тем же скриптом, что вшил
@@ -8555,10 +8861,46 @@ function rInventory(){
       <h2 style="margin:0;font-size:20px">Инвентарь</h2>
     </div>
     ${Items.catalog ? eqSlotsHTML() : ''}
+    ${chestShelfHTML()}
     ${Items.catalog ? `<div class="inv-tabs">${INV_TABS.map(t=>
       `<button class="inv-tab ${tab===t.id?'on':''}" onclick="setInvTab('${t.id}')">${t.name}</button>`).join('')}</div>` : ''}
     ${body}
   </div>`);
+}
+
+/* Полка сундуков — над вкладками, а не внутри одной из них.
+
+   Сундук живёт в инвентаре считанные секунды: он появляется в понедельник и
+   исчезает при первом нажатии. Спрячь мы его во вкладку — человек, зашедший
+   посмотреть трофеи, мог бы неделями не открывать награду, о которой ему
+   написал бот. Поэтому полка стоит на пути: она первое, что видно при входе,
+   и её нет вовсе, когда открывать нечего.
+
+   Пустого состояния у полки нет намеренно. Заголовок «Сундуки — 0» сообщал бы
+   ровно ничего и занимал место на экране, где и так тесно. */
+function chestShelfHTML(){
+  if(!Items.catalog) return '';
+  const chests = myChests();
+  if(!chests.length) return '';
+  const total = chests.reduce((a,c)=>a+itemCount(c.id), 0);
+  return `<div class="chest-shelf">
+    <div class="chest-shelf-head">${total===1 ? 'Сундук ждёт' : 'Сундуки ждут'} · ${total}</div>
+    <div class="chest-shelf-row">
+      ${chests.map(c=>{
+        const n = itemCount(c.id);
+        /* Кнопка блокируется на время запроса: второй тап ушёл бы вторым
+           запросом и съел бы второй сундук под одну анимацию. */
+        return `<button class="chest-cell${Chest.busy?' busy':''}" onclick="openChest('${c.id}')"
+                  aria-label="Открыть сундук ранга ${c.rank}"${Chest.busy?' disabled':''}>
+          ${chestIcon(46)}
+          <span class="chest-cell-rank">${c.rank}</span>
+          ${n>1 ? `<span class="chest-cell-n">×${n}</span>` : ''}
+        </button>`;
+      }).join('')}
+    </div>
+    <div class="chest-shelf-sub">Нажми, чтобы открыть. Внутри трофеи ранга, за который сундук получен.</div>
+    ${Chest.error ? `<div class="chest-shelf-err">${escapeHtml(Chest.error)}</div>` : ''}
+  </div>`;
 }
 
 /* ---- ЭКРАН ГИЛЬДИИ ---- */
@@ -9068,7 +9410,7 @@ function openItem(id){
    намеренно и ровно по одной причине: карточка должна нарисовать цену ДО
    того, как человек нажмёт. Решает всё равно сервер — он же и списывает, —
    а тест сверяет обе таблицы между собой, чтобы они не разъехались. */
-const CONVERT_PRICE = { E:30, D:30, C:80, B:80, A:200, S:200 };
+const CONVERT_PRICE = { E:5, D:5, C:15, B:15, A:40, S:40 };
 function convertValueOf(def){
   if(!def || !def.slot || def.craft) return 0;   // не косметика или кованое
   return CONVERT_PRICE[def.rank] || 0;
@@ -10906,6 +11248,11 @@ function doLocalReset(){
        прежние данные поверх уже стёртого профиля. */
     S.duel=null; S.duelState=null; S.duelResult=null; S.duelLoading=false; S.duelError=false; S.duelFinding=false;
     Items.have=null; Items.equip={weapon:null,aura:null,frame:null}; Items.loading=false; Items.error=false; Items.seen=true;
+    /* Сцена сундука живёт вне S — тем же кэшем, что и Items выше, и ровно по
+       той же причине попадает сюда. Узел сцены висит в body, а не в root, так
+       что сам он от смены экрана не исчезнет: сбросить его надо руками, иначе
+       после сброса профиля поверх заставки остался бы открытый сундук. */
+    Chest.busy=false; Chest.open=null; Chest.error=null; chestSceneClose();
     Guild.data=null; Guild.meta=null; Guild.list=null; Guild.preview=null; Guild.previewId=null;
     Guild.loading=false; Guild.error=false; Guild.listLoading=false; Guild.listError=false; Guild.busy=false;
     try{ localStorage.removeItem(SAVE_KEY); }catch(e){}
