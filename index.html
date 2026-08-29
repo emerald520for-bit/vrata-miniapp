@@ -1288,6 +1288,13 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
 .gd-away{font-size:11px;color:var(--muted);flex:none}
 .gd-reps{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text);flex:none}
 .gd-kick{border:none;background:transparent;color:var(--danger);font-size:16px;cursor:pointer;padding:0 2px;flex:none}
+/* Кнопка «Принять» в строке заявки. Узкая и не растягивается: строка та же,
+   что у состава, и место в ней делится с именем, титулами и повторами. */
+.gd-req-ok{padding:6px 12px;font-size:12px;flex:none;margin-left:6px}
+/* Срок подачи — тем же приглушённым тоном, что и титулы: это подпись под
+   именем, а не самостоятельная цифра, и спорить за внимание с «N дней без
+   боёв» она не должна. */
+.gd-ago{color:var(--muted)}
 .gd-card{border:1px solid var(--line);border-radius:12px;padding:12px;margin-top:8px;background:rgba(10,13,31,.5)}
 .gd-card-top{display:flex;align-items:center;gap:8px}
 .gd-card-meta{display:flex;gap:12px;font-size:11px;color:var(--muted);margin-top:7px;flex-wrap:wrap}
@@ -9086,14 +9093,31 @@ function chestShelfHTML(){
    всплытие, иначе основатель, целясь в крестик, попадал бы в профиль. */
 function guildRowHTML(r, opts){
   const o = opts || {};
-  const away = (!r.todayReps && r.daysAway != null && r.daysAway > 0)
-    ? `<span class="gd-away">${r.daysAway} ${guildPlural(r.daysAway,['день','дня','дней'])} без боёв</span>` : '';
+  /* «Ни разу не тренировался» и «не тренировался 15 дней» — разные вещи, и на
+     решении основателя они сказываются по-разному. Схлопни мы их в одну
+     строчку, самый показательный случай выглядел бы как «сегодня отдыхал».
+     Признак приходит с сервера отдельным полем: в составе таких людей быть не
+     может (в гильдию попадают уже тренирующиеся), а в заявках — сплошь и
+     рядом, именно у них имя показывается заглушкой «Охотник». */
+  const away = (r.everTrained === false)
+    ? `<span class="gd-away">ни одной тренировки</span>`
+    : ((!r.todayReps && r.daysAway != null && r.daysAway > 0)
+      ? `<span class="gd-away">${r.daysAway} ${guildPlural(r.daysAway,['день','дня','дней'])} без боёв</span>` : '');
 
   const duel = duelTitleName(r.duel_title);
   const own  = titleNameById(r.title_id);
   const bits = [];
   if(duel) bits.push(`<span class="lb-title-duel">⚔ ${escapeHtml(duel)}</span>`);
   if(own)  bits.push(escapeHtml(own));
+  /* Срок подачи — только у заявок. Он отвечает на вопрос «сколько человек уже
+     ждёт»: неделя молчания это уже не «не успел посмотреть», а забытая заявка,
+     и основателю стоит про неё знать. В составе поля created_at нет, строка
+     просто не появляется. */
+  if(r.created_at){
+    const d = guildDaysAgo(r.created_at);
+    if(d != null) bits.push(`<span class="gd-ago">${d === 0 ? 'заявка сегодня'
+      : `заявка ${d} ${guildPlural(d,['день','дня','дней'])} назад`}</span>`);
+  }
   const titleLine = bits.length
     ? `<div class="gd-title">${bits.join('<span style="opacity:.4"> · </span>')}</div>` : '';
 
@@ -9116,10 +9140,21 @@ function guildRowHTML(r, opts){
     </span>
     ${away}
     <span class="gd-reps">${r.weekReps}</span>
-    ${o.kick || ''}
+    ${o.kick || ''}${o.req || ''}
   </div>`;
 }
 
+/* Сколько дней назад подана заявка. Формат created_at — 'YYYY-MM-DD HH:MM' в
+   UTC (см. utcStampMin на сервере); пробел заменяем на 'T' и дописываем 'Z',
+   иначе Safari разбирает такую строку как локальное время, а часть браузеров
+   не разбирает вовсе. Считаем по календарным суткам, а не по разнице часов:
+   человеку важно «вчера» или «неделю назад», а не 31 час. */
+function guildDaysAgo(stamp){
+  const t = Date.parse(String(stamp || '').replace(' ', 'T') + ':00Z');
+  if(!Number.isFinite(t)) return null;
+  const day = ms => Math.floor(ms / 86400000);
+  return Math.max(0, day(Date.now()) - day(t));
+}
 function guildPlural(n, forms){
   const a = Math.abs(n) % 100, b = a % 10;
   if(a > 10 && a < 20) return forms[2];
@@ -9212,11 +9247,27 @@ function rGuildPreview(){
       action = `<div class="gd-frozen" style="margin-top:14px">Ты недавно вышел из гильдии. Вступить в новую можно будет чуть позже.</div>`;
     } else if(!p.canJoin){
       action = `<div class="gd-frozen" style="margin-top:14px">Ты уже состоишь в другой гильдии — сначала выйди из неё.</div>`;
+    } else if(p.requested){
+      /* Заявка уже подана. Показывать здесь «Подать заявку» значило бы звать
+         нажать кнопку, которая ничего не сделает: повторная заявка в ту же
+         гильдию не создаёт новой строки. Вместо этого даём единственное
+         осмысленное действие — отозвать, иначе при лимите в три гильдии
+         человек оказывался бы заперт молчанием основателей. */
+      action = `<div class="gd-frozen" style="margin-top:14px">Заявка отправлена — ждём ответа основателя.</div>
+        <button class="btn ghost" style="margin-top:9px" ${Guild.busy?'disabled':''}
+          onclick="guildUnrequest(${g.id})">Отозвать заявку</button>`;
     } else {
       const label = g.joinMode==='request' ? 'Подать заявку' : 'Вступить';
-      const disabled = full || g.frozen || Guild.busy;
+      const capped = g.joinMode==='request' && p.requestMax != null
+        && (p.myRequests || 0) >= p.requestMax;
+      const disabled = full || g.frozen || capped || Guild.busy;
       action = `<button class="btn" style="margin-top:14px" ${disabled?'disabled':''}
         onclick="guildJoinFromPreview(${g.id})">${full ? 'Мест нет' : (g.frozen ? 'Не принимает' : label)}</button>`;
+      /* Упёршемуся в лимит объясняем причину прямо здесь. Молча погашенная
+         кнопка читается как поломка приложения, а не как правило. */
+      if(capped && !full && !g.frozen){
+        action += `<div class="gd-frozen" style="margin-top:9px">У тебя уже ${p.myRequests} ${guildPlural(p.myRequests,['заявка','заявки','заявок'])}. Дождись ответа или отзови одну.</div>`;
+      }
     }
 
     body = `<div class="gd-hero">
@@ -9247,6 +9298,12 @@ function guildJoinFromPreview(id){
     if(d.requested) showModal(guildNoteHTML('Заявка отправлена. Основатель гильдии её увидит.'));
     if(d.guild || d.requested) go('guild');
   });
+}
+/* Отзыв своей заявки. Экран после этого перечитываем с сервера, а не правим
+   на месте: заявку мог только что принять основатель, и тогда правда о том,
+   где человек состоит, лежит там, а не у нас. */
+function guildUnrequest(id){
+  guildAction('/unrequest', { guildId:id }, ()=>{ loadGuildPreview(String(id), true); });
 }
 
 /* Экран того, у кого гильдии ещё нет. Порядок блоков не случайный: сначала
@@ -9336,14 +9393,27 @@ function guildMineHTML(g){
     ? 'Контракт закончился. Гильдия работает как обычно, но принимать новых охотников и расширять места пока нельзя — продли контракт, и рост вернётся.'
     : 'Гильдия временно не принимает новых охотников.'}</div>` : '';
 
+  /* Заявка рисуется ТОЙ ЖЕ функцией, что и строка состава.
+
+     Раньше здесь была своя разметка на два поля — имя и ранг. Основатель
+     отдавал место, не видя ни одной цифры об активности: отсюда жалоба
+     «принимаешь, а там человек, который пятнадцать дней не заходил».
+
+     guildRowHTML умеет ровно то, чего не хватало: аватар, титулы, «N дней без
+     боёв», повторы за неделю и переход в профиль по тапу. Переиспользуем её,
+     а не дописываем поля во вторую разметку — иначе состав и заявки начали бы
+     расходиться при каждой правке, и расхождение никто бы не заметил.
+
+     stopPropagation на кнопках обязателен: строка целиком открывает профиль,
+     и без него тап по «Принять» сперва принимал бы, а следом уводил на чужой
+     экран поверх обновлённого состава. */
   const requests = (g.isOwner && g.requests.length) ? `
     <div class="gd-sect">Заявки · ${g.requests.length}</div>
-    ${g.requests.map(r=>`<div class="gd-row">
-      <span class="gd-nm">${escapeHtml(r.name)} <span style="color:var(--muted);font-size:11px">${r.rank}</span></span>
-      <button class="btn" style="padding:6px 12px;font-size:12px;flex:none" ${Guild.busy?'disabled':''}
-        onclick="guildRequest('${r.chat_id}',true)">Принять</button>
-      <button class="gd-kick" ${Guild.busy?'disabled':''} onclick="guildRequest('${r.chat_id}',false)">✕</button>
-    </div>`).join('')}` : '';
+    ${g.requests.map(r=>guildRowHTML(r, { req: `
+      <button class="btn gd-req-ok" ${Guild.busy?'disabled':''}
+        onclick="event.stopPropagation();guildRequest('${r.chat_id}',true)">Принять</button>
+      <button class="gd-kick" ${Guild.busy?'disabled':''}
+        onclick="event.stopPropagation();guildRequest('${r.chat_id}',false)">✕</button>` })).join('')}` : '';
 
   const roster = g.roster.map(r=>{
     const isOwner = String(r.chat_id) === String(g.ownerId);
