@@ -9425,6 +9425,34 @@ function guildMineHTML(g){
     return guildRowHTML(r, { crown: isOwner, kick });
   }).join('');
 
+  /* ЧАТ ГИЛЬДИИ.
+
+     Три разных экрана, а не один с оговорками. Состав видит кнопку входа —
+     ссылка одноразовая, поэтому её просят в момент нажатия, а не держат на
+     виду. Основатель без чата видит инструкцию: бот не умеет создавать группы
+     (в Bot API такого метода нет вовсе), группу заводит человек. Остальным без
+     чата не показываем ничего — предлагать им то, чего они не могут сделать,
+     значит только раздражать. */
+  const chatLinked = !!(g.chat && g.chat.linked);
+  const chatBlock = chatLinked ? `
+    <div class="gd-card" style="margin-top:12px">
+      <div style="font-size:13px;color:var(--text)">💬 Чат гильдии</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:6px;line-height:1.45">
+        Отдельная группа в Telegram. Бот присылает туда недельную цель и итоги.
+      </div>
+      <button class="btn" style="margin-top:10px;padding:9px;font-size:13px" ${Guild.busy?'disabled':''}
+        onclick="openGuildChat()">Войти в чат</button>
+    </div>`
+    : (g.isOwner ? `
+    <div class="gd-card" style="margin-top:12px">
+      <div style="font-size:13px;color:var(--text)">💬 Чат гильдии</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:6px;line-height:1.45">
+        У гильдии пока нет чата. Создай его — состав получит приглашения сам.
+      </div>
+      <button class="btn ghost" style="margin-top:10px;padding:9px;font-size:13px"
+        onclick="showGuildChatHowto()">Как создать</button>
+    </div>` : '');
+
   const owner = g.isOwner ? `
     <div class="gd-sect">Управление</div>
     <div class="gd-card">
@@ -9455,6 +9483,8 @@ function guildMineHTML(g){
       </div>
     </div>
     <button class="btn ghost" style="margin-top:10px" ${Guild.busy?'disabled':''} onclick="openGuildRename()">Переименовать</button>
+    ${chatLinked ? `<button class="btn ghost" style="margin-top:8px" ${Guild.busy?'disabled':''}
+      onclick="confirmGuildChatUnlink()">Отвязать чат</button>` : ''}
     <button class="btn ghost" style="margin-top:8px;color:var(--danger);border-color:rgba(255,59,92,.35)" ${Guild.busy?'disabled':''}
       onclick="confirmGuildDisband()">Распустить гильдию</button>`
     : `<button class="btn ghost" style="margin-top:18px" ${Guild.busy?'disabled':''} onclick="confirmGuildLeave()">Покинуть гильдию</button>`;
@@ -9485,6 +9515,7 @@ function guildMineHTML(g){
     </div>
     ${last}
     ${frozen}
+    ${chatBlock}
     ${requests}
     <div class="gd-sect">Кто тренировался сегодня</div>
     ${roster}
@@ -9512,6 +9543,43 @@ function shareGuildInvite(){
   if(TG && TG.openTelegramLink){ TG.openTelegramLink(share); return; }
   showToast('Поделиться можно только внутри Telegram');
 }
+/* ---- чат гильдии ---- */
+
+/* Ссылку просим у сервера в момент нажатия, а не держим в карточке: она
+   персональная и одноразовая, и лежащая на экране ссылка после первого входа
+   превратилась бы в мёртвую кнопку. */
+function openGuildChat(){
+  guildAction('/chatlink', {}, d=>{
+    if(!d || !d.link){ showToast('Ссылка пока недоступна'); return; }
+    if(TG && TG.openTelegramLink){ TG.openTelegramLink(d.link); return; }
+    showToast('Открыть чат можно только внутри Telegram');
+  });
+}
+
+/* Инструкция, а не кнопка «создать»: у Bot API нет метода создания группы.
+   Написать «сейчас создам» и не смочь было бы хуже, чем честные четыре шага. */
+function showGuildChatHowto(){
+  showModal(`<div class="modal-card">
+    <div style="font-size:15px;font-weight:700;color:var(--text)">Чат гильдии</div>
+    <div style="font-size:13px;line-height:1.6;color:var(--muted);margin-top:12px">
+      1. Создай в Telegram группу — название любое<br>
+      2. Добавь туда бота ВРАТ<br>
+      3. Сделай его администратором — без этого он не сможет приглашать состав и наводить порядок<br>
+      4. Он сам спросит, чей это чат — выбери гильдию
+    </div>
+    <div style="font-size:12px;line-height:1.5;color:var(--muted);margin-top:12px">
+      Дальше состав получит приглашения в личку. Порядок в чате — на тебе:
+      бот только присылает цель, итоги и напоминает, когда до цели останется немного.
+    </div>
+    <button class="btn ghost" style="margin-top:16px" onclick="closeModal()">Понятно</button>
+  </div>`);
+}
+
+function confirmGuildChatUnlink(){
+  sysConfirm('Отвязать чат? Бот выйдет из группы, сама группа останется у тебя.',
+    ()=> guildAction('/chatunlink', {}, ()=> showToast('Чат отвязан')));
+}
+
 function rotateGuildInvite(){
   guildAction('/invite', {}, d=>{
     /* Ответ на обновление ссылки не содержит гильдии целиком — вписываем
