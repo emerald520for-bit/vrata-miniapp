@@ -852,13 +852,27 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
 /* ---- Гонка с призраком: бой ---- */
 /* Счётчики вверху и крупно: человек смотрит на экран с пола, с полутора
    метров, между повторами. Всё, что мельче, там просто не читается. */
-.duel-top{
+/* HUD боя — ОДНА колонка, а не два слоя, прибитые каждый к своему отступу.
+
+   Раньше счётчики висели на 52px, а полоса под ними на 120px. Работало это
+   ровно до первого случая, когда верхний блок становился выше: стоит добавить
+   в коробку соперника лицо — и полоса проходит прямо по цифрам.
+
+   Чинить сдвигом второго числа значило бы завести ДВА числа, которые обязаны
+   меняться вместе, и следующая правка разъехалась бы так же молча. Полоса
+   теперь просто лежит следующей строкой и опускается сама, какой бы высоты ни
+   стали счётчики. */
+.duel-hud{
   position:absolute;top:calc(52px + var(--sa-top));left:12px;right:12px;z-index:5;
-  display:flex;align-items:center;gap:10px;
+  display:flex;flex-direction:column;gap:8px;
+}
+.duel-top{
+  display:flex;align-items:stretch;gap:10px;
 }
 .duel-side{
   flex:1;background:rgba(2,3,10,.82);border:1px solid var(--line);border-radius:12px;
   padding:8px 10px;text-align:center;transition:border-color .2s ease;
+  display:flex;flex-direction:column;justify-content:center;
 }
 .duel-side.me{border-color:rgba(76,201,255,.5)}
 .duel-side.ghost{border-color:rgba(176,139,224,.5)}
@@ -872,9 +886,8 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
    Показывает РАЗНИЦУ, а не отношение: в минутной гонке важно «на сколько
    впереди», а не «во сколько раз». */
 .duel-bar{
-  position:absolute;top:calc(120px + var(--sa-top));left:12px;right:12px;z-index:5;
   height:14px;border-radius:7px;background:rgba(2,3,10,.82);border:1px solid var(--line);
-  overflow:hidden;display:flex;
+  overflow:hidden;display:flex;flex-shrink:0;
 }
 .duel-bar i{display:block;height:100%;transition:width .35s ease, background-color .3s ease}
 .duel-bar .mine{background:var(--sys)}
@@ -893,6 +906,7 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
 .duel-timer{
   flex-shrink:0;font-family:'JetBrains Mono';font-size:17px;color:var(--text);
   background:rgba(2,3,10,.82);border:1px solid var(--line);border-radius:10px;padding:8px 9px;
+  display:flex;align-items:center;justify-content:center;
 }
 /* Последние десять секунд — красным. Это единственный момент, когда цвет
    должен тревожить. */
@@ -1271,14 +1285,27 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
 .gd-sect{font-size:11px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin:18px 0 8px}
 .gd-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);font-size:13px}
 .gd-row:last-child{border-bottom:none}
+/* Коробка под точку — ровно того же размера, что и значок с лицом (.gd-av).
+   Одна колонка на всех: у кого лицо есть, у кого нет. */
+.gd-slot{flex:none;width:30px;height:30px;display:flex;align-items:center;justify-content:center}
 .gd-dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.16);flex:none}
 .gd-dot.on{background:var(--ok);box-shadow:0 0 8px rgba(52,211,153,.6)}
 /* Аватар в составе гильдии — на месте точки. Зелёная обводка вместо неё
    означает то же самое: сегодня тренировался. */
-.gd-av{flex:none;width:22px;height:22px;border-radius:7px;overflow:hidden;display:block;border:1px solid var(--line)}
-.gd-av.on{border-color:var(--ok);box-shadow:0 0 8px rgba(52,211,153,.45)}
-.gd-av img,.gd-av .av-stub{width:20px;height:20px;border-radius:6px;display:block}
-.gd-av .av-stub{font-size:9px}
+/* Обрезки и рамки у обёртки больше нет, и это не упрощение.
+
+   Раньше «тренировался сегодня» показывалось зелёной рамкой самой обёртки. С
+   приходом настоящих рамок из врат две рамки оказались бы на одном и том же
+   краю значка и слились бы в кашу — а поверх золотого кольца зелёная линия
+   вообще не читается. Плюс overflow:hidden срезал бы и рамку, и ауру: они
+   обязаны вылезать за габарит.
+
+   Сигнал переехал на подсветку по СИЛУЭТУ (drop-shadow идёт по форме, а не по
+   прямоугольнику): зелёное свечение обнимает кольцо снаружи и остаётся
+   различимым при любой рамке. */
+.gd-av{flex:none;width:30px;height:30px;display:block}
+.gd-av.on{filter:drop-shadow(0 0 5px rgba(52,211,153,.85))}
+.gd-av .av-badge{display:block}
 /* Обёртка нужна, чтобы имя и титул стояли столбиком внутри строки-флекса:
    сам .gd-nm обрезается многоточием и не может содержать второй этаж. */
 .gd-nm-wrap{flex:1;min-width:0}
@@ -1493,11 +1520,15 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
    и лишняя картинка отняла бы ширину у имени. Сам ранг переезжает на аватар
    угловой меткой — ширина строки не меняется ни на пиксель.
    У того, кто аватар не покупал, всё остаётся как было: .lb-rank-badge. */
-.lb-av{position:relative;width:26px;height:26px;flex-shrink:0}
-.lb-av img,.lb-av .av-stub{width:26px;height:26px;border-radius:8px;display:block}
-.lb-av .av-stub{font-size:11px}
+/* Значок вырос с 26 до 40: на 26 кольцо рамки сливалось в линию, а ради него
+   всё и затевалось. Коробка .lb-av одна на всех — и на тех, у кого значка
+   нет: их квадратик с буквой ранга стоит внутри неё по центру. Без этого
+   таблица шла бы ступеньками, а имена начинались бы с разных мест. */
+.lb-av{position:relative;width:40px;height:40px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center}
+.lb-av .av-badge{display:block}
 .lb-av .lb-av-rank{
-  position:absolute;right:-2px;bottom:-3px;min-width:11px;height:11px;padding:0 2px;
+  position:absolute;right:-2px;bottom:-1px;min-width:11px;height:11px;padding:0 2px;
   border-radius:4px;background:var(--void);border:1px solid var(--line);
   font-family:'Russo One',sans-serif;font-size:8px;line-height:9px;color:var(--sys);
   text-align:center;
@@ -1566,6 +1597,36 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
 .lb-score{font-family:'JetBrains Mono';font-weight:800;color:var(--gold);font-size:14px;flex-shrink:0;max-width:38%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .lb-divider{text-align:center;color:var(--muted);font-size:13px;letter-spacing:3px;margin:12px 0 4px}
 .gold{color:var(--gold)}.cy{color:var(--sys)}.vio{color:#CBB7FF}
+
+/* Значок на экране боя: строго по центру своей колонки и с воздухом под ним,
+   чтобы кольцо не липло к надписи с именем. */
+.duel-face{margin:0 auto 4px}
+/* Обёртка значка в профиле: держит его по центру и не даёт соседям съехать
+   от того, что аура вылезает за габарит. */
+.avatar-badge-wrap{width:96px;height:96px;display:flex;align-items:center;justify-content:center;flex:none}
+/* Карандаш смены имени: приглушён, чтобы не спорить с самим именем, и
+   оживает при нажатии. */
+.name-edit{background:none;border:none;padding:2px;line-height:0;cursor:pointer;
+  opacity:.45;transition:opacity .15s ease;color:var(--muted)}
+.name-edit:active{opacity:1}
+/* ---- значок охотника: аура + аватар + рамка (см. avatarBadge) ---- */
+.av-badge{position:relative;display:inline-block;flex-shrink:0;vertical-align:middle;
+  width:var(--avb);height:var(--avb)}
+.av-aura,.av-frame{
+  position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  background-size:100% 100%;background-repeat:no-repeat;background-position:center;
+  pointer-events:none;
+  /* Чёрный фон картинки исчезает сам — см. комментарий у avatarBadge. */
+  mix-blend-mode:screen;
+}
+.av-aura{width:128%;height:128%;z-index:0}
+.av-frame{width:100%;height:100%;z-index:2}
+.av-core{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  width:100%;height:100%;z-index:1;overflow:hidden;border-radius:22%;
+  display:flex;align-items:center;justify-content:center}
+.av-badge.ringed .av-core{width:68%;height:68%;border-radius:50%}
+.av-core img{width:100%;height:100%;display:block;object-fit:cover;border-radius:inherit}
+.av-core .av-stub{border-radius:inherit}
 </style>
 </head>
 <body>
@@ -2111,6 +2172,8 @@ const SCORE_API_URL = 'https://vrata-bot.emerald520for.workers.dev/api/score';
 const LEADERBOARD_API_URL = 'https://vrata-bot.emerald520for.workers.dev/api/leaderboard';
 const DROP_API_URL = 'https://vrata-bot.emerald520for.workers.dev/api/drop';
 const RAID_END_API_URL = 'https://vrata-bot.emerald520for.workers.dev/api/raid-end';
+const NAME_API_URL = 'https://vrata-bot.emerald520for.workers.dev/api/name';
+const FACE_API_URL = 'https://vrata-bot.emerald520for.workers.dev/api/face';
 const ITEMS_API_URL = 'https://vrata-bot.emerald520for.workers.dev/api/items';
 const EQUIP_API_URL = 'https://vrata-bot.emerald520for.workers.dev/api/equip';
 const CRAFT_API_URL = 'https://vrata-bot.emerald520for.workers.dev/api/craft';
@@ -2740,13 +2803,13 @@ function setRankTab(tab){
 const RANK_TABS = [
   { id:'pushups', label:'👊 Отжимания' },
   { id:'squats',  label:'🦵 Приседания' },
-  { id:'situps',  label:'🛡 Пресс' },
+  { id:'situps',  label:'🛡️ Пресс' },
   /* Планка стоит в общем ряду и меряется теми же единицами, что и соседи:
      сервер делит секунды на PLANK_SEC_PER_UNIT ещё до сортировки. Покажи мы
      здесь секунды — планка возглавила бы список просто потому, что её единица
      мельче, и сравнивать столбцы стало бы нельзя. */
   { id:'plank',   label:'🔥 Планка' },
-  { id:'duel',    label:'⚔ Арена' },
+  { id:'duel',    label:'⚔️ Арена' },
 ];
 function togglePeriodMenu(){
   S.rankPeriodMenuOpen = !S.rankPeriodMenuOpen;
@@ -2905,6 +2968,8 @@ function tgBack(){
       if(_modalEl){ closeModal(); return; }
       go(S.prevScreen||'guild'); return;
     case 'friends': go(S.prevScreen||'profile'); return;
+    case 'rename': go(S.prevScreen||'profile'); return;
+    case 'face': go(S.prevScreen||'profile'); return;
     case 'shop':
       if(_modalEl){ closeModal(); return; }
       go(S.prevScreen||'profile'); return;
@@ -2917,7 +2982,7 @@ function tgBack(){
 }
 function updateTgBackButton(){
   if(!TG || !TG.BackButton) return;
-  const show = ['quiz','journey','raid','settings','titles','instructions','gatePreview','duel','duelHome','inventory','otherProfile','guildPreview','friends','shop'].includes(S.screen);
+  const show = ['quiz','journey','raid','settings','titles','instructions','gatePreview','duel','duelHome','rename','face','inventory','otherProfile','guildPreview','friends','shop'].includes(S.screen);
   try{ show ? TG.BackButton.show() : TG.BackButton.hide(); }catch(e){}
 }
 /* Блокировка свайпа-вниз нужна ТОЛЬКО во время подхода — иначе на экранах с
@@ -4518,6 +4583,78 @@ const ITEM_IMAGES = {
 };
 // Если иконки нет (рассинхрон каталога и картинок при частичном деплое) —
 // показываем ячейку с цветом ранга, а не битую картинку.
+/* ============ ЗНАЧОК ОХОТНИКА: АУРА + АВАТАР + РАМКА ============
+
+   ЗАЧЕМ ОН ОДИН НА ВЕСЬ ПРОЕКТ. Значок рисуется в шести местах — профиль, чужой
+   профиль, таблица лидеров, друзья, состав гильдии, экран боя. Собери его в
+   каждом отдельно, и однажды в одном месте аура окажется поверх рамки, в другом
+   аватар останется квадратным, а заметит это только тот, кто откроет оба экрана
+   подряд. Поэтому сборщик один, а места отличаются лишь размером.
+
+   ПОЧЕМУ ЭКРАННОЕ СМЕШИВАНИЕ. Рамки и ауры нарисованы светящимися кольцами на
+   ЧЁРНОМ фоне — прозрачности в файлах нет вовсе. Фон приложения тоже почти
+   чёрный, поэтому mix-blend-mode:screen убирает чёрное сам и оставляет только
+   свечение. Перерисовывать арт или вырезать альфа-канал не нужно.
+
+   ПРОПОРЦИИ. За габарит берётся размер значка B — по нему рисуется рамка.
+   Аура шире (свечение обязано вылезать за края), аватар меньше (он садится
+   ВНУТРЬ кольца).
+
+   ПОЧЕМУ АВАТАР КРУГЛЫЙ, НО ТОЛЬКО С РАМКОЙ. Все рамки — кольца. Квадрат со
+   скруглением торчит из-под кольца углами, и выглядит это как ошибка вёрстки.
+   Без рамки квадрат остаётся: менять привычную форму всем без причины незачем. */
+const AVB_AURA   = 1.28;   // ширина ауры от габарита
+const AVB_CORE   = 0.68;   // диаметр аватара внутри кольца
+/* Порог ауры. Ниже него свечение превращается в грязное пятно вокруг лица и
+   утаскивает за собой читаемость рамки — а рамка на мелких размерах и есть
+   единственное, что различимо. Одно число на весь проект. */
+const AVB_AURA_MIN = 38;
+
+/* Адрес одобренного фото. Версия в адресе — не украшение: без неё пришлось бы
+   выбирать между устаревшими лицами и тремя десятками обращений к серверу на
+   каждый показ таблицы лидеров. Сменилось фото — сменился адрес, старый кэш
+   просто перестаёт запрашиваться. */
+const PHOTO_URL_BASE = 'https://vrata-bot.emerald520for.workers.dev/api/avatar/';
+function photoUrl(chatId, version){
+  return (chatId && version) ? `${PHOTO_URL_BASE}${chatId}?v=${version}` : null;
+}
+
+function avatarBadge(o){
+  const B = Math.max(12, Math.round((o && o.size) || 40));
+  /* СВОЁ ФОТО ВЫТЕСНЯЕТ МАГАЗИННОЕ ЛИЦО. Не дополняет и не спорит с ним:
+     человек, приславший своё, ожидает увидеть именно его, а не купленную маску
+     где-то ещё. Магазинный аватар при этом не теряется — вернётся, как только
+     фото снимут. */
+  const photo = (o && o.photo) || null;
+  const avId  = photo ? null : ((o && o.avatar) || null);
+  const frame = (o && o.frame) || null;
+  const aura  = (B >= AVB_AURA_MIN && o && o.aura) || null;
+  const name  = (o && o.name) || '';
+  const extra = (o && o.cls) ? ' ' + o.cls : '';
+
+  const frameImg = frame ? ITEM_IMAGES[frame] : null;
+  const auraImg  = aura  ? ITEM_IMAGES[aura]  : null;
+  /* Рамка «есть» только когда у неё есть КАРТИНКА: предмет мог остаться в базе
+     от прежней выдачи, а арт к нему не вшит. Круглый аватар без кольца вокруг
+     выглядел бы не задумкой, а обрезкой. */
+  const ringed = !!frameImg;
+
+  const side = Math.round(B * (ringed ? AVB_CORE : 1));
+  const core = photo
+    ? `<img src="${photo}" width="${side}" height="${side}" alt="" loading="lazy"
+            style="display:block;width:100%;height:100%;object-fit:cover">`
+    : (avId
+      ? avatarVisual(avId, side, name)
+      : `<span class="av-stub" style="width:100%;height:100%;font-size:${Math.round(side * 0.42)}px">${
+          escapeHtml(String(name || '?').trim().charAt(0).toUpperCase() || '?')}</span>`);
+
+  return `<span class="av-badge${ringed ? ' ringed' : ''}${extra}" style="--avb:${B}px">
+    ${auraImg  ? `<i class="av-aura"  style="background-image:url(${auraImg})"></i>` : ''}
+    <span class="av-core">${core}</span>
+    ${frameImg ? `<i class="av-frame" style="background-image:url(${frameImg})"></i>` : ''}
+  </span>`;
+}
+
 function itemIcon(id, size=44){
   const img = ITEM_IMAGES[id];
   return img
@@ -5203,6 +5340,7 @@ function render(opts){
     death: rDeath, titles: rTitlesScreen, rank: rRank, instructions: rInstructions,
     gatePreview: rGatePreview, duelHome: rDuelHome, duel: rDuel, duelResult: rDuelResult,
     inventory: rInventory, otherProfile: rOtherProfile, guild: rGuild, guildPreview: rGuildPreview,
+    rename: rRename, face: rFace,
     friends: rFriends, shop: rShop,
   })[S.screen]();
   updateTgBackButton();
@@ -5790,14 +5928,14 @@ function rMap(){
    Внутри самих экранов слово «гильдия» остаётся полным: сокращение нужно
    только кнопке.
    Иконки нет у дуэли и клана: в ICON_IMAGES их не рисовали, поэтому icon()
-   отдаёт запасной символ — тот же ⚔, что у вкладки дуэлей в рейтинге, и 🛡 у
+   отдаёт запасной символ — тот же ⚔️, что у вкладки дуэлей в рейтинге, и 🛡️ у
    гильдий. */
 function navBar(on){
   return `<div class="nav-spacer"></div><div class="nav">
-    <button class="${on==='map'?'on':''}" onclick="go('map')"><span class="nav-ico">${icon('nav_map',16,'⛩')}</span>Врата</button>
-    <button class="${on==='duel'?'on':''}" onclick="openDuelHome()"><span class="nav-ico">${icon('nav_duel',16,'⚔')}</span>Арена</button>
+    <button class="${on==='map'?'on':''}" onclick="go('map')"><span class="nav-ico">${icon('nav_map',16,'⛩️')}</span>Врата</button>
+    <button class="${on==='duel'?'on':''}" onclick="openDuelHome()"><span class="nav-ico">${icon('nav_duel',16,'⚔️')}</span>Арена</button>
     <button class="${on==='rank'?'on':''}" onclick="go('rank')"><span class="nav-ico">${icon('nav_rank',16,'🏆')}</span>Топ</button>
-    <button class="${on==='guild'?'on':''}" onclick="openGuild()"><span class="nav-ico">${icon('nav_guild',16,'🛡')}</span>Клан</button>
+    <button class="${on==='guild'?'on':''}" onclick="openGuild()"><span class="nav-ico">${icon('nav_guild',16,'🛡️')}</span>Клан</button>
   </div>`;
 }
 /* Иконка профиля для шапок экранов, где нет полного ряда переключателей
@@ -5840,7 +5978,7 @@ function lbTitleLineHTML(row){
   if(!duel && !own && !tag) return '';
   const parts = [];
   if(tag)  parts.push(`<span class="lb-gtag">[${escapeHtml(tag)}]</span>`);
-  if(duel) parts.push(`<span class="lb-title-duel">⚔ ${escapeHtml(duel)}</span>`);
+  if(duel) parts.push(`<span class="lb-title-duel">⚔️ ${escapeHtml(duel)}</span>`);
   if(own)  parts.push(escapeHtml(own));
   return `<div class="lb-title">${parts.join('<span style="opacity:.4"> · </span>')}</div>`;
 }
@@ -5853,7 +5991,7 @@ function titleNameById(id){
   return a ? a.name : null;
 }
 /* Строка таблицы дуэлей. Отличается от обычной тем, что по чужой строке можно
-   тапнуть и вызвать этого человека — поэтому у неё есть значок ⚔ как признак
+   тапнуть и вызвать этого человека — поэтому у неё есть значок ⚔️ как признак
    кликабельности. Своя строка некликабельна: драться с собственной записью
    бессмысленно, сервер такой вызов всё равно отклонит. */
 function lbDuelRowHTML(row, isMe){
@@ -5876,7 +6014,7 @@ function lbDuelRowHTML(row, isMe){
       ${lbTitleLineHTML(row)}
     </div>
     <div class="lb-score">${row.score}</div>
-    ${can ? `<div style="margin-left:8px;font-size:15px;${busy?'opacity:1':'opacity:.5'}">${busy?'⏳':'⚔'}</div>` : ''}
+    ${can ? `<div style="margin-left:8px;font-size:15px;${busy?'opacity:1':'opacity:.5'}">${busy?'⏳':'⚔️'}</div>` : ''}
   </div>`;
 }
 /* Значок надетого оружия рядом с именем в таблицах. Только оружие: три
@@ -5905,11 +6043,30 @@ function lbWeaponHTML(row, clickable){
    рисует «?» — это лучше пустоты, и до открытия лавки каталога может не быть. */
 function lbBadgeHTML(row){
   const av = row && row.avatar;
+  const fr = row && row.frame;
+  const au = row && row.aura;
   const rank = escapeHtml((row && row.rank) || 'E');
-  if(!av) return `<div class="lb-rank-badge">${rank}</div>`;
-  const def = shopAvatar(av);
+  /* Прежний квадратик с буквой ранга остаётся только у тех, у кого нет НИЧЕГО:
+     ни аватара, ни рамки, ни ауры. Рамку и ауру показываем и без аватара —
+     они выпадают из врат, и надевший Драконью оправу заслужил её независимо
+     от того, покупал ли он лицо в лавке. */
+  /* Пустой значок живёт в ТОЙ ЖЕ коробке 40×40, что и полный, хотя сам
+     остаётся квадратиком в 26.
+
+     Иначе строки в таблице разной высоты, а имена начинаются с разного места:
+     у кого есть аватар или рамка — отступ в сорок пикселей, у кого нет — в
+     двадцать шесть. Раньше это встречалось редко (аватар надо было купить), и
+     стоявший здесь комментарий уверял, что строка и так выше сорока из-за
+     титула под именем. Титул есть у меньшинства. А теперь, когда видны ещё и
+     выпадающие рамки с аурами, полный значок стал не исключением, а нормой —
+     и рваными оказались бы уже строки БЕЗ него. */
+  if(!av && !fr && !au && !(row && row.photo))
+    return `<div class="lb-av"><div class="lb-rank-badge">${rank}</div></div>`;
+  const def = av ? shopAvatar(av) : null;
   return `<div class="lb-av">
-    ${avatarVisual(av, 26, def ? def.name : '')}
+    ${avatarBadge({ size:40, avatar:av, frame:fr, aura:au,
+                    photo: photoUrl(row && row.chat_id, row && row.photo),
+                    name: def ? def.name : (row && row.name) })}
     <span class="lb-av-rank">${rank}</span>
   </div>`;
 }
@@ -7869,7 +8026,7 @@ function camLoop(){
         Cam.armState='down';
         const now=performance.now();
         if(now - Cam.lastRepAt > 450){
-          Cam.lastRepAt = now; setCamStatus('Повтор засчитан ✔ · вниз'); onCameraRep();
+          Cam.lastRepAt = now; setCamStatus('Повтор засчитан ✔️ · вниз'); onCameraRep();
         }
       } else if(Cam.armState==='down' && Cam.upStreak>=REP_CONFIRM_FRAMES){
         Cam.armState='up'; setCamStatus('Вверху — опускайся вниз ↓ · '+Math.round(Cam.emaAngle)+'°');
@@ -7898,7 +8055,7 @@ function camLoop(){
           Cam.depthDisplaced = true;
           const now = performance.now();
           if(now - Cam.lastRepAt > 450){
-            Cam.lastRepAt = now; setCamStatus('Повтор засчитан ✔ · вниз'); onCameraRep();
+            Cam.lastRepAt = now; setCamStatus('Повтор засчитан ✔️ · вниз'); onCameraRep();
           }
         }
       } else if(Math.abs(dev) < DEPTH_RETURN){
@@ -9107,7 +9264,7 @@ function guildRowHTML(r, opts){
   const duel = duelTitleName(r.duel_title);
   const own  = titleNameById(r.title_id);
   const bits = [];
-  if(duel) bits.push(`<span class="lb-title-duel">⚔ ${escapeHtml(duel)}</span>`);
+  if(duel) bits.push(`<span class="lb-title-duel">⚔️ ${escapeHtml(duel)}</span>`);
   if(own)  bits.push(escapeHtml(own));
   /* Срок подачи — только у заявок. Он отвечает на вопрос «сколько человек уже
      ждёт»: неделя молчания это уже не «не успел посмотреть», а забытая заявка,
@@ -9129,9 +9286,20 @@ function guildRowHTML(r, opts){
      сегодня» при этом не теряется — он переезжает на аватар зелёной обводкой.
      У кого аватара нет, остаётся прежняя точка. */
   const avId = r.avatar;
-  const badge = avId
-    ? `<span class="gd-av ${r.todayReps>0?'on':''}">${avatarVisual(avId, 22, (shopAvatar(avId)||{}).name)}</span>`
-    : `<span class="gd-dot ${r.todayReps>0?'on':''}"></span>`;
+  /* Аура здесь не рисуется — размер значка ниже порога (см. AVB_AURA_MIN), и
+     свечение на тридцати пикселях превратилось бы в грязное пятно вокруг лица.
+     Решает это сам avatarBadge, отдельного условия тут нет. */
+  const badge = (avId || r.frame || r.aura || r.photo)
+    ? `<span class="gd-av ${r.todayReps>0?'on':''}">${avatarBadge({
+        size:30, avatar:avId, frame:r.frame, aura:r.aura,
+        photo: photoUrl(r.chat_id, r.photo),
+        name:(avId && (shopAvatar(avId)||{}).name) || r.name })}</span>`
+    /* Точка живёт в коробке размером со значок. Сама она в 8 пикселей, значок
+       в 30 — отдай их разными коробками, и состав пойдёт лесенкой: имена
+       начинаются с разных мест, строки разной высоты. Пока лицо надо было
+       покупать, таких строк было мало; теперь видны и выпадающие рамки, и
+       рваным оказался бы уже состав БЕЗ них. */
+    : `<span class="gd-slot"><span class="gd-dot ${r.todayReps>0?'on':''}"></span></span>`;
   return `<div class="gd-row"${tap}>
     ${badge}
     <span class="gd-nm-wrap">
@@ -9877,11 +10045,15 @@ function rOtherProfile(){
         <!-- Аватар вместо безликой иконки человечка. Если охотник его не
              покупал, остаётся прежний значок — так у большинства и будет,
              и менять для них ничего не нужно. -->
-        <div style="width:64px;height:64px;margin:0 auto;border-radius:50%;border:2px solid var(--gold);display:flex;align-items:center;justify-content:center;overflow:hidden">
-          ${d.equip && d.equip.avatar
-            ? avatarVisual(d.equip.avatar, 60, (shopAvatar(d.equip.avatar)||{}).name)
-            : icon('nav_profile',30,'🧑')}
-        </div>
+        ${(d.equip && (d.equip.avatar || d.equip.frame || d.equip.aura || d.equip.photo))
+          ? `<div class="avatar-badge-wrap" style="margin:0 auto">${avatarBadge({
+               size:96, avatar:d.equip.avatar, frame:d.equip.frame, aura:d.equip.aura,
+               photo: photoUrl(S.otherUid, d.equip.photo),
+               name:(d.equip.avatar && (shopAvatar(d.equip.avatar)||{}).name) || d.name,
+             })}</div>`
+          : `<div style="width:64px;height:64px;margin:0 auto;border-radius:50%;border:2px solid var(--gold);display:flex;align-items:center;justify-content:center;overflow:hidden">
+               ${icon('nav_profile',30,'🧑')}
+             </div>`}
         <div style="font-size:19px;margin-top:9px">${escapeHtml(d.name||'Безымянный')}</div>
         <div class="sub" style="font-size:13px;margin-top:3px">
           Ранг ${escapeHtml(d.rank||'E')}${d.level>1 ? ' · Уровень '+d.level : ''}${d.streak>1 ? ' · 🔥 '+d.streak : ''}
@@ -9905,7 +10077,7 @@ function rOtherProfile(){
         <div class="rcp-prog" style="margin-top:8px"><i style="width:${pct}%"></i></div>
       </div>
 
-      <button class="btn ghost" style="width:100%;margin-top:18px" onclick="go('duelHome')">⚔ Перейти на Арену</button>`;
+      <button class="btn ghost" style="width:100%;margin-top:18px" onclick="go('duelHome')">⚔️ Перейти на Арену</button>`;
   }
   h(`<div class="screen">
     <div class="topbar">
@@ -10236,7 +10408,7 @@ function titleUnlockHTML(){
     const bColor = isAchievement ? BADGE_META.color : badgeInfo(t.cat).color;
     return `<div class="title-unlock" style="animation-delay:${i*0.45}s">
       <div class="tu-flash"></div>
-      <div class="tu-badge" style="border-color:${bColor};color:${bColor}">${badgeHTML(isAchievement?null:t.cat, true, isAchievement?'🏆':'🏵')}</div>
+      <div class="tu-badge" style="border-color:${bColor};color:${bColor}">${badgeHTML(isAchievement?null:t.cat, true, isAchievement?'🏆':'🏵️')}</div>
       <div class="tu-body"><div class="tu-tag">${isAchievement?'Новое достижение':'Новый титул'}</div><div class="tu-name">${escapeHtml(item.name)}</div></div>
     </div>`;
   }).join('');
@@ -10398,6 +10570,23 @@ const DUEL_API_URL = 'https://vrata-bot.emerald520for.workers.dev/api/duel';
 // Отсчёт перед стартом минуты — время встать в упор после калибровки.
 const DUEL_COUNTDOWN_S = 3;
 
+/* Внешность призрака для экрана боя.
+
+   Чужого соперника сервер присылает уже со снаряжением. А вот СВОЙ рекорд —
+   это заход без владельца: сервер про него ничего не знает, потому что и
+   спрашивать не у кого. Оставь мы его пустым — на экране получилось бы, что
+   твоя же тень дерётся с тобой безликой, и выглядело бы это поломкой, а не
+   задумкой. Подставляем собственное снаряжение: против своего рекорда стоит
+   ровно тот же охотник. */
+function duelGhostWithLook(){
+  const g = (S.duelState && S.duelState.ghost) || null;
+  if(!g) return null;
+  if(g.avatar || g.frame || g.aura) return g;
+  if(!S.duelState || S.duelState.oppKind !== 'self') return g;
+  const eq = Items.equip || {};
+  return { ...g, avatar: eq.avatar || null, frame: eq.frame || null, aura: eq.aura || null };
+}
+
 function startDuel(rated){
   if(!Cam.running && Cam.error){ showToast('Дуэль требует камеры'); return; }
   /* Принятый вызов отмечаем в момент НАЧАЛА боя, а не открытия экрана: до
@@ -10410,7 +10599,7 @@ function startDuel(rated){
     rated: rated !== false,
     reps: 0,
     timeline: [],             // моменты своих повторов, десятые доли секунды
-    ghost: (S.duelState && S.duelState.ghost) || null,
+    ghost: duelGhostWithLook(),
     ghostReps: 0,
     ghostPtr: 0,              // указатель по дорожке призрака, чтобы не искать заново
     calibState:'searching', calibPct:0, stableSince:null, calibStart:null,
@@ -10715,13 +10904,28 @@ function rDuel(){
     </div>
     <button class="raid-back" onclick="abortDuel()">‹</button>
 
+    ${/* ЛИЦО С ОБЕИХ СТОРОН. Раньше у своей стороны была только надпись «ТЫ»,
+          и рядом с живым соперником она выглядела безликой колонкой. Половина
+          смысла снаряжения в том, чтобы его видел не только ты, а вторая — в
+          том, чтобы ты видел его сам, и как раз её тут не было. */ ''}
+    <div class="duel-hud">
     <div class="duel-top">
       <div class="duel-side me">
+        ${avatarBadge({ size:50,
+          avatar: Items.equip && Items.equip.avatar,
+          frame:  Items.equip && Items.equip.frame,
+          aura:   Items.equip && Items.equip.aura,
+          photo:  photoUrl(rankChatId(), Items.equip && Items.equip.photo),
+          name:   S.ans.name, cls:'duel-face' })}
         <div class="duel-side-tag">ТЫ</div>
         <div class="duel-side-num" id="duelMyReps">${d.reps}</div>
       </div>
       <div class="duel-timer" id="duelTimer">0:${String(DUEL_SECONDS).padStart(2,'0')}</div>
       <div class="duel-side ghost">
+        ${d.ghost ? avatarBadge({ size:50,
+          avatar: d.ghost.avatar, frame: d.ghost.frame, aura: d.ghost.aura,
+          photo: photoUrl(d.ghost.chatId, d.ghost.photo),
+          name: d.ghost.name, cls:'duel-face' }) : ''}
         <div class="duel-side-tag">${d.ghost && d.ghost.weapon
           ? `<span style="margin-right:4px;vertical-align:-3px;display:inline-block">${itemIcon(d.ghost.weapon,14)}</span>` : ''}${ghostName}</div>
         <div class="duel-side-num" id="duelGhostReps">${d.ghost ? d.ghostReps : '—'}</div>
@@ -10732,6 +10936,7 @@ function rDuel(){
       <i class="mine" id="duelBarMine" style="width:50%"></i>
       <i class="theirs" id="duelBarTheirs" style="width:50%"></i>
     </div>` : ''}
+    </div>
 
     <div class="duel-bottom">
       <div class="duel-hint" id="duelHint">${d.phase==='fight' ? 'Отжимайся!' : 'Встань в упор — минута начнётся, когда Система тебя увидит'}</div>
@@ -11006,7 +11211,7 @@ function firstWinPathHTML(){
   return `<div class="path">
     <div class="path-t">ПУТЬ ОХОТНИКА</div>
     <div class="path-step">
-      <div class="path-i">⛩</div>
+      <div class="path-i">⛩️</div>
       <div><b>Ещё ${n} ${pluralGatesRu(n)}</b> ранга E
         <div class="path-s">дальше мобы крепче, а находки чаще</div></div>
     </div>
@@ -11016,7 +11221,7 @@ function firstWinPathHTML(){
         <div class="path-s">первый настоящий босс</div></div>
     </div>
     <div class="path-step">
-      <div class="path-i">🗡</div>
+      <div class="path-i">🗡️</div>
       <div>Ранги <b>D, C, B и A</b>
         <div class="path-s">снаряжение, гильдии, арена</div></div>
     </div>
@@ -11115,6 +11320,269 @@ function toggleStatus(btn){
     if(ch) ch.classList.toggle('open', S.statusOpen);
   }
 }
+/* ============ ЛИЦО ОХОТНИКА: СВОЁ ФОТО ============
+
+   Загрузчика здесь нет и не будет. Фото человек отправляет БОТУ в личку, а
+   приложение только показывает, что с ним стало. Причина не в лени: своя
+   загрузка означала бы хранилище чужих файлов, сжатие, и главное — очередь
+   модерации без всякой помощи со стороны. Через бота картинка по дороге
+   проходит фильтры Telegram, лежит у Telegram и стоит нам ноль.
+
+   ПОЧЕМУ НЕТ ПРЕДПРОСМОТРА ДО ОДОБРЕНИЯ. Задумывалось, что своё фото человек
+   увидит в профиле сразу, а в общих списках оно появится после проверки. На
+   деле это невозможно сделать безопасно: значок рисуется тегом <img>, а он не
+   умеет подписывать запрос — то есть картинку пришлось бы отдавать по
+   публичному адресу, угадываемому по chat_id. Непроверенный снимок стал бы
+   доступен любому, кто подставит число в адрес, и вся затея с очередью
+   потеряла бы смысл.
+
+   Поэтому «сразу» живёт там, где оно и так есть: человек только что отправил
+   фото боту и видит его прямо в переписке, а бот отвечает, что принял. В
+   приложении до одобрения остаётся прежний аватар и честная строка «на
+   проверке». */
+const Face = { data:null, loading:false };
+
+function openFace(){
+  S.prevScreen = S.screen;
+  go('face');
+  loadFaceState();
+}
+
+function loadFaceState(){
+  if(!(TG && TG.initData)){ Face.loading = false; render(); return; }
+  Face.loading = true;
+  fetch(FACE_API_URL, { headers:{ 'X-Init-Data':TG.initData } })
+    .then(r=>r.json())
+    .then(d=>{
+      Face.data = d;
+      /* Одобрили — перечитываем снаряжение: версия фото приезжает вместе с
+         ним, и без этого значок в профиле остался бы прежним до перезапуска. */
+      if(d && d.state === 'approved') loadItems(true);
+      Face.loading = false; render();
+    })
+    .catch(()=>{ Face.loading = false; render(); });
+}
+
+function faceBotLink(){
+  /* Имя бота приходит с сервера, а не вписано здесь: вписанное однажды, оно
+     переживёт переименование бота и начнёт вести в никуда.
+     Открываем через Telegram, а не обычным переходом: внутри мини-аппа ссылка
+     на t.me уходит во встроенный браузер и никуда не ведёт. */
+  const user = Face.data && Face.data.botUsername;
+  if(!user){ showToast('Адрес бота пока не загрузился'); return; }
+  if(TG && TG.openTelegramLink){ TG.openTelegramLink('https://t.me/' + user); return; }
+  showToast('Открыть можно только внутри Telegram');
+}
+
+function rFace(){
+  const d = Face.data;
+  const cd = d && d.cooldownUntil ? renameDaysLeft(d.cooldownUntil) : 0;
+  let status = '';
+
+  if(Face.loading && !d){
+    status = `<div class="sub" style="margin-top:22px">Загружаю…</div>`;
+  } else if(d && d.pending){
+    status = `<div class="gd-card" style="margin-top:16px">
+      <div style="font-size:14px">Фото на проверке</div>
+      <div class="sub" style="font-size:12px;margin-top:5px;line-height:1.5">
+        Пока на месте прежний аватар. Новый встанет, когда фото посмотрят.
+      </div>
+    </div>`;
+  } else if(d && d.state === 'approved'){
+    status = `<div class="gd-card" style="margin-top:16px">
+      <div style="font-size:14px;color:var(--ok)">Фото принято</div>
+      <div class="sub" style="font-size:12px;margin-top:5px;line-height:1.5">
+        Его видят все: в таблице лидеров, в гильдии и на Арене.
+      </div>
+    </div>`;
+  } else if(d && d.state === 'rejected'){
+    /* Причину не называем — её не называл и владелец. Зато сразу говорим, что
+       можно прислать другое: смысл сообщения не в отказе, а в том, чтобы
+       человек не считал, что дверь закрыта. */
+    status = `<div class="gd-card" style="margin-top:16px">
+      <div style="font-size:14px">Прошлое фото не подошло</div>
+      <div class="sub" style="font-size:12px;margin-top:5px;line-height:1.5">
+        Можно прислать другое — попытка не потрачена.
+      </div>
+    </div>`;
+  }
+
+  h(`<div class="screen">
+    <div class="hdr">
+      <button class="back" onclick="go(S.prevScreen||'profile')">‹</button>
+      <h2 style="margin:0;font-size:20px">Лицо охотника</h2>
+      <div style="width:40px"></div>
+    </div>
+
+    <div class="avatar-badge-wrap" style="margin:18px auto 0">${avatarBadge({
+      size:96,
+      avatar: Items.equip && Items.equip.avatar,
+      frame:  Items.equip && Items.equip.frame,
+      aura:   Items.equip && Items.equip.aura,
+      photo:  photoUrl(rankChatId(), Items.equip && Items.equip.photo),
+      name:   S.ans.name,
+    })}</div>
+
+    ${status}
+
+    <div class="gd-card" style="margin-top:14px">
+      <div style="font-size:13px;color:var(--text)">Как поставить своё</div>
+      <div class="sub" style="font-size:12px;margin-top:8px;line-height:1.7">
+        1. Открой переписку с ботом<br>
+        2. Отправь ему фотографию<br>
+        3. Он сразу подтвердит, что принял
+      </div>
+      <button class="btn ghost" style="margin-top:12px;padding:9px;font-size:13px"
+        ${(d && d.botUsername) ? '' : 'disabled'} onclick="faceBotLink()">Написать боту</button>
+    </div>
+
+    ${cd ? `<div class="gd-card" style="margin-top:12px">
+        <div style="font-size:13px">Фото недавно менялось</div>
+        <div class="sub" style="font-size:12px;margin-top:4px">Сменить снова можно через ${cd} ${guildPlural(cd,['день','дня','дней'])}</div>
+      </div>`
+     : `<div class="sub" style="margin-top:12px;font-size:12px;line-height:1.5">
+        Менять фото можно раз в ${(d&&d.cooldownDays)||30} ${guildPlural((d&&d.cooldownDays)||30,['день','дня','дней'])}.
+      </div>`}
+
+    ${(Items.equip && Items.equip.avatar) ? `<div class="sub" style="margin-top:10px;font-size:12px;line-height:1.5">
+        Купленный аватар никуда не денется — он вернётся, если снять фото.
+      </div>` : ''}
+  </div>`);
+}
+
+/* ============ СМЕНА ИМЕНИ ============
+
+   Цену, откат и право на бесплатную попытку считает СЕРВЕР — здесь только
+   показываем то, что он прислал. Клиент не решает, сколько это стоит: цена,
+   посчитанная на клиенте, обходится открытой консолью за минуту, а списание
+   всё равно происходит на сервере и разошлось бы с показанным числом.
+
+   Отдельное состояние, а не поле в S: S уезжает на сервер снимком прогресса,
+   и класть туда служебные данные экрана значило бы отправлять их при каждой
+   тренировке. */
+const Rename = { data:null, loading:false, busy:false, error:'', draft:null };
+
+function openRename(){
+  Rename.error = ''; Rename.draft = null;
+  S.prevScreen = S.screen;
+  go('rename');
+  loadRenameState();
+}
+
+function loadRenameState(){
+  if(!(TG && TG.initData)){ Rename.loading = false; render(); return; }
+  Rename.loading = true;
+  fetch(NAME_API_URL, { headers:{ 'X-Init-Data':TG.initData } })
+    .then(r=>r.json())
+    .then(d=>{ Rename.data = d; Rename.loading = false; render(); })
+    .catch(()=>{ Rename.loading = false; Rename.error = 'Нет связи с Системой'; render(); });
+}
+
+function submitRename(){
+  if(Rename.busy) return;
+  const el = document.getElementById('renameField');
+  const value = el ? el.value : '';
+  Rename.draft = value;
+  Rename.error = '';
+  Rename.busy = true; render({ keepScroll:true });
+  fetch(NAME_API_URL, {
+    method:'POST',
+    headers:{ 'Content-Type':'application/json', 'X-Init-Data':TG.initData },
+    body: JSON.stringify({ name: value }),
+  })
+    .then(r=>r.json().then(d=>({ ok:r.ok, d })))
+    .then(({ok,d})=>{
+      Rename.busy = false;
+      if(!ok || !d || d.error){ Rename.error = (d && d.error) || 'Не получилось'; render({ keepScroll:true }); return; }
+      Rename.data = d;
+      Rename.draft = null;
+      /* ЛОКАЛЬНОЕ ИМЯ ОБЯЗАНО ОБНОВИТЬСЯ ЗДЕСЬ ЖЕ. Оно уезжает на сервер с
+         КАЖДОЙ тренировкой (см. /api/score) — оставь мы старое, первый же
+         заход во врата вернул бы прежнее имя, и человек решил бы, что смена
+         не сработала. Ошибка была бы отложенной и оттого непонятной. */
+      S.ans.name = d.name;
+      saveState();
+      go(S.prevScreen || 'profile');
+      showToast('Теперь ты ' + d.name);
+    })
+    .catch(()=>{ Rename.busy = false; Rename.error = 'Связь потерялась'; render({ keepScroll:true }); });
+}
+
+function renameDaysLeft(iso){
+  const ms = Date.parse(iso) - Date.now();
+  if(!(ms > 0)) return 0;
+  return Math.max(1, Math.ceil(ms / 86400000));
+}
+
+function rRename(){
+  const d = Rename.data;
+  const busy = Rename.busy;
+  let body = '';
+
+  if(Rename.loading && !d){
+    body = `<div class="sub" style="margin-top:40px">Загружаю…</div>`;
+  } else if(!d){
+    body = `<div class="sub" style="margin-top:40px">${escapeHtml(Rename.error || 'Нет связи с Системой')}</div>`;
+  } else if(!d.trained){
+    /* «После первых врат» — из договорённости: единственная бесплатная попытка
+       не должна тратиться на случайный ввод в первую минуту, когда человек ещё
+       не видел ни таблицы лидеров, ни гильдии. */
+    body = `<div class="gd-card" style="margin-top:22px">
+      <div style="font-size:14px;line-height:1.6">Имя можно сменить после первых врат.</div>
+      <div class="sub" style="margin-top:8px;font-size:12px;line-height:1.5">
+        Сначала пройди хотя бы одни — тогда будет видно, ради чего выбирается имя.
+      </div>
+    </div>`;
+  } else {
+    const cd = d.cooldownUntil ? renameDaysLeft(d.cooldownUntil) : 0;
+    const free = d.price === 0;
+    body = `
+      <div class="gd-card" style="margin-top:18px">
+        <div class="sub" style="font-size:11px;letter-spacing:1px">СЕЙЧАС</div>
+        <div style="font-family:'Russo One';font-size:20px;margin-top:4px">${escapeHtml(d.name || 'Безымянный')}</div>
+      </div>
+
+      <input class="gd-inp" id="renameField" maxlength="${d.max}" ${cd||busy?'disabled':''}
+        placeholder="Новое имя" value="${escapeHtml(Rename.draft != null ? Rename.draft : '')}"
+        style="margin-top:14px;width:100%">
+
+      ${Rename.error ? `<div style="color:var(--danger);font-size:12px;margin-top:8px">${escapeHtml(Rename.error)}</div>` : ''}
+
+      <div class="sub" style="margin-top:12px;font-size:12px;line-height:1.6">
+        Имя видно в таблице лидеров, в гильдии и на Арене. Менять можно раз в ${d.cooldownDays} ${guildPlural(d.cooldownDays,['день','дня','дней'])}.
+      </div>
+
+      <div class="gd-card" style="margin-top:14px">
+        <div style="display:flex;justify-content:space-between;font-size:13px">
+          <span class="sub">${free ? 'Первая смена' : 'Эта смена'}</span>
+          <b style="color:${free?'var(--ok)':'var(--sys)'}">${free ? 'бесплатно' : d.price + ' эссенции'}</b>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:12px;margin-top:6px">
+          <span class="sub">Следующая</span>
+          <span class="sub">${d.nextPrice} эссенции</span>
+        </div>
+      </div>
+
+      ${cd ? `<div class="gd-card" style="margin-top:12px">
+          <div style="font-size:13px">Имя недавно менялось</div>
+          <div class="sub" style="font-size:12px;margin-top:4px">Снова можно через ${cd} ${guildPlural(cd,['день','дня','дней'])}</div>
+        </div>` : ''}
+
+      <div class="bottom" style="width:100%">
+        <button class="btn" ${cd||busy?'disabled':''} onclick="submitRename()">${busy?'Меняю…':'Взять имя'}</button>
+      </div>`;
+  }
+
+  h(`<div class="screen">
+    <div class="hdr">
+      <button class="back" onclick="go(S.prevScreen||'profile')">‹</button>
+      <h2 style="margin:0;font-size:20px">Имя охотника</h2>
+      <div style="width:40px"></div>
+    </div>
+    ${body}
+  </div>`);
+}
+
 function rProfile(){
   const a=S.ans;
   h(`<div class="screen">
@@ -11128,13 +11596,28 @@ function rProfile(){
     <div class="profile-head">
       <!-- Свой аватар, если куплен. Без него — прежняя буква ранга: у всех,
            кто ещё ничего не покупал, профиль выглядит ровно как раньше. -->
-      <div class="avatar${(Items.equip && Items.equip.avatar) ? ' has-av' : ''}">${
-        (Items.equip && Items.equip.avatar)
-          ? avatarVisual(Items.equip.avatar, 70, (shopAvatar(Items.equip.avatar)||{}).name)
-          : S.rank
-      }</div>
+      ${/* Рамку и ауру показываем и тому, у кого нет купленного лица: они
+            выпадают из врат, а не покупаются, и заслужены отдельно. Если нет
+            вообще ничего — остаётся прежний круг с буквой ранга, и профиль
+            выглядит ровно как раньше. */ ''}
+      ${(Items.equip && (Items.equip.avatar || Items.equip.frame || Items.equip.aura || Items.equip.photo))
+        ? `<div class="avatar-badge-wrap" onclick="openFace()" style="cursor:pointer">${avatarBadge({
+             size:96,
+             avatar: Items.equip.avatar,
+             frame:  Items.equip.frame,
+             aura:   Items.equip.aura,
+             photo:  photoUrl(rankChatId(), Items.equip.photo),
+             name:   (Items.equip.avatar && (shopAvatar(Items.equip.avatar)||{}).name) || S.ans.name,
+           })}</div>`
+        : `<div class="avatar">${S.rank}</div>`}
       <div>
-        <div style="font-family:'Russo One';font-size:22px">${escapeHtml(a.name)||'Безымянный'}</div>
+        <div style="font-family:'Russo One';font-size:22px;display:flex;align-items:center;gap:7px">
+          ${escapeHtml(a.name)||'Безымянный'}
+          ${/* Карандаш рядом с именем, а не пункт в настройках: имя меняют
+                глядя на него, и искать эту возможность в другом разделе никто
+                не станет. */ ''}
+          <button class="name-edit" onclick="openRename()" aria-label="Сменить имя">${icon('settings_gear',13,'✎')}</button>
+        </div>
         ${selectedTitleObj() ? `<div style="color:var(--gold);font-size:13px;font-weight:700;margin-top:2px">${escapeHtml(selectedTitleObj().name)}</div>` : ''}
         ${Guild.data ? `<div style="margin-top:3px;cursor:pointer" onclick="openGuild()">
           <span class="gd-tag">${escapeHtml(Guild.data.tag)}</span>
@@ -11149,7 +11632,7 @@ function rProfile(){
     ${statusBlockHTML()}
 
     <button class="toggle-row" style="margin-top:9px" onclick="S.prevScreen=S.screen;go('titles')">
-      <span>🏵 Титулы и достижения</span>
+      <span>🏵️ Титулы и достижения</span>
       <span class="sub" style="font-size:12.5px">${S.titles.length + S.achievements.length}/${TITLES_LIST.length + ACHIEVEMENTS_LIST.length} →</span>
     </button>
 
@@ -11265,7 +11748,7 @@ function titleCardHTML(t){
   const progress = !unlocked ? titleProgressText(t) : null;
   const badgeColor = unlocked ? badgeInfo(t.cat).color : '';
   return `<div class="title-card ${unlocked?'unlocked':'locked'}">
-    <div class="tc-badge" style="${badgeColor?`border-color:${badgeColor};color:${badgeColor}`:''}">${badgeHTML(t.cat, unlocked, '🏵')}</div>
+    <div class="tc-badge" style="${badgeColor?`border-color:${badgeColor};color:${badgeColor}`:''}">${badgeHTML(t.cat, unlocked, '🏵️')}</div>
     <div class="tc-body">
       <div class="tc-name">${escapeHtml(t.name)}</div>
       <div class="tc-sub">${unlocked ? (t.desc||'') : (progress ? `Прогресс: ${progress}` : (t.desc||'Пока не открыт'))}</div>
@@ -11341,7 +11824,7 @@ function rTitlesBestiaryTab(){
     const kinds = Object.keys(BESTIARY).filter(k=>BESTIARY[k].group===groupKey);
     const done = kinds.filter(k=>S.bestiary[k] && S.bestiary[k].killed).length;
     const groupDone = done===kinds.length;
-    return `<div class="beast-group-title"><span>${group.name}${groupDone?' · 🏵 '+escapeHtml(group.title.name):''}</span><span class="mono">${done}/${kinds.length}</span></div>
+    return `<div class="beast-group-title"><span>${group.name}${groupDone?' · 🏵️ '+escapeHtml(group.title.name):''}</span><span class="mono">${done}/${kinds.length}</span></div>
       ${kinds.map(beastCardHTML).join('')}`;
   }).join('');
 }
@@ -11499,7 +11982,7 @@ function rInstructions(){
 
     ${instructionBlockHTML('strength','pushup','👊','Отжимания')}
     ${instructionBlockHTML('endurance','squat','🦵','Приседания')}
-    ${instructionBlockHTML('core','situp','🛡','Подъём корпуса')}
+    ${instructionBlockHTML('core','situp','🛡️','Подъём корпуса')}
     ${instructionBlockHTML('stamina','plank','🔥','Планка')}
 
     <div class="sub" style="margin-top:18px;font-size:12.5px;line-height:1.4">⚠️ Если Система долго не видит тебя в кадре — попробуй немного отодвинуть или развернуть телефон, подсказка на экране калибровки подскажет, чего именно не хватает.</div>
