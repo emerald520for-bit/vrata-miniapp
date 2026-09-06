@@ -1277,6 +1277,45 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
 .gd-name{font-family:'Russo One',sans-serif;font-size:20px;color:var(--text);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .gd-tag{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--sys);border:1px solid var(--sys-dim);border-radius:6px;padding:2px 6px}
 .gd-sub{font-size:12px;color:var(--muted);margin-top:6px}
+/* ---- война гильдий ----
+   Своя рамка и свой цвет: война идёт неделю и меняется каждый день, а всё
+   остальное на экране постоянно. Спутать их нельзя. */
+.war{border:1px solid rgba(255,59,92,.35);border-radius:16px;padding:14px 13px;margin-bottom:14px;
+  background:linear-gradient(180deg,rgba(255,59,92,.07),rgba(10,13,31,.5))}
+.war-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.war-tag{font-size:10px;letter-spacing:2px;color:var(--danger);font-weight:800}
+.war-elo{font-size:11px;color:var(--muted)}
+.war-none{font-size:12.5px;color:var(--muted);line-height:1.45}
+.war-vs{display:flex;align-items:center;gap:10px}
+.war-side{flex:1;min-width:0;text-align:center}
+.war-side.foe{text-align:center}
+.war-num{font-family:'Russo One',sans-serif;font-size:26px;line-height:1.1}
+.war-side.me .war-num{color:var(--sys)}
+.war-side.foe .war-num{color:#B08BE0}
+/* Имя соперника обрезается многоточием: оно приходит от людей и бывает
+   длиннее, чем весь блок. */
+.war-who{font-size:10px;letter-spacing:1px;color:var(--muted);margin-top:2px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.war-state{flex:none;font-size:11px;color:var(--muted);padding:5px 8px;
+  border:1px solid var(--line);border-radius:8px}
+.war-state.up{color:var(--sys);border-color:rgba(76,201,255,.45)}
+.war-state.down{color:var(--danger);border-color:rgba(255,59,92,.45)}
+.war-bar{height:12px;border-radius:6px;background:rgba(2,3,10,.6);border:1px solid var(--line);
+  overflow:hidden;display:flex;margin-top:10px}
+.war-bar i{display:block;height:100%;transition:width .35s ease, background-color .3s ease}
+.war-bar .mine{background:var(--sys)}
+.war-bar .theirs{background:#B08BE0}
+/* Красный — только пока соперник ВЕДЁТ. Будь он красным всегда, цвет стал бы
+   просто меткой чужой стороны и перестал что-либо сообщать. */
+.war-bar .theirs.ahead{background:var(--danger)}
+.war-exs{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:10px}
+.war-ex{display:flex;gap:6px;font-size:11.5px;color:var(--muted)}
+.war-ex span:last-child{color:var(--text);font-family:'JetBrains Mono'}
+.war-note{font-size:10.5px;color:var(--muted);margin-top:9px;line-height:1.4}
+.war-last{font-size:11.5px;color:var(--muted);margin-top:9px;padding-top:9px;
+  border-top:1px solid var(--line);line-height:1.4}
+.war-last.win{color:var(--ok)}
+.war-last.lose{color:var(--danger)}
 .gd-goal{margin-top:12px}
 .gd-goal-top{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:5px}
 .gd-bar{height:8px;background:rgba(255,255,255,.08);border-radius:4px;overflow:hidden}
@@ -1315,9 +1354,18 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
 .gd-away{font-size:11px;color:var(--muted);flex:none}
 .gd-reps{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text);flex:none}
 .gd-kick{border:none;background:transparent;color:var(--danger);font-size:16px;cursor:pointer;padding:0 2px;flex:none}
-/* Кнопка «Принять» в строке заявки. Узкая и не растягивается: строка та же,
-   что у состава, и место в ней делится с именем, титулами и повторами. */
-.gd-req-ok{padding:6px 12px;font-size:12px;flex:none;margin-left:6px}
+/* Заявка — это решение, а не строка состава. Поэтому под именем идёт своя
+   полоса из двух подписанных кнопок во всю ширину: «Принять» и «Отклонить»
+   равны по весу, потому что равны по праву. Разделительную черту забирает
+   себе обёртка — иначе она прошла бы между именем и его же кнопками. */
+.gd-req{border-bottom:1px solid var(--line)}
+.gd-req:last-child{border-bottom:none}
+.gd-req .gd-row{border-bottom:none}
+.gd-req-acts{display:flex;gap:8px;padding:2px 0 10px}
+.gd-req-acts .btn{flex:1;padding:9px;font-size:13px;min-width:0}
+/* Отказ — призрачная кнопка, но красным по краю: действие обычное, однако
+   необратимое для этой заявки, и путать его с «Принять» нельзя. */
+.gd-req-no{border-color:rgba(255,59,92,.45);color:var(--danger)}
 /* Срок подачи — тем же приглушённым тоном, что и титулы: это подпись под
    именем, а не самостоятельная цифра, и спорить за внимание с «N дней без
    боёв» она не должна. */
@@ -1604,11 +1652,28 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
 /* Обёртка значка в профиле: держит его по центру и не даёт соседям съехать
    от того, что аура вылезает за габарит. */
 .avatar-badge-wrap{width:96px;height:96px;display:flex;align-items:center;justify-content:center;flex:none}
-/* Карандаш смены имени: приглушён, чтобы не спорить с самим именем, и
-   оживает при нажатии. */
-.name-edit{background:none;border:none;padding:2px;line-height:0;cursor:pointer;
-  opacity:.45;transition:opacity .15s ease;color:var(--muted)}
-.name-edit:active{opacity:1}
+/* Имя целиком — кнопка смены имени.
+
+   Отступы с одновременным отрицательным полем: палец получает площадь, а
+   картинка не сдвигается ни на пиксель. Без этой пары кнопка либо остаётся
+   тонкой полоской текста, либо расталкивает шапку профиля.
+
+   text-align:left обязателен: кнопки по умолчанию центрируют содержимое, и
+   длинное имя, перенесясь на вторую строку, встало бы посередине — вразрез со
+   всем остальным в колонке. */
+.name-tap{
+  display:flex;align-items:center;gap:7px;
+  font-family:'Russo One';font-size:22px;color:var(--text);text-align:left;
+  background:none;border:none;cursor:pointer;
+  padding:5px 9px;margin:-5px -9px;border-radius:10px;
+  transition:background-color .15s ease;
+}
+/* Нажатие подсвечивается: без отклика непонятно, что попал. */
+.name-tap:active{background:rgba(76,201,255,.12)}
+.name-tap:active .name-edit{opacity:1}
+/* Карандаш теперь ПОДСКАЗКА, а не мишень: он объясняет, что имя нажимается.
+   Поэтому приглушён — спорить с самим именем ему незачем. */
+.name-edit{line-height:0;opacity:.5;transition:opacity .15s ease;color:var(--muted);flex:none}
 /* ---- значок охотника: аура + аватар + рамка (см. avatarBadge) ---- */
 .av-badge{position:relative;display:inline-block;flex-shrink:0;vertical-align:middle;
   width:var(--avb);height:var(--avb)}
@@ -9572,16 +9637,29 @@ function guildMineHTML(g){
      а не дописываем поля во вторую разметку — иначе состав и заявки начали бы
      расходиться при каждой правке, и расхождение никто бы не заметил.
 
-     stopPropagation на кнопках обязателен: строка целиком открывает профиль,
-     и без него тап по «Принять» сперва принимал бы, а следом уводил на чужой
-     экран поверх обновлённого состава. */
+     РЕШЕНИЕ ПО ЗАЯВКЕ СТОИТ ОТДЕЛЬНОЙ СТРОКОЙ ПОД ИМЕНЕМ, а не жмётся в один
+     ряд с ним. Раньше отказ был голым крестиком рядом с кнопкой «Принять» —
+     тем же значком и тем же классом, что «исключить из состава». Рядом с
+     полноценной кнопкой он читался как «закрыть», а не как «отклонить»: люди
+     принимали и выгоняли следом либо оставляли заявку висеть, потому что
+     отказать было, по их ощущению, нечем. Два подписанных слова снимают
+     вопрос, а места в узкой строке на них нет — она и без того делится между
+     именем, титулами, сроком подачи и повторами.
+
+     Заодно отпала нужда в stopPropagation: кнопки больше не лежат внутри
+     строки, открывающей профиль по тапу. Раньше без него «Принять» сперва
+     принимал, а следом уводил на чужой экран поверх обновлённого состава. */
   const requests = (g.isOwner && g.requests.length) ? `
     <div class="gd-sect">Заявки · ${g.requests.length}</div>
-    ${g.requests.map(r=>guildRowHTML(r, { req: `
-      <button class="btn gd-req-ok" ${Guild.busy?'disabled':''}
-        onclick="event.stopPropagation();guildRequest('${r.chat_id}',true)">Принять</button>
-      <button class="gd-kick" ${Guild.busy?'disabled':''}
-        onclick="event.stopPropagation();guildRequest('${r.chat_id}',false)">✕</button>` })).join('')}` : '';
+    ${g.requests.map(r=>`<div class="gd-req">
+      ${guildRowHTML(r, {})}
+      <div class="gd-req-acts">
+        <button class="btn" ${Guild.busy?'disabled':''}
+          onclick="guildRequest('${r.chat_id}',true)">Принять</button>
+        <button class="btn ghost gd-req-no" ${Guild.busy?'disabled':''}
+          onclick="guildRequest('${r.chat_id}',false)">Отклонить</button>
+      </div>
+    </div>`).join('')}` : '';
 
   const roster = g.roster.map(r=>{
     const isOwner = String(r.chat_id) === String(g.ownerId);
@@ -9665,7 +9743,8 @@ function guildMineHTML(g){
         : `Прошлую неделю не добрали — ${g.last.reps} из ${g.last.goal}. Эта ещё в игре.`}
     </div>` : '';
 
-  return `<div class="gd-hero">
+  return `${warBlockHTML(g)}
+    <div class="gd-hero">
       <div class="gd-name"><span class="gd-tag">${escapeHtml(g.tag)}</span>${escapeHtml(g.name)}</div>
       <div class="gd-sub">${g.members} из ${g.slots} · сегодня тренировалось ${trainedToday}</div>
       <div class="gd-goal">
@@ -9691,6 +9770,78 @@ function guildMineHTML(g){
       Справа — вклад за неделю. Сундук получит каждый, кто сам сделал хотя бы ${g.chestMinReps} повторов.
     </div>
     ${owner}`;
+}
+
+/* ---- ВОЙНА ГИЛЬДИЙ ----
+
+   Блок стоит НАД карточкой гильдии, а не под составом. Война — единственное на
+   этом экране, что живёт всего неделю и может измениться за то время, пока
+   человек ходил тренироваться; состав и цель никуда не денутся, а войну он
+   пришёл посмотреть.
+
+   Всё, что здесь показано, приходит с сервера готовым: счёт, потолок, разбивка,
+   рейтинг. Своих формул у клиента нет намеренно — разойдись он с сервером хоть
+   на единицу, человек увидел бы «мы ведём» там, где война уже проиграна. */
+function warBarHTML(mine, theirs){
+  /* Полоса-канат — тот же приём, что на экране боя: шов едет к отстающему, и
+     позиция считается от РАЗНИЦЫ, а не от отношения. В войне «на сколько
+     впереди» и есть вопрос, а «во сколько раз» не значит ничего.
+     Края недожаты (12%…88%): даже при разгроме видна полоска чужого цвета,
+     иначе заливка целиком читается как «всё кончено». */
+  const sum = mine + theirs;
+  const raw = sum > 0 ? (mine / sum) * 100 : 50;
+  const w = Math.max(12, Math.min(88, raw));
+  const ahead = theirs > mine;
+  return `<div class="war-bar">
+    <i class="mine" style="width:${w}%"></i>
+    <i class="theirs${ahead?' ahead':''}" style="width:${100-w}%"></i>
+  </div>`;
+}
+function warBlockHTML(g){
+  const w = g && g.war;
+  if(!w) return '';
+
+  /* Гильдии без трёх активных войну не получают. Показываем не пустоту, а
+     причину: иначе основатель решит, что война сломалась. */
+  if(!w.active) return `<div class="war">
+    <div class="war-head"><span class="war-tag">ВОЙНА ГИЛЬДИЙ</span></div>
+    <div class="war-none">Нужно ${w.need} человека, тренирующихся на этой неделе. Наберите состав — и на следующей неделе вас поставят в пару.</div>
+  </div>`;
+
+  const foeName = w.self ? 'Прошлая неделя' : ((w.foe && w.foe.name) || 'Соперник');
+  const lead = w.score - w.foeScore;
+  const state = lead > 0 ? 'Ведём' : (lead < 0 ? 'Отстаём' : 'Поровну');
+
+  /* Разбивка — ответ на вопрос «куда налечь», а не слагаемые счёта. Сумма этих
+     четырёх строк НЕ обязана совпадать с итогом: потолок применяется к вкладу
+     человека, а разбивка считается по гильдии целиком. */
+  const b = w.breakdown || {};
+  const rows = [
+    ['Отжимания', b.pushups], ['Приседания', b.squats],
+    ['Пресс', b.situps], ['Планка', b.plank],
+  ].map(([n, v]) => `<div class="war-ex"><span>${n}</span><span>${v||0}</span></div>`).join('');
+
+  const last = w.last ? `<div class="war-last ${w.last.mine > w.last.theirs ? 'win' : (w.last.mine < w.last.theirs ? 'lose' : '')}">
+      Прошлая война: ${w.last.mine} — ${w.last.theirs}.
+      ${w.last.self ? 'Бой с собой рейтинг не меняет.'
+        : (w.last.after === w.last.before ? '' : `Рейтинг ${w.last.after > w.last.before ? '+' : ''}${w.last.after - w.last.before} → ${w.last.after}.`)}
+    </div>` : '';
+
+  return `<div class="war">
+    <div class="war-head">
+      <span class="war-tag">ВОЙНА ГИЛЬДИЙ</span>
+      <span class="war-elo">Рейтинг ${w.elo}</span>
+    </div>
+    <div class="war-vs">
+      <div class="war-side me"><div class="war-num">${w.score}</div><div class="war-who">МЫ</div></div>
+      <div class="war-state ${lead>0?'up':(lead<0?'down':'')}">${state}</div>
+      <div class="war-side foe"><div class="war-num">${w.foeScore}</div><div class="war-who">${escapeHtml(foeName)}</div></div>
+    </div>
+    ${warBarHTML(w.score, w.foeScore)}
+    <div class="war-exs">${rows}</div>
+    <div class="war-note">Вклад каждого считается до ${w.cap} повторов за неделю — чтобы войну выигрывал состав, а не один человек.</div>
+    ${last}
+  </div>`;
 }
 
 /* ---- действия ---- */
@@ -11611,13 +11762,21 @@ function rProfile(){
            })}</div>`
         : `<div class="avatar">${S.rank}</div>`}
       <div>
-        <div style="font-family:'Russo One';font-size:22px;display:flex;align-items:center;gap:7px">
-          ${escapeHtml(a.name)||'Безымянный'}
-          ${/* Карандаш рядом с именем, а не пункт в настройках: имя меняют
-                глядя на него, и искать эту возможность в другом разделе никто
-                не станет. */ ''}
-          <button class="name-edit" onclick="openRename()" aria-label="Сменить имя">${icon('settings_gear',13,'✎')}</button>
-        </div>
+        ${/* НАЖИМАЕТСЯ ВСЁ ИМЯ, а не карандаш рядом с ним.
+
+              Карандаш остался, но теперь он подсказка, а не мишень. Мишенью он
+              был плох: тринадцать пикселей рядом с крупным именем читаются как
+              украшение, и попасть по нему пальцем труднее, чем прочитать. Имя
+              же — первое, на что смотрят в профиле, и «нажать на то, что хочешь
+              изменить» не нужно объяснять вовсе.
+
+              Настройки для этого не годятся по той же причине: имя меняют
+              глядя на него, и искать возможность в другом разделе никто не
+              станет. */ ''}
+        <button class="name-tap" onclick="openRename()" aria-label="Сменить имя">
+          <span>${escapeHtml(a.name)||'Безымянный'}</span>
+          <i class="name-edit">${icon('settings_gear',13,'✎')}</i>
+        </button>
         ${selectedTitleObj() ? `<div style="color:var(--gold);font-size:13px;font-weight:700;margin-top:2px">${escapeHtml(selectedTitleObj().name)}</div>` : ''}
         ${Guild.data ? `<div style="margin-top:3px;cursor:pointer" onclick="openGuild()">
           <span class="gd-tag">${escapeHtml(Guild.data.tag)}</span>
