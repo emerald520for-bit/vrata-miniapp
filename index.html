@@ -7473,6 +7473,32 @@ function getSitupAngle(keypoints){
    фиксируем — оно зависит от того, как именно стоит телефон, поэтому в
    camLoop() отслеживается ЛЮБОЕ достаточно большое отклонение от "домашней"
    позы и возврат обратно, без предположений о знаке. */
+/* ЧИСТЫЙ СТАРТ СЧЁТЧИКА ПОВТОРОВ. Одной функцией, потому что мест четыре, и
+   они уже разошлись.
+
+   Два детектора, а сбрасывался один. Перед боем выполнялось «Cam.armState =
+   'up'; downStreak = 0; upStreak = 0; …» — то есть угловой детектор, — а
+   depthBaseline и depthDisplaced оставались от калибровки, когда человек ещё
+   устраивался в кадре. База меряется по положению носа относительно плеч, за
+   время калибровки оно меняется сильно, и на первых же кадрах боя отклонение
+   от старой базы перепрыгивало порог: засчитывался повтор, которого не было.
+   Либо наоборот — флаг оставался «смещён», и первый настоящий повтор пропадал.
+
+   Комментарий на месте сброса при этом честно обещал, что «первый настоящий
+   повтор не должен зависеть» от калибровки. Обещал за половину состояния. */
+function resetRepCounter(){
+  Cam.armState = 'up';
+  Cam.downStreak = 0;
+  Cam.upStreak = 0;
+  Cam.emaAngle = null;
+  Cam.depthBaseline = null;
+  Cam.depthDisplaced = false;
+  Cam.smoothPts = {};
+  Cam.lastKeypoints = null;
+  Cam.lastExercise = null;
+  Cam.curExercise = null;
+}
+
 function getDepthSignal(keypoints){
   const pts={}; keypoints.forEach(k=>pts[k.name]=k);
   const ls=pts.left_shoulder, rs=pts.right_shoulder, nose=pts.nose;
@@ -8856,7 +8882,7 @@ function startRaid(track, id, resume){
   // остатки предыдущего захода — иначе цвет скелета (skeletonColor()) мог бы
   // на миг показать "неверное" состояние ещё до того, как калибровка вообще
   // началась.
-  Cam.armState = 'up'; Cam.downStreak = 0; Cam.upStreak = 0; Cam.smoothPts = {}; Cam.lastKeypoints = null; Cam.lastExercise = null; Cam.curExercise = null;
+  resetRepCounter();
   checkTitles('enter', { mobs });
   // "Восставший из пепла" — не за саму смерть, а за то, что охотник всё равно
   // вернулся во врата после неё (см. флаг S.everDied в playerDied()).
@@ -8938,8 +8964,8 @@ function finishRaidCountdown(){
   r.started = true;
   // Чистый старт для реального боя — что бы ни происходило во время
   // калибровки (человек ещё двигался в кадр), первый настоящий повтор
-  // не должен зависеть от этого.
-  Cam.armState = 'up'; Cam.downStreak = 0; Cam.upStreak = 0; Cam.smoothPts = {}; Cam.lastKeypoints = null; Cam.lastExercise = null; Cam.curExercise = null;
+  // не должен зависеть от этого. ОБА детектора, а не только угловой.
+  resetRepCounter();
   startCombatTick();
   const overlay = document.getElementById('raidCalib');
   if(overlay) overlay.remove();
