@@ -440,6 +440,39 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
 .map-fixed-top .icon-row,.map-fixed-top .hdr{margin-bottom:10px}
 .map-fixed-top .track-tag{margin-bottom:0}
 .map-top-spacer{height:0}
+/* РАЗЛОМ ВРАТ. Блок живёт в той же закреплённой шапке, что предупреждение о
+   сроке и подсказки, поэтому у него те же поля и такой же скромный рост:
+   лестница врат под ним не должна уезжать за экран. Багровый вариант
+   (.rift-card.last) — не отдельная карточка, а переопределение трёх цветов:
+   так состояния гарантированно не разъедутся вёрсткой. */
+.rift-card{margin-top:10px;padding:11px 13px;border-radius:14px;border:1px solid rgba(139,92,246,.38);background:linear-gradient(180deg,rgba(60,30,120,.28),rgba(13,18,38,.9))}
+.rift-card.last{border-color:rgba(255,59,92,.45);background:linear-gradient(180deg,rgba(120,20,44,.30),rgba(13,18,38,.9))}
+.rift-card.done{border-color:var(--line);background:var(--panel)}
+.rift-head{display:flex;align-items:center;gap:7px;margin-bottom:8px}
+.rift-name{font-size:12px;font-weight:800;letter-spacing:.06em;color:var(--mana)}
+.rift-card.last .rift-name{color:var(--danger)}
+.rift-card.done .rift-name{color:var(--muted)}
+.rift-left{margin-left:auto;font-family:'JetBrains Mono';font-size:11px;color:var(--muted)}
+.rift-row{display:flex;align-items:baseline;gap:6px;font-size:11px;color:var(--muted);margin-bottom:3px}
+.rift-row b{font-family:'JetBrains Mono';font-size:12px;color:var(--text);font-weight:700}
+.rift-row .rift-of{margin-left:auto;font-family:'JetBrains Mono';font-size:11px}
+/* overflow:hidden на дорожке, а не border-radius на заливке: заливка шире
+   дорожки быть не может, а отметки ярусов лежат поверх и скруглять их не надо. */
+.rift-bar{position:relative;height:7px;border-radius:4px;background:#111A33;overflow:hidden;margin-bottom:9px}
+.rift-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--mana-2),var(--mana));transition:width .4s ease}
+.rift-card.last .rift-fill{background:linear-gradient(90deg,#8B1E3A,var(--danger))}
+.rift-fill.me{background:linear-gradient(90deg,#2B7FA8,var(--sys))}
+.rift-mark{position:absolute;top:0;width:1px;height:100%;background:rgba(234,240,255,.28)}
+.rift-mark.hit{background:var(--gold)}
+.rift-note{font-size:10.5px;color:var(--muted);line-height:1.35}
+.rift-note b{color:var(--sys);font-weight:700}
+.rift-titles{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px}
+.rift-ttl{padding:3px 8px;border-radius:7px;background:rgba(245,194,66,.12);border:1px solid rgba(245,194,66,.35);color:var(--gold);font-size:10px;font-weight:700}
+/* Строка внутри врат — вариант баннера рейда, а не своя карточка: на
+   полноэкранной камере любой блок обязан быть с тем же затемнением и блюром,
+   иначе текст пропадает на светлом кадре. */
+.raid-banner.rift{border-color:rgba(139,92,246,.4);color:var(--muted);font-size:11.5px}
+.raid-banner.rift b{font-family:'JetBrains Mono';color:var(--text)}
 .toggle-row{width:100%;display:flex;align-items:center;justify-content:space-between;padding:15px 16px;border-radius:14px;border:1px solid var(--line);background:var(--panel);color:var(--text);font-size:15px;font-weight:700;cursor:pointer;text-align:left;transition:border-color .2s ease, transform .12s ease}
 .toggle-row:active{transform:scale(.98)}
 .toggle-pill{padding:5px 12px;border-radius:8px;background:var(--line);color:var(--muted);font-family:'JetBrains Mono';font-size:12px;font-weight:700;transition:background .25s ease, color .25s ease}
@@ -724,8 +757,11 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
    не касается — без баннера она сама первая и должна сидеть у самого верха
    экрана без отступа. На экране отдыха (.rest-fullbleed) этой коллизии нет
    (там нет ни кнопки назад, ни мини-очереди) — там баннер по-прежнему без
-   лишнего отступа. */
-.raid-fullbleed:not(.rest-fullbleed) .raid-banner{margin-top:40px}
+   лишнего отступа.
+   :first-child — отступ нужен ТОЛЬКО верхнему баннеру. Пока их было два,
+   оба получали по 40px, и при совпадении экзамена с реплеем между ними
+   зияла дыра; с третьим баннером (разлом) это стало бы заметно всегда. */
+.raid-fullbleed:not(.rest-fullbleed) .raid-banner:first-child{margin-top:40px}
 .raid-banner{
   padding:8px 12px;border-radius:12px;background:rgba(4,6,16,.6);backdrop-filter:blur(6px);
   border:1px solid rgba(255,255,255,.15);font-size:12px;line-height:1.35;color:var(--text);
@@ -1746,6 +1782,11 @@ const S = {
   // результат последнего захода. Всё это живёт только в сессии и в сохранение
   // не идёт — источник правды по рейтингу и лимитам на сервере.
   duel: null, duelState: null, duelResult: null, duelLoading: false, duelError: false, duelFinding: false,
+  /* Разлом врат. Тоже только сессия и тоже целиком с сервера: полоса мира,
+     личный вклад, взятый ярус и дневной зачёт считаются из `scores` при
+     чтении. Клиент не пересчитывает НИЧЕГО из этого — вторая копия формулы
+     рано или поздно разойдётся с первой. */
+  rift: null,
   step: 0,
   // Вкладка инвентаря и добыча последнего захода — для экранов победы/смерти.
   invTab: 'trophy', wonLoot: [], lostLoot: [],
@@ -2089,6 +2130,89 @@ function hintHTML(){
     </div>
   </div>`;
 }
+/* ============ РАЗЛОМ ВРАТ: КАРТОЧКА НА КАРТЕ ============
+
+   Четыре состояния одной карточки: скоро · идёт · последние сутки · закрыт.
+   Разными блоками их делать нельзя — они обязаны занимать одно и то же место
+   в шапке, иначе лестница врат будет прыгать при каждом переходе.
+
+   Все числа берутся из S.rift как есть. Клиент считает здесь ровно одно —
+   ширину полосок в процентах, и это единственная величина, которая нигде
+   больше не нужна. */
+function riftPct(a, b){ return b > 0 ? Math.max(0, Math.min(100, a / b * 100)) : 0; }
+function riftDateRu(s){
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(s || ''));
+  if(!m) return '';
+  const MN = ['янв','фев','мар','апр','мая','июн','июл','авг','сен','окт','ноя','дек'];
+  return String(Number(m[3])) + ' ' + (MN[Number(m[2]) - 1] || '');
+}
+function riftHTML(){
+  const r = S.rift;
+  if(!r) return '';
+  const nm = escapeHtml(r.name || 'Разлом врат');
+
+  if(r.state === 'soon'){
+    return `<div class="rift-card">
+      <div class="rift-head"><span class="rift-name">${nm}</span>
+        <span class="rift-left">${riftDateRu(r.from)} — ${riftDateRu(r.to)}</span></div>
+      <div class="rift-note">Повторы всех охотников пойдут в общий счёт. Цель — <b>${r.goal}</b>. За личный вклад дают титулы.</div>
+    </div>`;
+  }
+
+  if(r.state === 'closed'){
+    const took = r.tier > 0;
+    return `<div class="rift-card done">
+      <div class="rift-head"><span class="rift-name">${nm}</span><span class="rift-left">закрыт</span></div>
+      <div class="rift-row">Итог мира <b>${r.total}</b><span class="rift-of">ярус ${r.tier} из ${r.marks.length}</span></div>
+      <div class="rift-bar"><div class="rift-fill" style="width:${riftPct(r.total, r.goal)}%"></div></div>
+      <div class="rift-note">Твой вклад — <b>${r.mine}</b>. Участвовало ${r.people}.${took ? ' Эхо разлома: повышенная добыча во вратах.' : ''}</div>
+      ${riftTitlesHTML(r)}
+    </div>`;
+  }
+
+  // Идёт. Последние сутки окна — багровый вариант.
+  const last = todayStr() >= String(r.to || '');
+  const capped = r.today >= r.dayCap;
+  return `<div class="rift-card${last ? ' last' : ''}">
+    <div class="rift-head"><span class="rift-name">${nm}</span>
+      <span class="rift-left">${last ? 'последние часы' : 'до ' + riftDateRu(r.to)}</span></div>
+    <div class="rift-row">Разлом <b>${r.total}</b><span class="rift-of">из ${r.goal}</span></div>
+    <div class="rift-bar">
+      <div class="rift-fill" style="width:${riftPct(r.total, r.goal)}%"></div>
+      ${(r.marks || []).map((m, i) => `<div class="rift-mark${r.tier > i ? ' hit' : ''}" style="left:${m * 100}%"></div>`).join('')}
+    </div>
+    <div class="rift-row">Твой вклад <b>${r.mine}</b><span class="rift-of">из ${r.personal[r.personal.length - 1]}</span></div>
+    <div class="rift-bar"><div class="rift-fill me" style="width:${riftPct(r.mine, r.personal[r.personal.length - 1])}%"></div></div>
+    <div class="rift-note">Сегодня зачтено <b>${r.today}</b> из ${r.dayCap}${capped ? ' — дневной предел взят' : ''}.</div>
+    ${riftTitlesHTML(r)}
+  </div>`;
+}
+function riftTitlesHTML(r){
+  const t = r && r.titles || [];
+  if(!t.length) return '';
+  return `<div class="rift-titles">${t.map(x => `<span class="rift-ttl">${escapeHtml(x.name)}</span>`).join('')}</div>`;
+}
+/* Заработанные титулы разлома открываем ПО ОТВЕТУ СЕРВЕРА, а не по своим
+   подсчётам: сервер — единственный, кто видит и общий счёт мира, и вклад
+   человека. Открытые титулы дальше живут в S.titles как все прочие, поэтому
+   их можно надеть, и после окончания события они никуда не денутся. */
+function riftSyncTitles(r){
+  if(!r || !Array.isArray(r.titles)) return false;
+  let any = false;
+  for(const t of r.titles){
+    if(t && t.id && !S.titles.includes(t.id)){ unlockTitle(t.id); any = true; }
+  }
+  return any;
+}
+
+/* Строка внутри врат. Показываем только пока окно открыто: после закрытия она
+   была бы обещанием, которого механика уже не выполняет. */
+function riftStripHTML(){
+  const r = S.rift;
+  if(!r || r.state !== 'live') return '';
+  return `<div class="raid-banner rift">Повторы идут в разлом · твои <b>${r.mine}</b></div>`;
+}
+
 /* Отмечаем показанной только по нажатию, а не по факту отрисовки. Человек
    мог закрыть приложение, не дочитав, — тогда подсказка должна остаться. */
 function hintClose(id, goTo){
@@ -2285,6 +2409,33 @@ const STATE_API_URL = 'https://vrata-bot.emerald520for.workers.dev/api/state';
 const RESET_API_URL = 'https://vrata-bot.emerald520for.workers.dev/api/reset';
 const GUILD_API_URL  = 'https://vrata-bot.emerald520for.workers.dev/api/guild';
 const GUILDS_API_URL = 'https://vrata-bot.emerald520for.workers.dev/api/guilds';
+const RIFT_API_URL   = 'https://vrata-bot.emerald520for.workers.dev/api/rift';
+
+/* ---- РАЗЛОМ ВРАТ ----
+
+   Событие на несколько суток: повторы всех игроков идут в одну общую полосу.
+   Всё, что здесь показывается, ПРИХОДИТ С СЕРВЕРА готовым — цель, ярусы,
+   пороги, дневной потолок. Своих чисел у клиента нет намеренно: разойдись
+   копия с сервером хоть на единицу, человек увидел бы взятый ярус там, где
+   сервер считает иначе. Тот же урок, что со ступенями арены и знамёнами. */
+let riftLoadAt = 0;
+function loadRift(force){
+  if(!TG || !TG.initData) return;
+  const now = Date.now();
+  /* Не чаще раза в полминуты: карта перерисовывается часто, а полоса
+     двигается повторами, а не открытиями экрана. */
+  if(!force && now - riftLoadAt < 30000) return;
+  riftLoadAt = now;
+  fetch(RIFT_API_URL, { headers: { 'X-Init-Data': TG.initData } })
+    .then(r=>r.ok ? r.json() : null)
+    .then(d=>{
+      if(!d) return;
+      S.rift = d.rift || null;
+      if(riftSyncTitles(S.rift)) saveState();
+      if(S.screen==='map') render();
+    })
+    .catch(()=>{});
+}
 const FRIENDS_API_URL = 'https://vrata-bot.emerald520for.workers.dev/api/friends';
 const SHOP_API_URL = 'https://vrata-bot.emerald520for.workers.dev/api/shop';
 const CHEST_OPEN_API_URL = 'https://vrata-bot.emerald520for.workers.dev/api/chest/open';
@@ -2792,11 +2943,25 @@ function sendScore(){
            иначе на экране было бы одно число, а в титулах другое.
            Ответ может не прийти вовсе (нет сети, старый воркер) — тогда
            просто ничего не меняем. */
-        if(!data || typeof data.streak !== 'number') return;
+        if(!data) return;
+        /* Разлом приезжает тем же ответом — это главный путь его обновления:
+           полоса двигается повторами, а счёт уходит на сервер сразу после
+           них. Отдельный /api/rift нужен только чтобы карточка была видна при
+           первом открытии, до первой тренировки. Забираем его ДО проверки
+           streak: старый воркер стрик вернёт, а разлом нет, и наоборот —
+           одно не должно блокировать другое. */
+        let riftChanged = false;
+        if(data.rift !== undefined){
+          S.rift = data.rift || null;
+          riftChanged = true;
+          if(riftSyncTitles(S.rift)) saveState();
+        }
+        if(typeof data.streak !== 'number'){ if(riftChanged) render(); return; }
         const days = Math.max(0, Math.floor(data.streak));
         const changed = days !== S.streak;
         S.streak = days;
         if(checkStreakTitles(days) || changed){ saveState(); render(); }
+        else if(riftChanged) render();
       })
       .catch(()=>{});
   }catch(e){}
@@ -4201,6 +4366,21 @@ const BESTIARY_GROUPS = {
 // Плоский список всех титулов — источник для экрана "Титулы" (rTitlesScreen).
 // Собран из тех же объектов, что использует checkTitles(), — никакого
 // дублирования текста title-имён.
+/* Титулы Разлома врат. Здесь только НАЗВАНИЯ и описания — условия получения
+   живут на сервере и там же проверяются: пороги вклада и общая цель выводятся
+   из `scores`, клиент их не знает и знать не должен. Тот же раздел
+   обязанностей, что у DUEL_PLACE_TITLE_NAMES.
+   Поэтому в описаниях нет чисел: стоило бы написать «100 повторов» — и однажды
+   порог на сервере поменялся бы, а человек продолжал ждать титул не на той
+   отметке. Сколько осталось, видно в самой карточке разлома, где цифры
+   приходят с сервера живыми.
+   Ключ содержит номер события (rift1_…): у второго разлома будут свои титулы,
+   иначе ветерану на нём нечего было бы получать. */
+const RIFT_TITLES_LIST = [
+  { id:'rift1_call', name:'Откликнувшийся', cat:'rift', desc:'Разлом · октябрь: ты пришёл, когда открылось' },
+  { id:'rift1_edge', name:'Держащий край',  cat:'rift', desc:'Разлом · октябрь: крупный личный вклад' },
+  { id:'rift1_seal', name:'Запечатавший разлом', cat:'rift', desc:'Разлом · октябрь: наибольший вклад, и разлом закрыт полностью — всем сервером' },
+];
 const TITLES_LIST = [
   ...Object.entries(RANK_CLEAR_TITLES).map(([rank,t])=>({ ...t, rank, cat:'rank', desc:`Закрыты все обычные врата ранга ${rank}` })),
   ...Object.entries(TRIAL_BOSS_TITLES).map(([rank,t])=>({ ...t, rank, cat:'trial', desc:`Повержен босс Испытания ранга ${rank}` })),
@@ -4217,6 +4397,7 @@ const TITLES_LIST = [
      обещать «ни одного пропуска» и прощать разрыв было бы обманом. */
   ...STREAK_TITLES.map(t=>({ ...t, cat:'streak',
     desc:`${t.days} ${pluralDaysRu(t.days)} тренировок подряд. Один пропущенный день серию не рвёт, но злоупотребить этим не выйдет` })),
+  ...RIFT_TITLES_LIST,
   ...CONTRACT_TITLES,
 ];
 // Русские окончания: 7 дней, 30 дней, 365 дней. Отдельной функцией, потому что
@@ -6001,6 +6182,7 @@ function rMap(){
       ${trackRowHTML()}
       <div class="track-tag">${icon(TRACKS[track].iconKey,16,TRACKS[track].iconFallback)} ${TRACKS[track].label}</div>
       ${wallReached ? mapOfferHTML() : ''}
+      ${riftHTML()}
       ${trialWarnHTML()}
       ${hintHTML()}
     </div>
@@ -6019,6 +6201,10 @@ function rMap(){
   // сколько строк займут пилюли/иконки на узком экране, поэтому не хардкодим
   // пиксели, а меряем по факту отрисовки и подгоняем спейсер под неё.
   if(wallReached) paywallHint('map');
+  /* Тянем разлом при показе карты, а не на старте приложения: если события
+     нет, запрос не делается вовсе, а если есть — карта единственный экран,
+     где карточка видна. Свой троттлинг внутри loadRift(). */
+  loadRift();
   requestAnimationFrame(()=>{
     const topEl = document.querySelector('.map-fixed-top');
     const spacer = document.getElementById('mapTopSpacer');
@@ -9293,6 +9479,7 @@ function rRaid(){
     <div class="raid-top-panel">
       ${(g.stage==='exam' && (EXAM_XP_MULT[g.rank]||1)>1) ? `<div class="raid-banner exam"><b>⚡ БОНУС СИСТЕМЫ</b> · Экзамен даёт ×${EXAM_XP_MULT[g.rank]} опыта за подход.</div>` : ''}
       ${r.replay ? `<div class="raid-banner replay">ℹ️ Повторное прохождение — опыт за этот заход не начисляется. Повторы идут в профиль как обычно.</div>` : ''}
+      ${riftStripHTML()}
       <div class="raid-mob-card">
         <div class="mob-art" id="mobArt" style="border-color:${gateColor}">${mobVisual(m.kind,120,m.name)}</div>
         <div class="raid-gate-tag" style="color:${gateColor}">${g.stage==='exam'?'ЭКЗАМЕН':g.stage==='trial'?'ИСПЫТАНИЕ':'ВРАТА '+g.rank} · ${g.name.toUpperCase()}</div>
@@ -12240,7 +12427,7 @@ function setTitlesTab(tab){
 const TITLE_CAT_LABELS = {
   rank:'За зачистку ранга', trial:'За боссов испытаний', exam:'За боссов экзамена',
   combo:'Сводные титулы', bestiary_group:'За бестиарий', situational:'Ситуативные',
-  streak:'За серию тренировок', contract:'За контракт',
+  streak:'За серию тренировок', contract:'За контракт', rift:'За разлом врат',
 };
 function titleCardHTML(t){
   const unlocked = isTitleUnlocked(t);
