@@ -2160,7 +2160,7 @@ function riftHTML(){
   }
 
   if(r.state === 'closed'){
-    const took = r.tier > 0;
+    const took = !!r.echo;
     return `<div class="rift-card done">
       <div class="rift-head"><span class="rift-name">${nm}</span><span class="rift-left">закрыт</span></div>
       <div class="rift-row">Итог мира <b>${r.total}</b><span class="rift-of">ярус ${r.tier} из ${r.marks.length}</span></div>
