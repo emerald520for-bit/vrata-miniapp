@@ -2355,12 +2355,18 @@ function drainContractTitleQueue(){
   const later = wrap.querySelector('[data-act="later"]');
   if(later) later.onclick = ()=>{ close(); render(); };
 }
+/* Запас в трое суток — ТОЛЬКО на случай, когда сервер не ответил (нет сети,
+   сбой воркера): тогда верим кэшу, но не дольше paidUntil + 3 суток, чтобы
+   старый кэш с subscribed:true не держал врата открытыми вечно.
+   Если сервер ответил в этом запуске — его слово окончательное, без запаса.
+   Раньше запас действовал всегда, и после окончания контракта человек ещё
+   трое суток видел все врата открытыми, хотя сервер уже сказал «нет». */
 function isSubActive(){
   if(!S.sub) return false;
-  if(S.sub.subscribed) return true;
-  if(!S.sub.paidUntil) return false;
-  const untilMs = Date.parse(String(S.sub.paidUntil).replace(' ','T')+'Z') + 3*86400000;
-  return Number.isFinite(untilMs) && Date.now() < untilMs;
+  if(SubCheck.ok) return !!S.sub.subscribed;
+  const untilMs = S.sub.paidUntil ? Date.parse(String(S.sub.paidUntil).replace(' ','T')+'Z') : NaN;
+  if(!Number.isFinite(untilMs)) return !!S.sub.subscribed;
+  return Date.now() < untilMs + 3*86400000;
 }
 // "2026-08-25 14:30" (формат D1) -> "25 августа 2026" для показа в Настройках.
 const MONTHS_RU_GEN = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
