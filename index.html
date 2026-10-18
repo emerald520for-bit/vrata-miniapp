@@ -2406,7 +2406,6 @@ const LEADERBOARD_API_URL = 'https://vrata-bot.emerald520for.workers.dev/api/lea
 const DROP_API_URL = 'https://vrata-bot.emerald520for.workers.dev/api/drop';
 const RAID_END_API_URL = 'https://vrata-bot.emerald520for.workers.dev/api/raid-end';
 const NAME_API_URL = 'https://vrata-bot.emerald520for.workers.dev/api/name';
-const FACE_API_URL = 'https://vrata-bot.emerald520for.workers.dev/api/face';
 const ITEMS_API_URL = 'https://vrata-bot.emerald520for.workers.dev/api/items';
 const EQUIP_API_URL = 'https://vrata-bot.emerald520for.workers.dev/api/equip';
 const CRAFT_API_URL = 'https://vrata-bot.emerald520for.workers.dev/api/craft';
@@ -3243,7 +3242,6 @@ function tgBack(){
       go(S.prevScreen||'guild'); return;
     case 'friends': go(S.prevScreen||'profile'); return;
     case 'rename': go(S.prevScreen||'profile'); return;
-    case 'face': go(S.prevScreen||'profile'); return;
     case 'shop':
       if(_modalEl){ closeModal(); return; }
       go(S.prevScreen||'profile'); return;
@@ -3256,7 +3254,7 @@ function tgBack(){
 }
 function updateTgBackButton(){
   if(!TG || !TG.BackButton) return;
-  const show = ['quiz','journey','raid','settings','titles','instructions','gatePreview','duel','duelHome','rename','face','inventory','otherProfile','guildPreview','friends','shop'].includes(S.screen);
+  const show = ['quiz','journey','raid','settings','titles','instructions','gatePreview','duel','duelHome','rename','inventory','otherProfile','guildPreview','friends','shop'].includes(S.screen);
   try{ show ? TG.BackButton.show() : TG.BackButton.hide(); }catch(e){}
 }
 /* Блокировка свайпа-вниз нужна ТОЛЬКО во время подхода — иначе на экранах с
@@ -4914,23 +4912,9 @@ const AVB_CORE   = 0.68;   // диаметр аватара внутри кол�
    единственное, что различимо. Одно число на весь проект. */
 const AVB_AURA_MIN = 38;
 
-/* Адрес одобренного фото. Версия в адресе — не украшение: без неё пришлось бы
-   выбирать между устаревшими лицами и тремя десятками обращений к серверу на
-   каждый показ таблицы лидеров. Сменилось фото — сменился адрес, старый кэш
-   просто перестаёт запрашиваться. */
-const PHOTO_URL_BASE = 'https://vrata-bot.emerald520for.workers.dev/api/avatar/';
-function photoUrl(chatId, version){
-  return (chatId && version) ? `${PHOTO_URL_BASE}${chatId}?v=${version}` : null;
-}
-
 function avatarBadge(o){
   const B = Math.max(12, Math.round((o && o.size) || 40));
-  /* СВОЁ ФОТО ВЫТЕСНЯЕТ МАГАЗИННОЕ ЛИЦО. Не дополняет и не спорит с ним:
-     человек, приславший своё, ожидает увидеть именно его, а не купленную маску
-     где-то ещё. Магазинный аватар при этом не теряется — вернётся, как только
-     фото снимут. */
-  const photo = (o && o.photo) || null;
-  const avId  = photo ? null : ((o && o.avatar) || null);
+  const avId  = (o && o.avatar) || null;
   const frame = (o && o.frame) || null;
   const aura  = (B >= AVB_AURA_MIN && o && o.aura) || null;
   const name  = (o && o.name) || '';
@@ -4944,13 +4928,10 @@ function avatarBadge(o){
   const ringed = !!frameImg;
 
   const side = Math.round(B * (ringed ? AVB_CORE : 1));
-  const core = photo
-    ? `<img src="${photo}" width="${side}" height="${side}" alt="" loading="lazy"
-            style="display:block;width:100%;height:100%;object-fit:cover">`
-    : (avId
-      ? avatarVisual(avId, side, name)
-      : `<span class="av-stub" style="width:100%;height:100%;font-size:${Math.round(side * 0.42)}px">${
-          escapeHtml(String(name || '?').trim().charAt(0).toUpperCase() || '?')}</span>`);
+  const core = avId
+    ? avatarVisual(avId, side, name)
+    : `<span class="av-stub" style="width:100%;height:100%;font-size:${Math.round(side * 0.42)}px">${
+        escapeHtml(String(name || '?').trim().charAt(0).toUpperCase() || '?')}</span>`;
 
   return `<span class="av-badge${ringed ? ' ringed' : ''}${extra}" style="--avb:${B}px">
     ${auraImg  ? `<i class="av-aura"  style="background-image:url(${auraImg})"></i>` : ''}
@@ -5644,7 +5625,7 @@ function render(opts){
     death: rDeath, titles: rTitlesScreen, rank: rRank, instructions: rInstructions,
     gatePreview: rGatePreview, duelHome: rDuelHome, duel: rDuel, duelResult: rDuelResult,
     inventory: rInventory, otherProfile: rOtherProfile, guild: rGuild, guildPreview: rGuildPreview,
-    rename: rRename, face: rFace,
+    rename: rRename,
     friends: rFriends, shop: rShop,
   })[S.screen]();
   updateTgBackButton();
@@ -6369,12 +6350,11 @@ function lbBadgeHTML(row){
      титула под именем. Титул есть у меньшинства. А теперь, когда видны ещё и
      выпадающие рамки с аурами, полный значок стал не исключением, а нормой —
      и рваными оказались бы уже строки БЕЗ него. */
-  if(!av && !fr && !au && !(row && row.photo))
+  if(!av && !fr && !au)
     return `<div class="lb-av"><div class="lb-rank-badge">${rank}</div></div>`;
   const def = av ? shopAvatar(av) : null;
   return `<div class="lb-av">
     ${avatarBadge({ size:40, avatar:av, frame:fr, aura:au,
-                    photo: photoUrl(row && row.chat_id, row && row.photo),
                     name: def ? def.name : (row && row.name) })}
     <span class="lb-av-rank">${rank}</span>
   </div>`;
@@ -9709,10 +9689,9 @@ function guildRowHTML(r, opts){
   /* Аура здесь не рисуется — размер значка ниже порога (см. AVB_AURA_MIN), и
      свечение на тридцати пикселях превратилось бы в грязное пятно вокруг лица.
      Решает это сам avatarBadge, отдельного условия тут нет. */
-  const badge = (avId || r.frame || r.aura || r.photo)
+  const badge = (avId || r.frame || r.aura)
     ? `<span class="gd-av ${r.todayReps>0?'on':''}">${avatarBadge({
         size:30, avatar:avId, frame:r.frame, aura:r.aura,
-        photo: photoUrl(r.chat_id, r.photo),
         name:(avId && (shopAvatar(avId)||{}).name) || r.name })}</span>`
     /* Точка живёт в коробке размером со значок. Сама она в 8 пикселей, значок
        в 30 — отдай их разными коробками, и состав пойдёт лесенкой: имена
@@ -10590,10 +10569,9 @@ function rOtherProfile(){
         <!-- Аватар вместо безликой иконки человечка. Если охотник его не
              покупал, остаётся прежний значок — так у большинства и будет,
              и менять для них ничего не нужно. -->
-        ${(d.equip && (d.equip.avatar || d.equip.frame || d.equip.aura || d.equip.photo))
+        ${(d.equip && (d.equip.avatar || d.equip.frame || d.equip.aura))
           ? `<div class="avatar-badge-wrap" style="margin:0 auto">${avatarBadge({
                size:96, avatar:d.equip.avatar, frame:d.equip.frame, aura:d.equip.aura,
-               photo: photoUrl(S.otherUid, d.equip.photo),
                name:(d.equip.avatar && (shopAvatar(d.equip.avatar)||{}).name) || d.name,
              })}</div>`
           : `<div style="width:64px;height:64px;margin:0 auto;border-radius:50%;border:2px solid var(--gold);display:flex;align-items:center;justify-content:center;overflow:hidden">
@@ -11574,7 +11552,6 @@ function rDuel(){
           avatar: Items.equip && Items.equip.avatar,
           frame:  Items.equip && Items.equip.frame,
           aura:   Items.equip && Items.equip.aura,
-          photo:  photoUrl(rankChatId(), Items.equip && Items.equip.photo),
           name:   S.ans.name, cls:'duel-face' })}
         <div class="duel-side-tag">ТЫ</div>
         <div class="duel-side-num" id="duelMyReps">${d.reps}</div>
@@ -11583,7 +11560,6 @@ function rDuel(){
       <div class="duel-side ghost">
         ${d.ghost ? avatarBadge({ size:50,
           avatar: d.ghost.avatar, frame: d.ghost.frame, aura: d.ghost.aura,
-          photo: photoUrl(d.ghost.chatId, d.ghost.photo),
           name: d.ghost.name, cls:'duel-face' }) : ''}
         <div class="duel-side-tag">${d.ghost && d.ghost.weapon
           ? `<span style="margin-right:4px;vertical-align:-3px;display:inline-block">${itemIcon(d.ghost.weapon,14)}</span>` : ''}${ghostName}</div>
@@ -12005,136 +11981,6 @@ function toggleStatus(btn){
     if(ch) ch.classList.toggle('open', S.statusOpen);
   }
 }
-/* ============ ЛИЦО ОХОТНИКА: СВОЁ ФОТО ============
-
-   Загрузчика здесь нет и не будет. Фото человек отправляет БОТУ в личку, а
-   приложение только показывает, что с ним стало. Причина не в лени: своя
-   загрузка означала бы хранилище чужих файлов, сжатие, и главное — очередь
-   модерации без всякой помощи со стороны. Через бота картинка по дороге
-   проходит фильтры Telegram, лежит у Telegram и стоит нам ноль.
-
-   ПОЧЕМУ НЕТ ПРЕДПРОСМОТРА ДО ОДОБРЕНИЯ. Задумывалось, что своё фото человек
-   увидит в профиле сразу, а в общих списках оно появится после проверки. На
-   деле это невозможно сделать безопасно: значок рисуется тегом <img>, а он не
-   умеет подписывать запрос — то есть картинку пришлось бы отдавать по
-   публичному адресу, угадываемому по chat_id. Непроверенный снимок стал бы
-   доступен любому, кто подставит число в адрес, и вся затея с очередью
-   потеряла бы смысл.
-
-   Поэтому «сразу» живёт там, где оно и так есть: человек только что отправил
-   фото боту и видит его прямо в переписке, а бот отвечает, что принял. В
-   приложении до одобрения остаётся прежний аватар и честная строка «на
-   проверке». */
-const Face = { data:null, loading:false };
-
-function openFace(){
-  S.prevScreen = S.screen;
-  go('face');
-  loadFaceState();
-}
-
-function loadFaceState(){
-  if(!(TG && TG.initData)){ Face.loading = false; render(); return; }
-  Face.loading = true;
-  fetch(FACE_API_URL, { headers:{ 'X-Init-Data':TG.initData } })
-    .then(r=>r.json())
-    .then(d=>{
-      Face.data = d;
-      /* Одобрили — перечитываем снаряжение: версия фото приезжает вместе с
-         ним, и без этого значок в профиле остался бы прежним до перезапуска. */
-      if(d && d.state === 'approved') loadItems(true);
-      Face.loading = false; render();
-    })
-    .catch(()=>{ Face.loading = false; render(); });
-}
-
-function faceBotLink(){
-  /* Имя бота приходит с сервера, а не вписано здесь: вписанное однажды, оно
-     переживёт переименование бота и начнёт вести в никуда.
-     Открываем через Telegram, а не обычным переходом: внутри мини-аппа ссылка
-     на t.me уходит во встроенный браузер и никуда не ведёт. */
-  const user = Face.data && Face.data.botUsername;
-  if(!user){ showToast('Адрес бота пока не загрузился'); return; }
-  if(TG && TG.openTelegramLink){ TG.openTelegramLink('https://t.me/' + user); return; }
-  showToast('Открыть можно только внутри Telegram');
-}
-
-function rFace(){
-  const d = Face.data;
-  const cd = d && d.cooldownUntil ? renameDaysLeft(d.cooldownUntil) : 0;
-  let status = '';
-
-  if(Face.loading && !d){
-    status = `<div class="sub" style="margin-top:22px">Загружаю…</div>`;
-  } else if(d && d.pending){
-    status = `<div class="gd-card" style="margin-top:16px">
-      <div style="font-size:14px">Фото на проверке</div>
-      <div class="sub" style="font-size:12px;margin-top:5px;line-height:1.5">
-        Пока на месте прежний аватар. Новый встанет, когда фото посмотрят.
-      </div>
-    </div>`;
-  } else if(d && d.state === 'approved'){
-    status = `<div class="gd-card" style="margin-top:16px">
-      <div style="font-size:14px;color:var(--ok)">Фото принято</div>
-      <div class="sub" style="font-size:12px;margin-top:5px;line-height:1.5">
-        Его видят все: в таблице лидеров, в гильдии и на Арене.
-      </div>
-    </div>`;
-  } else if(d && d.state === 'rejected'){
-    /* Причину не называем — её не называл и владелец. Зато сразу говорим, что
-       можно прислать другое: смысл сообщения не в отказе, а в том, чтобы
-       человек не считал, что дверь закрыта. */
-    status = `<div class="gd-card" style="margin-top:16px">
-      <div style="font-size:14px">Прошлое фото не подошло</div>
-      <div class="sub" style="font-size:12px;margin-top:5px;line-height:1.5">
-        Можно прислать другое — попытка не потрачена.
-      </div>
-    </div>`;
-  }
-
-  h(`<div class="screen">
-    <div class="hdr">
-      <button class="back" onclick="go(S.prevScreen||'profile')">‹</button>
-      <h2 style="margin:0;font-size:20px">Лицо охотника</h2>
-      <div style="width:40px"></div>
-    </div>
-
-    <div class="avatar-badge-wrap" style="margin:18px auto 0">${avatarBadge({
-      size:96,
-      avatar: Items.equip && Items.equip.avatar,
-      frame:  Items.equip && Items.equip.frame,
-      aura:   Items.equip && Items.equip.aura,
-      photo:  photoUrl(rankChatId(), Items.equip && Items.equip.photo),
-      name:   S.ans.name,
-    })}</div>
-
-    ${status}
-
-    <div class="gd-card" style="margin-top:14px">
-      <div style="font-size:13px;color:var(--text)">Как поставить своё</div>
-      <div class="sub" style="font-size:12px;margin-top:8px;line-height:1.7">
-        1. Открой переписку с ботом<br>
-        2. Отправь ему фотографию<br>
-        3. Он сразу подтвердит, что принял
-      </div>
-      <button class="btn ghost" style="margin-top:12px;padding:9px;font-size:13px"
-        ${(d && d.botUsername) ? '' : 'disabled'} onclick="faceBotLink()">Написать боту</button>
-    </div>
-
-    ${cd ? `<div class="gd-card" style="margin-top:12px">
-        <div style="font-size:13px">Фото недавно менялось</div>
-        <div class="sub" style="font-size:12px;margin-top:4px">Сменить снова можно через ${cd} ${guildPlural(cd,['день','дня','дней'])}</div>
-      </div>`
-     : `<div class="sub" style="margin-top:12px;font-size:12px;line-height:1.5">
-        Менять фото можно раз в ${(d&&d.cooldownDays)||30} ${guildPlural((d&&d.cooldownDays)||30,['день','дня','дней'])}.
-      </div>`}
-
-    ${(Items.equip && Items.equip.avatar) ? `<div class="sub" style="margin-top:10px;font-size:12px;line-height:1.5">
-        Купленный аватар никуда не денется — он вернётся, если снять фото.
-      </div>` : ''}
-  </div>`);
-}
-
 /* ============ СМЕНА ИМЕНИ ============
 
    Цену, откат и право на бесплатную попытку считает СЕРВЕР — здесь только
@@ -12285,13 +12131,12 @@ function rProfile(){
             выпадают из врат, а не покупаются, и заслужены отдельно. Если нет
             вообще ничего — остаётся прежний круг с буквой ранга, и профиль
             выглядит ровно как раньше. */ ''}
-      ${(Items.equip && (Items.equip.avatar || Items.equip.frame || Items.equip.aura || Items.equip.photo))
-        ? `<div class="avatar-badge-wrap" onclick="openFace()" style="cursor:pointer">${avatarBadge({
+      ${(Items.equip && (Items.equip.avatar || Items.equip.frame || Items.equip.aura))
+        ? `<div class="avatar-badge-wrap" onclick="openShop()" style="cursor:pointer">${avatarBadge({
              size:96,
              avatar: Items.equip.avatar,
              frame:  Items.equip.frame,
              aura:   Items.equip.aura,
-             photo:  photoUrl(rankChatId(), Items.equip.photo),
              name:   (Items.equip.avatar && (shopAvatar(Items.equip.avatar)||{}).name) || S.ans.name,
            })}</div>`
         : `<div class="avatar">${S.rank}</div>`}
