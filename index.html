@@ -9,7 +9,7 @@
 <!-- fonts.gstatic.com — реальный хост файлов шрифтов, а не только CSS; без этого preconnect
      соединение к нему открывается на кадр позже, шрифты чуть медленнее -->
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Russo+One&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Golos+Text:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <!-- Telegram Mini App SDK — должен грузиться максимально рано. Вне Telegram
      (обычный браузер) объект window.Telegram просто не появится, весь код
      ниже это учитывает и работает как обычная веб-страница. -->
@@ -36,26 +36,28 @@
   --sa-bottom:max(env(safe-area-inset-bottom, 0px), var(--tg-sa-bottom));
 }
 :root{
-  --void:#05070F;
-  --panel:rgba(13,18,38,.88);
-  --panel-solid:#0D1226;
-  --line:#1B2547;
-  --sys:#4CC9FF;
-  --sys-dim:rgba(76,201,255,.35);
-  --mana:#8B5CF6;
-  --mana-2:#6D28D9;
-  --danger:#FF3B5C;
-  --gold:#F5C242;
-  --text:#EAF0FF;
-  --muted:#8A94B8;
-  --ok:#34D399;
+  --void:#0B0A10;
+  --panel:#14131C;
+  --panel-solid:#14131C;
+  --panel-2:#1B1A25;
+  --line:#2A2735;
+  --line-2:#383447;
+  --sys:#8E6BFF;
+  --sys-dim:rgba(142,107,255,.4);
+  --mana:#8E6BFF;
+  --mana-2:#7A58F0;
+  --danger:#E5484D;
+  --gold:#E9B861;
+  --text:#F3F0E8;
+  --muted:#8B8798;
+  --ok:#5FD39A;
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{min-height:100%}
 body{
   background:#02030A;
   color:var(--text);
-  font-family:'Manrope',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+  font-family:'Golos Text',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
   display:flex;justify-content:center;
   overflow-x:hidden; /* страховка от горизонтального скролла на очень узких экранах */
 }
@@ -98,7 +100,7 @@ body{
    чёрном фоне — добавляем рамку и лёгкую виньетку вокруг телефона. */
 @media (min-width:600px){
   body{ background:radial-gradient(120% 100% at 50% 0%, #0A0E1E, #02030A); padding:32px 0; }
-  #phone{ border:1px solid var(--line); border-radius:28px; box-shadow:0 40px 100px rgba(0,0,0,.55), 0 0 0 1px rgba(255,255,255,.02); }
+  #phone{ border:1px solid var(--line); border-radius:0; box-shadow:0 40px 100px rgba(0,0,0,.55), 0 0 0 0 transparent; }
 }
 /* Внутри Telegram своя рамка/шапка уже есть — декоративная "карточка телефона"
    поверх неё выглядит лишней. Класс tg-app вешается из JS при обнаружении
@@ -127,7 +129,7 @@ html.tg-app body{ padding:0; background:var(--void); }
   html:not(.kb-open) .rotate-hint{
     display:flex;position:fixed;inset:0;z-index:100;align-items:center;justify-content:center;
     text-align:center;padding:24px;background:var(--void);color:var(--text);
-    font-family:'Manrope',sans-serif;font-size:15px;line-height:1.5;
+    font-family:'Golos Text',sans-serif;font-size:15px;line-height:1.5;
   }
 }
 /* фоновые "частицы маны" */
@@ -179,41 +181,41 @@ html.tg-app body{ padding:0; background:var(--void); }
   .mob-art{width:52px;height:52px}
 }
 
-h1,h2,.display{font-family:'Russo One',sans-serif;font-weight:400;letter-spacing:.5px}
+h1,h2,.display{font-family:Oswald,sans-serif;font-weight:400;letter-spacing:.5px}
 h2{font-size:26px;line-height:1.2;margin-bottom:8px}
 .sub{color:var(--muted);font-size:15px;line-height:1.45}
-.mono{font-family:'JetBrains Mono',monospace}
+.mono{font-family:Oswald,monospace}
 
 /* ---- шапка квиза ---- */
 .topbar{display:flex;align-items:center;gap:14px;margin-bottom:26px}
-.back{width:40px;height:40px;border-radius:12px;border:1px solid var(--line);background:var(--panel);color:var(--text);font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer}
-.progress{flex:1;height:6px;border-radius:3px;background:var(--line);overflow:hidden}
-.progress i{display:block;height:100%;background:linear-gradient(90deg,var(--mana),var(--sys));border-radius:3px;transition:width .4s ease;box-shadow:0 0 10px var(--mana)}
+.back{width:40px;height:40px;border-radius:0;border:1px solid var(--line);background:var(--panel);color:var(--text);font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.progress{flex:1;height:6px;border-radius:0;background:var(--line);overflow:hidden}
+.progress i{display:block;height:100%;background:linear-gradient(90deg,var(--mana),var(--sys));border-radius:0;transition:width .4s ease;box-shadow:0 0 0 transparent}
 
 /* ---- системное окно ---- */
 .syswin{
-  border:1px solid var(--sys-dim);background:var(--panel);border-radius:10px;
+  border:1px solid var(--sys-dim);background:var(--panel);border-radius:0;
   padding:16px 18px;position:relative;
-  box-shadow:0 0 24px rgba(76,201,255,.08), inset 0 0 30px rgba(76,201,255,.04);
+  box-shadow:0 0 0 transparent, inset 0 0 0 transparent;
 }
 .syswin::before,.syswin::after{content:"";position:absolute;width:14px;height:14px;border-color:var(--sys);border-style:solid}
-.syswin::before{top:-1px;left:-1px;border-width:2px 0 0 2px;border-radius:10px 0 0 0}
-.syswin::after{bottom:-1px;right:-1px;border-width:0 2px 2px 0;border-radius:0 0 10px 0}
-.sys-tag{display:flex;align-items:center;gap:8px;color:var(--sys);font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:2px;margin-bottom:8px}
+.syswin::before{top:-1px;left:-1px;border-width:2px 0 0 2px;border-radius:0}
+.syswin::after{bottom:-1px;right:-1px;border-width:0 2px 2px 0;border-radius:0}
+.sys-tag{display:flex;align-items:center;gap:8px;color:var(--sys);font-family:Oswald,monospace;font-size:11px;letter-spacing:2px;margin-bottom:8px}
 .sys-tag .bang{width:18px;height:18px;border:1.5px solid var(--sys);border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:11px;animation:pulse 1.6s infinite}
-@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(76,201,255,.5)}50%{box-shadow:0 0 0 6px rgba(76,201,255,0)}}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(76,201,255,.5)}50%{box-shadow:0 0 0 0 transparent}}
 
 /* ---- кнопки ---- */
 .btn{
-  width:100%;padding:17px;border:none;border-radius:16px;cursor:pointer;
-  font-family:'Russo One',sans-serif;font-size:17px;letter-spacing:.5px;color:#fff;
+  width:100%;padding:17px;border:none;border-radius:0;cursor:pointer;
+  font-family:Oswald,sans-serif;font-size:17px;letter-spacing:.5px;color:#fff;
   background:linear-gradient(180deg,var(--mana),var(--mana-2));
-  box-shadow:0 6px 0 #3B1E7A, 0 0 26px rgba(139,92,246,.35);
+  box-shadow:0 6px 0 #3B1E7A, 0 0 0 transparent;
   transition:transform .08s, box-shadow .08s, opacity .2s;
 }
 .btn:active{transform:translateY(4px);box-shadow:0 2px 0 #3B1E7A}
 .btn:disabled{opacity:.35;pointer-events:none}
-.btn.ghost{background:transparent;border:1px solid var(--line);box-shadow:none;color:var(--muted);font-family:'Manrope';font-weight:700;font-size:15px}
+.btn.ghost{background:transparent;border:1px solid var(--line);box-shadow:none;color:var(--muted);font-family:'Golos Text';font-weight:700;font-size:15px}
 .bottom{margin-top:auto;padding-top:18px;display:flex;flex-direction:column;gap:10px}
 /* Кнопка "Далее" в квизе — раньше просто margin-top:auto внутри flex-экрана,
    из-за чего на коротких шагах (имя) она стояла у самого низа вьюпорта, а на
@@ -239,7 +241,7 @@ h2{font-size:26px;line-height:1.2;margin-bottom:8px}
 /* ---- варианты ответов ---- */
 .opts{display:flex;flex-direction:column;gap:12px;margin-top:20px}
 .opt{
-  display:flex;align-items:center;gap:12px;padding:17px 16px;border-radius:14px;
+  display:flex;align-items:center;gap:12px;padding:17px 16px;border-radius:0;
   border:1px solid var(--line);background:var(--panel);cursor:pointer;
   font-weight:700;font-size:16px;color:var(--text);text-align:left;
   transition:border-color .25s ease, box-shadow .25s ease, color .25s ease, transform .12s ease;
@@ -247,13 +249,13 @@ h2{font-size:26px;line-height:1.2;margin-bottom:8px}
 .opt:active{transform:scale(.97)}
 .opt .ico{font-size:18px;width:24px;text-align:center;filter:grayscale(.4)}
 .opt .side{margin-left:auto;color:var(--muted);font-size:13px;font-weight:600}
-.opt.sel{border-color:var(--mana);color:#CBB7FF;box-shadow:0 0 0 1px var(--mana), 0 0 18px rgba(139,92,246,.35)}
+.opt.sel{border-color:var(--mana);color:#CBB7FF;box-shadow:0 0 0 0 transparent, 0 0 0 transparent}
 .opt.sel .side{color:#CBB7FF}
 input.field{
-  width:100%;margin-top:20px;padding:17px 16px;border-radius:14px;border:1px solid var(--line);
-  background:var(--panel);color:var(--text);font-size:17px;font-weight:600;outline:none;font-family:'Manrope';
+  width:100%;margin-top:20px;padding:17px 16px;border-radius:0;border:1px solid var(--line);
+  background:var(--panel);color:var(--text);font-size:17px;font-weight:600;outline:none;font-family:'Golos Text';
 }
-input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.25)}
+input.field:focus{border-color:var(--sys);box-shadow:0 0 0 transparent}
 
 /* ---- возраст ---- */
 .age-picker{display:flex;align-items:center;justify-content:center;gap:22px;margin:42px 0}
@@ -265,19 +267,19 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
   mask-image:linear-gradient(to bottom, transparent 0, #000 32%, #000 68%, transparent 100%);}
 .wheel-col::-webkit-scrollbar{display:none}
 .wheel-track{padding:88px 0}
-.wheel-item{height:44px;display:flex;align-items:center;justify-content:center;font-family:'Russo One',sans-serif;font-size:22px;color:var(--text);scroll-snap-align:center;will-change:opacity,transform}
+.wheel-item{height:44px;display:flex;align-items:center;justify-content:center;font-family:Oswald,sans-serif;font-size:22px;color:var(--text);scroll-snap-align:center;will-change:opacity,transform}
 .wheel-item.pulse{animation:wheelPulse .3s ease}
 @keyframes wheelPulse{0%{transform:scale(1)}40%{transform:scale(1.15)}100%{transform:scale(1)}}
-.wheel-highlight{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);height:44px;border-top:1px solid var(--sys-dim);border-bottom:1px solid var(--sys-dim);background:rgba(76,201,255,.07);pointer-events:none;border-radius:10px;z-index:0}
-.wheel-colon{font-family:'Russo One',sans-serif;font-size:22px;color:var(--muted);padding:0 2px;align-self:center}
-.age-btn{width:56px;height:56px;border-radius:16px;border:1px solid var(--line);background:var(--panel);color:var(--sys);font-size:26px;cursor:pointer}
-.age-val{font-family:'Russo One';font-size:64px;min-width:120px;text-align:center;color:var(--gold);text-shadow:0 0 24px rgba(245,194,66,.4)}
+.wheel-highlight{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);height:44px;border-top:1px solid var(--sys-dim);border-bottom:1px solid var(--sys-dim);background:rgba(76,201,255,.07);pointer-events:none;border-radius:0;z-index:0}
+.wheel-colon{font-family:Oswald,sans-serif;font-size:22px;color:var(--muted);padding:0 2px;align-self:center}
+.age-btn{width:56px;height:56px;border-radius:0;border:1px solid var(--line);background:var(--panel);color:var(--sys);font-size:26px;cursor:pointer}
+.age-val{font-family:Oswald,'Arial Narrow',sans-serif;font-size:64px;min-width:120px;text-align:center;color:var(--gold);text-shadow:0 0 0 transparent}
 
 /* ---- чипы времени ---- */
 .chips{display:flex;flex-wrap:wrap;gap:10px;margin-top:20px}
-.chip{padding:12px 18px;border-radius:12px;border:1px solid var(--line);background:var(--panel);color:var(--text);font-family:'JetBrains Mono';font-size:15px;cursor:pointer;transition:border-color .25s ease, box-shadow .25s ease, color .25s ease, transform .12s ease}
+.chip{padding:12px 18px;border-radius:0;border:1px solid var(--line);background:var(--panel);color:var(--text);font-family:Oswald,'Arial Narrow',sans-serif;font-size:15px;cursor:pointer;transition:border-color .25s ease, box-shadow .25s ease, color .25s ease, transform .12s ease}
 .chip:active{transform:scale(.94)}
-.chip.sel{border-color:var(--sys);color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.25)}
+.chip.sel{border-color:var(--sys);color:var(--sys);box-shadow:0 0 0 transparent}
 
 /* ---- онбординг: экран режима (дни + время на одном экране) ----
    Дни компактной сеткой, а не списком в высоту: под ними на том же экране
@@ -286,20 +288,20 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
 .plan-days{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:14px}
 .plan-day{
   display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 2px;
-  border-radius:12px;border:1px solid var(--line);background:var(--panel);
+  border-radius:0;border:1px solid var(--line);background:var(--panel);
   color:var(--text);cursor:pointer;transition:border-color .2s ease, box-shadow .2s ease, color .2s ease, transform .12s ease;
 }
 .plan-day:active{transform:scale(.94)}
-.plan-day .v{font-family:'JetBrains Mono';font-size:13px;line-height:1.1;white-space:nowrap}
+.plan-day .v{font-family:Oswald,'Arial Narrow',sans-serif;font-size:13px;line-height:1.1;white-space:nowrap}
 .plan-day .s{font-size:9.5px;color:var(--muted);letter-spacing:.2px}
-.plan-day.sel{border-color:var(--sys);color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.25)}
+.plan-day.sel{border-color:var(--sys);color:var(--sys);box-shadow:0 0 0 transparent}
 .plan-day.sel .s{color:var(--sys)}
 
 /* ---- экран ранга ---- */
 .reveal{align-items:center;justify-content:center;text-align:center;gap:18px}
-.rankbox{width:150px;height:150px;border-radius:24px;display:flex;align-items:center;justify-content:center;position:relative;margin:10px 0}
-.rankbox .glyph{font-family:'Russo One';font-size:86px;color:var(--sys);text-shadow:0 0 34px var(--sys)}
-.rankbox::before{content:"";position:absolute;inset:0;border:2px solid var(--sys);border-radius:24px;animation:pulse 2s infinite}
+.rankbox{width:150px;height:150px;border-radius:0;display:flex;align-items:center;justify-content:center;position:relative;margin:10px 0}
+.rankbox .glyph{font-family:Oswald,'Arial Narrow',sans-serif;font-size:86px;color:var(--sys);text-shadow:0 0 0 transparent}
+.rankbox::before{content:"";position:absolute;inset:0;border:2px solid var(--sys);border-radius:0;animation:pulse 2s infinite}
 .stat-row{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px dashed var(--line);font-size:14px}
 .stat-row b{color:var(--sys)}
 
@@ -311,36 +313,36 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
 .mini-path{position:relative;height:130px;margin:6px 0}
 .mini-path-svg{position:absolute;inset:0;width:100%;height:100%}
 .mini-gate{position:absolute;transform:translate(-50%,-50%)}
-.mini-gate-frame{width:46px;height:46px;border-radius:13px;border:2px solid #8B5CF6;background:rgba(13,18,38,.9);display:flex;align-items:center;justify-content:center}
+.mini-gate-frame{width:46px;height:46px;border-radius:0;border:2px solid #8B5CF6;background:rgba(13,18,38,.9);display:flex;align-items:center;justify-content:center}
 .mini-gate-frame svg{width:30px;height:30px}
 .gate-node{position:absolute;width:104px;text-align:center;cursor:pointer;transform:translateX(-50%)}
 .gate-frame{
-  width:86px;height:86px;margin:0 auto;border-radius:20px;border:2px solid var(--mana);
+  width:86px;height:86px;margin:0 auto;border-radius:0;border:2px solid var(--mana);
   background:radial-gradient(ellipse at 50% 60%, rgba(139,92,246,.5), rgba(13,18,38,.95) 70%);
   display:flex;align-items:center;justify-content:center;
-  box-shadow:0 0 22px rgba(139,92,246,.45), inset 0 0 18px rgba(139,92,246,.35);
+  box-shadow:0 0 0 transparent, inset 0 0 0 transparent;
 }
 .gate-frame svg{width:56px;height:56px}
-.gate-node.red .gate-frame{border-color:var(--danger);background:radial-gradient(ellipse at 50% 60%, rgba(255,59,92,.5), rgba(13,18,38,.95) 70%);box-shadow:0 0 24px rgba(255,59,92,.5), inset 0 0 18px rgba(255,59,92,.4)}
-.gate-node.gold .gate-frame{border-color:var(--gold);background:radial-gradient(ellipse at 50% 60%, rgba(245,194,66,.5), rgba(13,18,38,.95) 70%);box-shadow:0 0 24px rgba(245,194,66,.5), inset 0 0 18px rgba(245,194,66,.4)}
+.gate-node.red .gate-frame{border-color:var(--danger);background:radial-gradient(ellipse at 50% 60%, rgba(255,59,92,.5), rgba(13,18,38,.95) 70%);box-shadow:0 0 0 transparent, inset 0 0 0 transparent}
+.gate-node.gold .gate-frame{border-color:var(--gold);background:radial-gradient(ellipse at 50% 60%, rgba(245,194,66,.5), rgba(13,18,38,.95) 70%);box-shadow:0 0 0 transparent, inset 0 0 0 transparent}
 .gate-node.gold .gate-rank{color:var(--gold)}
 .gate-node.locked .gate-frame{border-color:var(--line);background:var(--panel);box-shadow:none;filter:grayscale(1);opacity:.55}
-.gate-node.done .gate-frame{border-color:var(--ok);box-shadow:0 0 18px rgba(52,211,153,.4)}
+.gate-node.done .gate-frame{border-color:var(--ok);box-shadow:0 0 0 transparent}
 /* Метка незакрытого захода — «3/6» в углу рамки врат. Тот же приём и то же
    место, что у замка (.lockbadge): угол уже читается как «статус этих врат». */
 .gate-resume{
   position:absolute;right:-6px;bottom:-6px;background:var(--panel-solid);
-  border:1px solid var(--gold);border-radius:9px;padding:1px 6px;
-  font-family:'JetBrains Mono';font-size:10px;font-weight:700;color:var(--gold);
-  box-shadow:0 0 10px rgba(245,194,66,.35);
+  border:1px solid var(--gold);border-radius:0;padding:1px 6px;
+  font-family:Oswald,'Arial Narrow',sans-serif;font-size:10px;font-weight:700;color:var(--gold);
+  box-shadow:0 0 0 transparent;
 }
 .gate-name{margin-top:8px;font-size:12.5px;font-weight:800;line-height:1.25;text-shadow:0 2px 6px #000}
-.gate-rank{font-family:'JetBrains Mono';font-size:10px;letter-spacing:2px;color:var(--sys);margin-top:2px}
+.gate-rank{font-family:Oswald,'Arial Narrow',sans-serif;font-size:10px;letter-spacing:2px;color:var(--sys);margin-top:2px}
 .gate-node.red .gate-rank{color:var(--danger)}
 .gate-node.locked .gate-name,.gate-node.locked .gate-rank{color:var(--muted)}
 .hdr{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-bottom:10px}
 .icon-row{display:flex;justify-content:flex-end;gap:10px;margin-bottom:14px}
-.icon-btn{width:40px;height:40px;border-radius:12px;border:1px solid var(--line);background:var(--panel);color:var(--text);font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:transform .12s ease, border-color .2s ease}
+.icon-btn{width:40px;height:40px;border-radius:0;border:1px solid var(--line);background:var(--panel);color:var(--text);font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:transform .12s ease, border-color .2s ease}
 .icon-btn:active{transform:scale(.9)}
 /* Размер картинки задаём здесь, а не в вызовах icon(...) — их четыре штуки в
    разных экранах (rMap(), rProfile()), и они бы разъехались при первой же
@@ -352,7 +354,7 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
 .icon-btn img{width:24px;height:24px}
 /* Активный переключатель направления (Врата Силы/Выносливости) в icon-row —
    тот же приём подсветки, что и у выбранного низа nav, см. .nav button.on. */
-.icon-btn.on{border-color:var(--gold);box-shadow:0 0 10px rgba(245,194,66,.35)}
+.icon-btn.on{border-color:var(--gold);box-shadow:0 0 0 transparent}
 /* Подпись текущего направления над картой врат — какая из двух карт сейчас
    показана (см. rMap()/TRACKS). */
 /* Ряд выбора направления на карте. Пять ячеек во всю ширину вместо трёх
@@ -367,7 +369,7 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
 .track-row{display:flex;gap:6px;margin-bottom:10px}
 .track-cell{flex:1;min-width:0;background:none;border:none;padding:0;cursor:pointer;font-family:inherit;text-align:center}
 .track-box{
-  height:60px;border:1px solid var(--line);border-radius:14px;background:var(--panel);
+  height:60px;border:1px solid var(--line);border-radius:0;background:var(--panel);
   display:flex;align-items:center;justify-content:center;
   transition:border-color .2s ease, transform .12s ease, box-shadow .2s ease;
 }
@@ -381,23 +383,23 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
 /* Подпись узкая: на 320px-экране ячейка ужимается до ~51px, поэтому шрифт 9px
    и отрицательный трекинг — иначе «Стойкость» не помещается и обрезается. */
 .track-cap{font-size:9px;line-height:1;color:var(--muted);margin-top:5px;white-space:nowrap;letter-spacing:-.2px}
-.track-cell.on .track-box{border-color:var(--gold);box-shadow:0 0 10px rgba(245,194,66,.35)}
+.track-cell.on .track-box{border-color:var(--gold);box-shadow:0 0 0 transparent}
 .track-cell.on .track-cap{color:var(--gold)}
 /* Будущие направления. pointer-events:none, а не disabled: кнопки тут нет
    вовсе — это div, и нажать его нечем даже с клавиатуры. */
 .track-cell.soon{opacity:.45;pointer-events:none}
 .track-cell.soon .track-box{background:transparent}
 .track-soon-ico{font-size:28px;line-height:1;color:var(--gold)}
-.track-tag{font-family:'JetBrains Mono';font-size:12px;letter-spacing:1.5px;text-transform:uppercase;color:var(--sys);text-align:center;margin-bottom:8px}
+.track-tag{font-family:Oswald,'Arial Narrow',sans-serif;font-size:12px;letter-spacing:1.5px;text-transform:uppercase;color:var(--sys);text-align:center;margin-bottom:8px}
 /* Полоса «ранг E пройден» в шапке карты. Намеренно НЕ кричит: это не баннер
    поверх экрана, а строка в том же ряду, что и название направления. Человек,
    который дошёл до конца бесплатного, заслужил приглашение, а не засаду. */
 /* Предупреждение «статус не проверен». Тон не тревожный: это не ошибка
    человека и не его вина, а сообщение о том, что мы чего-то не знаем. */
-.sub-warn{margin-top:12px;padding:11px 12px;border-radius:12px;border:1px solid rgba(245,194,66,.3);background:rgba(245,194,66,.06);text-align:left}
+.sub-warn{margin-top:12px;padding:11px 12px;border-radius:0;border:1px solid rgba(245,194,66,.3);background:rgba(245,194,66,.06);text-align:left}
 .sub-warn-t{font-size:12.5px;font-weight:800;color:var(--gold)}
 .sub-warn-b{font-size:11.5px;color:var(--muted);line-height:1.5;margin-top:5px}
-.path{width:100%;margin-top:12px;padding:13px 14px;border-radius:14px;border:1px solid rgba(245,194,66,.28);background:rgba(245,194,66,.05);text-align:left;box-sizing:border-box}
+.path{width:100%;margin-top:12px;padding:13px 14px;border-radius:0;border:1px solid rgba(245,194,66,.28);background:rgba(245,194,66,.05);text-align:left;box-sizing:border-box}
 .path-t{font-size:12.5px;font-weight:800;color:var(--gold);margin-bottom:9px;letter-spacing:.06em}
 .path-step{display:flex;align-items:flex-start;gap:9px;margin-bottom:8px;font-size:12.5px;line-height:1.45}
 .path-step:last-of-type{margin-bottom:0}
@@ -405,27 +407,27 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
 .path-s{color:var(--muted);font-size:11.5px}
 .path-foot{margin-top:11px;padding-top:10px;border-top:1px solid rgba(245,194,66,.18);font-size:11.5px;color:var(--muted);display:flex;justify-content:space-between;align-items:center}
 .path-days{color:var(--gold);font-weight:800}
-.trial-warn{width:100%;margin-top:8px;padding:10px 12px;border-radius:12px;border:1px solid rgba(245,194,66,.3);background:rgba(245,194,66,.06);box-sizing:border-box;text-align:left}
+.trial-warn{width:100%;margin-top:8px;padding:10px 12px;border-radius:0;border:1px solid rgba(245,194,66,.3);background:rgba(245,194,66,.06);box-sizing:border-box;text-align:left}
 .trial-warn-t{font-size:12.5px;font-weight:800;color:var(--gold)}
 .trial-warn-b{font-size:11.5px;color:var(--muted);line-height:1.5;margin-top:5px}
-.trial-wall{margin:14px 16px 24px;padding:18px 16px;border-radius:16px;border:1px solid var(--line);background:var(--panel);text-align:center}
+.trial-wall{margin:14px 16px 24px;padding:18px 16px;border-radius:0;border:1px solid var(--line);background:var(--panel);text-align:center}
 .trial-wall-ico{font-size:30px;line-height:1}
 .trial-wall-t{font-size:16px;font-weight:800;margin-top:8px}
 .trial-wall-b{font-size:12.5px;color:var(--muted);line-height:1.6;margin:12px 0;text-align:left}
-.trial-wall-stats{display:flex;justify-content:space-between;gap:8px;margin:14px 0;padding:12px;border-radius:12px;background:rgba(255,255,255,.03)}
+.trial-wall-stats{display:flex;justify-content:space-between;gap:8px;margin:14px 0;padding:12px;border-radius:0;background:rgba(255,255,255,.03)}
 .trial-wall-stats div{flex:1}
 .trial-wall-stats b{display:block;font-size:20px;font-weight:800;color:var(--sys)}
 .trial-wall-stats span{display:block;font-size:11px;color:var(--muted);margin-top:2px}
 .trial-wall-sub{font-size:11px;color:var(--muted);margin-top:8px}
 .trial-wall-alt{font-size:12px;color:var(--muted);line-height:1.6;margin-top:12px}
 .trial-wall-link{color:var(--sys);font-weight:800;cursor:pointer}
-.hint-card{display:flex;gap:10px;align-items:flex-start;width:100%;margin-top:10px;padding:11px 12px;border-radius:12px;border:1px solid rgba(76,201,255,.3);background:rgba(76,201,255,.06);box-sizing:border-box;text-align:left}
+.hint-card{display:flex;gap:10px;align-items:flex-start;width:100%;margin-top:10px;padding:11px 12px;border-radius:0;border:1px solid rgba(76,201,255,.3);background:rgba(76,201,255,.06);box-sizing:border-box;text-align:left}
 .hint-ico{font-size:17px;line-height:1.2;flex:0 0 auto}
 .hint-txt{font-size:12.5px;line-height:1.5;color:var(--text)}
 .hint-act{display:flex;gap:14px;margin-top:9px}
 .hint-go{font-size:12.5px;font-weight:800;color:var(--sys);cursor:pointer}
 .hint-ok{font-size:12.5px;color:var(--muted);cursor:pointer}
-.map-offer{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;margin-top:8px;padding:10px 12px;border-radius:12px;border:1px solid rgba(245,194,66,.35);background:rgba(245,194,66,.07);color:var(--text);font:inherit;cursor:pointer;text-align:left;box-sizing:border-box}
+.map-offer{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;margin-top:8px;padding:10px 12px;border-radius:0;border:1px solid rgba(245,194,66,.35);background:rgba(245,194,66,.07);color:var(--text);font:inherit;cursor:pointer;text-align:left;box-sizing:border-box}
 .map-offer-t{font-weight:800;font-size:13px;color:var(--gold)}
 .map-offer-s{font-size:11.5px;color:var(--muted);white-space:nowrap}
 /* Верхний блок карты врат (ранг/стрик/уровень + переключатель направления +
@@ -445,21 +447,21 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
    лестница врат под ним не должна уезжать за экран. Багровый вариант
    (.rift-card.last) — не отдельная карточка, а переопределение трёх цветов:
    так состояния гарантированно не разъедутся вёрсткой. */
-.rift-card{margin-top:10px;padding:11px 13px;border-radius:14px;border:1px solid rgba(139,92,246,.38);background:linear-gradient(180deg,rgba(60,30,120,.28),rgba(13,18,38,.9))}
+.rift-card{margin-top:10px;padding:11px 13px;border-radius:0;border:1px solid rgba(139,92,246,.38);background:linear-gradient(180deg,rgba(60,30,120,.28),rgba(13,18,38,.9))}
 .rift-card.last{border-color:rgba(255,59,92,.45);background:linear-gradient(180deg,rgba(120,20,44,.30),rgba(13,18,38,.9))}
 .rift-card.done{border-color:var(--line);background:var(--panel)}
 .rift-head{display:flex;align-items:center;gap:7px;margin-bottom:8px}
 .rift-name{font-size:12px;font-weight:800;letter-spacing:.06em;color:var(--mana)}
 .rift-card.last .rift-name{color:var(--danger)}
 .rift-card.done .rift-name{color:var(--muted)}
-.rift-left{margin-left:auto;font-family:'JetBrains Mono';font-size:11px;color:var(--muted)}
+.rift-left{margin-left:auto;font-family:Oswald,'Arial Narrow',sans-serif;font-size:11px;color:var(--muted)}
 .rift-row{display:flex;align-items:baseline;gap:6px;font-size:11px;color:var(--muted);margin-bottom:3px}
-.rift-row b{font-family:'JetBrains Mono';font-size:12px;color:var(--text);font-weight:700}
-.rift-row .rift-of{margin-left:auto;font-family:'JetBrains Mono';font-size:11px}
+.rift-row b{font-family:Oswald,'Arial Narrow',sans-serif;font-size:12px;color:var(--text);font-weight:700}
+.rift-row .rift-of{margin-left:auto;font-family:Oswald,'Arial Narrow',sans-serif;font-size:11px}
 /* overflow:hidden на дорожке, а не border-radius на заливке: заливка шире
    дорожки быть не может, а отметки ярусов лежат поверх и скруглять их не надо. */
-.rift-bar{position:relative;height:7px;border-radius:4px;background:#111A33;overflow:hidden;margin-bottom:9px}
-.rift-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--mana-2),var(--mana));transition:width .4s ease}
+.rift-bar{position:relative;height:7px;border-radius:0;background:#111A33;overflow:hidden;margin-bottom:9px}
+.rift-fill{height:100%;border-radius:0;background:linear-gradient(90deg,var(--mana-2),var(--mana));transition:width .4s ease}
 .rift-card.last .rift-fill{background:linear-gradient(90deg,#8B1E3A,var(--danger))}
 .rift-fill.me{background:linear-gradient(90deg,#2B7FA8,var(--sys))}
 .rift-mark{position:absolute;top:0;width:1px;height:100%;background:rgba(234,240,255,.28)}
@@ -467,15 +469,15 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
 .rift-note{font-size:10.5px;color:var(--muted);line-height:1.35}
 .rift-note b{color:var(--sys);font-weight:700}
 .rift-titles{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px}
-.rift-ttl{padding:3px 8px;border-radius:7px;background:rgba(245,194,66,.12);border:1px solid rgba(245,194,66,.35);color:var(--gold);font-size:10px;font-weight:700}
+.rift-ttl{padding:3px 8px;border-radius:0;background:rgba(245,194,66,.12);border:1px solid rgba(245,194,66,.35);color:var(--gold);font-size:10px;font-weight:700}
 /* Строка внутри врат — вариант баннера рейда, а не своя карточка: на
    полноэкранной камере любой блок обязан быть с тем же затемнением и блюром,
    иначе текст пропадает на светлом кадре. */
 .raid-banner.rift{border-color:rgba(139,92,246,.4);color:var(--muted);font-size:11.5px}
-.raid-banner.rift b{font-family:'JetBrains Mono';color:var(--text)}
-.toggle-row{width:100%;display:flex;align-items:center;justify-content:space-between;padding:15px 16px;border-radius:14px;border:1px solid var(--line);background:var(--panel);color:var(--text);font-size:15px;font-weight:700;cursor:pointer;text-align:left;transition:border-color .2s ease, transform .12s ease}
+.raid-banner.rift b{font-family:Oswald,'Arial Narrow',sans-serif;color:var(--text)}
+.toggle-row{width:100%;display:flex;align-items:center;justify-content:space-between;padding:15px 16px;border-radius:0;border:1px solid var(--line);background:var(--panel);color:var(--text);font-size:15px;font-weight:700;cursor:pointer;text-align:left;transition:border-color .2s ease, transform .12s ease}
 .toggle-row:active{transform:scale(.98)}
-.toggle-pill{padding:5px 12px;border-radius:8px;background:var(--line);color:var(--muted);font-family:'JetBrains Mono';font-size:12px;font-weight:700;transition:background .25s ease, color .25s ease}
+.toggle-pill{padding:5px 12px;border-radius:0;background:var(--line);color:var(--muted);font-family:Oswald,'Arial Narrow',sans-serif;font-size:12px;font-weight:700;transition:background .25s ease, color .25s ease}
 /* «Статус» в профиле. max-height, а не display:none — иначе раскрытие было бы
    рывком. Значение с запасом: реальная высота трёх блоков около 300px, но
    привязываться к точной цифре нельзя, она зависит от шрифта и ширины
@@ -485,7 +487,7 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
 .st-chev{display:inline-block;transition:transform .25s ease}
 .st-chev.open{transform:rotate(90deg)}
 .toggle-pill.on{background:rgba(52,211,153,.18);color:var(--ok)}
-.pill{display:flex;align-items:center;gap:8px;padding:8px 14px;border-radius:12px;border:1px solid var(--line);background:var(--panel);font-family:'JetBrains Mono';font-size:12px}
+.pill{display:flex;align-items:center;gap:8px;padding:8px 14px;border-radius:0;border:1px solid var(--line);background:var(--panel);font-family:Oswald,'Arial Narrow',sans-serif;font-size:12px}
 .pill b{color:var(--gold)}
 
 /* ---- нижняя навигация ---- */
@@ -509,8 +511,8 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
    «Гильдия» (см. navBar). На совсем узких экранах прячем иконки: подпись
    важнее картинки, без неё пункт просто не опознать. */
 .nav{display:flex;gap:6px;padding:12px 12px calc(12px + var(--sa-bottom));border-top:1px solid var(--line);position:fixed;left:50%;bottom:0;transform:translateX(-50%);width:100%;max-width:430px;background:var(--void);z-index:5;box-sizing:border-box}
-.nav button{flex:1;min-width:0;padding:11px 6px;border-radius:12px;border:1px solid var(--line);background:var(--panel);color:var(--muted);font-weight:800;font-size:12px;cursor:pointer;white-space:nowrap;display:flex;align-items:center;justify-content:center;gap:5px}
-.nav button.on{color:var(--sys);border-color:var(--sys-dim);box-shadow:0 0 12px rgba(76,201,255,.15)}
+.nav button{flex:1;min-width:0;padding:11px 6px;border-radius:0;border:1px solid var(--line);background:var(--panel);color:var(--muted);font-weight:800;font-size:12px;cursor:pointer;white-space:nowrap;display:flex;align-items:center;justify-content:center;gap:5px}
+.nav button.on{color:var(--sys);border-color:var(--sys-dim);box-shadow:0 0 0 transparent}
 .nav .nav-ico{display:inline-flex;align-items:center}
 .nav .nav-ico img{vertical-align:0}
 @media (max-width:350px){ .nav .nav-ico{display:none} }
@@ -518,10 +520,10 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
 /* ---- рейд ---- */
 .mob-stage{display:flex;flex-direction:column;align-items:center;margin:8px 0 4px}
 .mob-queue{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-top:2px}
-.qmob{width:26px;height:26px;border-radius:7px;border:1px solid var(--line);background:var(--panel);display:flex;align-items:center;justify-content:center;overflow:hidden;opacity:.9;position:relative}
+.qmob{width:26px;height:26px;border-radius:0;border:1px solid var(--line);background:var(--panel);display:flex;align-items:center;justify-content:center;overflow:hidden;opacity:.9;position:relative}
 .qmob svg{width:20px;height:20px}
 .qmob.dead{opacity:.25;filter:grayscale(1)}
-.qmob.cur{border-color:var(--gold);box-shadow:0 0 10px rgba(245,194,66,.5)}
+.qmob.cur{border-color:var(--gold);box-shadow:0 0 0 transparent}
 .qmob.boss{width:32px;height:32px;border-color:var(--danger)}
 .qmob.boss svg{width:24px;height:24px}
 .qmob.boss.gold{border-color:var(--gold)}
@@ -534,7 +536,7 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
    Раньше была отдельной строкой под именем — на низких экранах она и была
    одной из причин, почему низ экрана (камера/кнопки) не помещался, поэтому
    теперь это узкая плашка встроена в ту же строку, что и имя моба. */
-.mob-exercise{display:inline-flex;align-items:center;gap:3px;margin-left:6px;padding:2px 8px;border-radius:20px;background:var(--panel-solid);border:1px solid var(--line);font-family:'JetBrains Mono';font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--sys);vertical-align:middle}
+.mob-exercise{display:inline-flex;align-items:center;gap:3px;margin-left:6px;padding:2px 8px;border-radius:0;background:var(--panel-solid);border:1px solid var(--line);font-family:Oswald,'Arial Narrow',sans-serif;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--sys);vertical-align:middle}
 .lockbadge{position:absolute;bottom:-4px;right:-4px;font-size:16px;background:var(--panel-solid);border:1px solid var(--line);border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center}
 /* Портрет моба — круглая рамка (как на референсе игрока), а не просто картинка
    в воздухе. overflow:hidden обрезает mobVisual() в круг, не трогая саму
@@ -544,7 +546,7 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
   width:68px;height:68px;border-radius:50%;border:3px solid var(--mana);
   background:#000;
   display:flex;align-items:center;justify-content:center;overflow:hidden;
-  box-shadow:0 0 22px rgba(139,92,246,.45), inset 0 0 16px rgba(0,0,0,.5);
+  box-shadow:0 0 0 transparent, inset 0 0 0 transparent;
   position:relative; /* точка отсчёта для вспышки ::after */
 }
 .mob-art.hit{animation:shake .4s}
@@ -589,7 +591,7 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
   width:150px;height:150px;border-radius:50%;border:3px solid var(--ok);
   background:#000;
   display:flex;align-items:center;justify-content:center;overflow:hidden;
-  box-shadow:0 0 26px rgba(52,211,153,.35), inset 0 0 18px rgba(0,0,0,.6);
+  box-shadow:0 0 0 transparent, inset 0 0 0 transparent;
 }
 /* mobVisual() отдаёт картинку со своим скруглением 16px — внутри круглой
    рамки оно не нужно и мешает, обрезку делает сам контейнер. */
@@ -598,49 +600,49 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
    жили только в бестиарии, и человек закрывал врата, не узнав, кого победил. */
 .victory-mob-info{
   width:100%;border:1px solid var(--line);background:var(--panel);
-  border-radius:14px;padding:12px 14px;text-align:left;
+  border-radius:0;padding:12px 14px;text-align:left;
 }
 .victory-mob-info .vm-tag{
-  font-family:'JetBrains Mono';font-size:10px;letter-spacing:1.5px;
+  font-family:Oswald,'Arial Narrow',sans-serif;font-size:10px;letter-spacing:1.5px;
   text-transform:uppercase;color:var(--muted);
 }
-.victory-mob-info .vm-name{font-family:'Russo One';font-size:16px;margin-top:5px}
+.victory-mob-info .vm-name{font-family:Oswald,'Arial Narrow',sans-serif;font-size:16px;margin-top:5px}
 .victory-mob-info .vm-lore{font-size:12.5px;color:var(--muted);line-height:1.45;margin-top:5px}
 @keyframes shake{0%,100%{transform:none}20%{transform:translateX(-9px)}40%{transform:translateX(8px)}60%{transform:translateX(-6px)}80%{transform:translateX(4px)}}
 .mob-name{
-  font-family:'Russo One';font-size:14px;margin-top:6px;padding:5px 14px;
-  border-radius:8px;background:var(--panel);border:1px solid var(--line);
+  font-family:Oswald,'Arial Narrow',sans-serif;font-size:14px;margin-top:6px;padding:5px 14px;
+  border-radius:0;background:var(--panel);border:1px solid var(--line);
   width:max-content;max-width:96%;display:flex;align-items:center;flex-wrap:wrap;justify-content:center;gap:2px 6px;
 }
 /* Полоса HP моба — текст поверх тёмной плашки (как "0/12 HP" на референсе),
    а не число под цветной полосой. Заливка теперь фоновая подсветка внутри
    той же плашки, а не отдельный бар. */
 .hp-strip{
-  width:100%;height:26px;margin-top:8px;border-radius:8px;background:#0B0E1C;
+  width:100%;height:26px;margin-top:8px;border-radius:0;background:#0B0E1C;
   border:1px solid var(--line);position:relative;overflow:hidden;
   display:flex;align-items:center;justify-content:center;
 }
 .hp-strip i{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(90deg,#FF3B5C,#FF7A5C);opacity:.4;transition:width .5s ease}
-.hp-strip span{position:relative;z-index:1;font-family:'JetBrains Mono';font-size:12px;letter-spacing:1px;color:var(--text)}
-.hpbar{width:100%;height:10px;border-radius:6px;border:1px solid var(--line);background:#141A33;margin-top:6px;overflow:hidden}
-.hpbar i{display:block;height:100%;background:linear-gradient(90deg,#FF3B5C,#FF7A5C);transition:width .5s ease;border-radius:6px}
-.hp-num{font-family:'JetBrains Mono';font-size:11px;color:var(--muted);margin-top:3px;text-align:right}
+.hp-strip span{position:relative;z-index:1;font-family:Oswald,'Arial Narrow',sans-serif;font-size:12px;letter-spacing:1px;color:var(--text)}
+.hpbar{width:100%;height:10px;border-radius:0;border:1px solid var(--line);background:#141A33;margin-top:6px;overflow:hidden}
+.hpbar i{display:block;height:100%;background:linear-gradient(90deg,#FF3B5C,#FF7A5C);transition:width .5s ease;border-radius:0}
+.hp-num{font-family:Oswald,'Arial Narrow',sans-serif;font-size:11px;color:var(--muted);margin-top:3px;text-align:right}
 /* HP игрока — зелёная полоса, отдельно от красной полосы моба (та же .hpbar,
    просто другой цвет заливки), чтобы два бара не путались между собой. */
 .hpbar.player i{background:linear-gradient(90deg,#1FAE71,#34D399)}
 .hp-num.player{color:var(--ok);text-align:left}
 .set-info{text-align:center;margin:20px 0 8px}
-.set-info .big{font-family:'Russo One';font-size:58px;color:var(--gold);text-shadow:0 0 26px rgba(245,194,66,.35);line-height:1}
+.set-info .big{font-family:Oswald,'Arial Narrow',sans-serif;font-size:58px;color:var(--gold);text-shadow:0 0 0 transparent;line-height:1}
 .set-info .lbl{color:var(--muted);font-size:14px;margin-top:6px}
 
 /* ---- камера-счётчик отжиманий ---- */
-.cam-wrap{position:relative;width:100%;aspect-ratio:3/4;max-height:360px;border-radius:16px;overflow:hidden;border:1px solid var(--sys-dim);background:#000;margin-top:14px;box-shadow:0 0 24px rgba(76,201,255,.12)}
+.cam-wrap{position:relative;width:100%;aspect-ratio:3/4;max-height:360px;border-radius:0;overflow:hidden;border:1px solid var(--sys-dim);background:#000;margin-top:14px;box-shadow:0 0 0 transparent}
 /* Базовый (сейчас нигде фактически не используемый — экран боя всегда
    .raid-fullbleed, см. override ниже) вариант — contain, без обрезки. Оставлен
    как безопасный дефолт на случай возврата "коробочной" камеры 3:4. */
 .cam-wrap video{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;transform:scaleX(-1)}
 .cam-wrap canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
-.cam-status{position:absolute;left:0;right:0;bottom:0;padding:9px 12px;background:linear-gradient(0deg, rgba(2,3,10,.9), transparent);color:var(--sys);font-family:'JetBrains Mono';font-size:11.5px;text-align:center;letter-spacing:.4px}
+.cam-status{position:absolute;left:0;right:0;bottom:0;padding:9px 12px;background:linear-gradient(0deg, rgba(2,3,10,.9), transparent);color:var(--sys);font-family:Oswald,'Arial Narrow',sans-serif;font-size:11.5px;text-align:center;letter-spacing:.4px}
 /* Экран боя (rRaid) — раньше просто рос по контенту и скроллился, как и все
    остальные экраны. На нём это плохо: во время калибровки пользователь стоит
    в 1.5-2м от телефона и физически не может скроллить, а низ (статус камеры,
@@ -732,7 +734,7 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
    (комната днём) без неё теряются. */
 .raid-mini-queue{
   position:absolute;top:calc(14px + var(--sa-top));right:14px;z-index:5;
-  display:flex;gap:5px;align-items:center;padding:6px 8px;border-radius:10px;
+  display:flex;gap:5px;align-items:center;padding:6px 8px;border-radius:0;
   background:rgba(2,3,10,.82);border:1px solid var(--line);
 }
 /* Порядок правил = приоритет: сначала «босс», потом «пройден», потом
@@ -741,8 +743,8 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
 .raid-qdot{width:7px;height:7px;border-radius:50%;background:#3A4570;flex-shrink:0}
 .raid-qdot.boss{width:9px;height:9px;background:var(--gold);opacity:.5}
 .raid-qdot.done{background:var(--muted);opacity:.35}
-.raid-qdot.now{background:var(--sys);opacity:1;box-shadow:0 0 7px rgba(76,201,255,.9)}
-.raid-qdot.now.boss{background:var(--gold);box-shadow:0 0 8px rgba(245,194,66,.95)}
+.raid-qdot.now{background:var(--sys);opacity:1;box-shadow:0 0 0 transparent}
+.raid-qdot.now.boss{background:var(--gold);box-shadow:0 0 0 transparent}
 /* Верхняя панель — карточка моба + полоса HP игрока (+ баннеры экзамена/
    реплея, если есть) одним flex-столбцом. Специально НЕ через отдельные
    absolute-блоки с угаданными отступами — так высота карточки (может
@@ -763,7 +765,7 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
    зияла дыра; с третьим баннером (разлом) это стало бы заметно всегда. */
 .raid-fullbleed:not(.rest-fullbleed) .raid-banner:first-child{margin-top:40px}
 .raid-banner{
-  padding:8px 12px;border-radius:12px;background:rgba(4,6,16,.6);backdrop-filter:blur(6px);
+  padding:8px 12px;border-radius:0;background:rgba(4,6,16,.6);backdrop-filter:blur(6px);
   border:1px solid rgba(255,255,255,.15);font-size:12px;line-height:1.35;color:var(--text);
 }
 .raid-banner b{color:var(--gold)}
@@ -797,7 +799,7 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
    прижата к левому краю (там раньше был ориентир на кнопку "назад", но
    сейчас вся карточка сама уехала к самому верху экрана). */
 .raid-gate-tag{
-  font-family:'JetBrains Mono';font-size:10px;letter-spacing:1.5px;text-transform:uppercase;
+  font-family:Oswald,'Arial Narrow',sans-serif;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;
   text-shadow:0 2px 8px rgba(0,0,0,.9);
 }
 .raid-mob-card .mob-name{
@@ -822,7 +824,7 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
    ужимается до нечитаемой, либо переносится. Поэтому здесь скруглённая
    плашка по содержимому и шрифт вдвое крупнее: её надо прочесть одним косым
    взглядом из позы, в которой голова смотрит в пол. */
-.raid-counter-row .rep-counter.hold{width:auto;min-width:132px;height:64px;border-radius:16px;font-size:40px;padding:0 12px;letter-spacing:1px}
+.raid-counter-row .rep-counter.hold{width:auto;min-width:132px;height:64px;border-radius:0;font-size:40px;padding:0 12px;letter-spacing:1px}
 /* Колонка счётчика в планке перестаёт держать фиксированные 80px — иначе
    широкая плашка вылезала бы за свою колонку и рвала симметрию ряда. */
 .raid-counter-col:has(.rep-counter.hold){width:auto;min-width:132px}
@@ -846,10 +848,10 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
 /* Фиолетовая рамка отделяет режим от врат: голубой в приложении означает
    Систему и врата, фиолетовый нигде не занят и ложится под «призрака». */
   margin:0 14px 10px;border:1px solid rgba(176,139,224,.45);background:rgba(20,16,34,.9);
-  border-radius:14px;padding:12px 14px;cursor:pointer;
+  border-radius:0;padding:12px 14px;cursor:pointer;
 }
 /* Когда попытки кончились — карточка гаснет и перестаёт звать. */
-  background:linear-gradient(135deg,#6D28D9,#8B5CF6);border-radius:11px;padding:11px;
+  background:linear-gradient(135deg,#6D28D9,#8B5CF6);border-radius:0;padding:11px;
   text-align:center;font-size:14px;color:#fff;
 }
 
@@ -859,17 +861,17 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
 /* ---- ступень арены ----
    Своя рамка и свой цвет: ступень — единственное на этом экране, что растёт
    месяцами, всё остальное живёт день. */
-.ar-tier{border:1px solid rgba(139,92,246,.35);border-radius:16px;padding:13px;margin-top:16px;
+.ar-tier{border:1px solid rgba(139,92,246,.35);border-radius:0;padding:13px;margin-top:16px;
   background:linear-gradient(180deg,rgba(139,92,246,.09),rgba(10,13,31,.5))}
 .ar-top{display:flex;justify-content:space-between;align-items:baseline}
 .ar-tag{font-size:10px;letter-spacing:2px;color:var(--mana)}
 .ar-thr{font-size:11px;color:var(--muted)}
-.ar-name{font-family:'Russo One',sans-serif;font-size:24px;margin-top:4px}
+.ar-name{font-family:Oswald,sans-serif;font-size:24px;margin-top:4px}
 .ar-body{display:flex;align-items:center;gap:12px;margin-top:2px}
 .ar-medal{flex:none;width:96px;height:96px;display:flex;align-items:center;justify-content:center}
 .ar-info{flex:1;min-width:0}
 .ar-up-medal{vertical-align:-14px;margin-right:6px}
-.ar-bar{height:8px;border-radius:5px;background:rgba(2,3,10,.6);border:1px solid var(--line);
+.ar-bar{height:8px;border-radius:0;background:rgba(2,3,10,.6);border:1px solid var(--line);
   overflow:hidden;margin-top:10px}
 .ar-bar>i{display:block;height:100%;background:linear-gradient(90deg,#6D28D9,#8B5CF6);
   transition:width .35s ease}
@@ -879,39 +881,56 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
    незачем. */
 .ar-peak{font-size:11px;color:rgba(245,194,66,.85);margin-top:6px;line-height:1.4}
 .ar-note{font-size:11px;color:var(--muted);margin-top:6px;line-height:1.4}
-/* Первый вход: вопрос вместо ступени. */
-.ar-ask{font-size:15px;margin-top:6px;line-height:1.35}
-.ar-seed{display:flex;gap:8px;margin-top:10px}
-.ar-in{flex:1;min-width:0;background:rgba(2,3,10,.6);border:1px solid var(--line);border-radius:10px;
-  color:var(--text);font-family:'JetBrains Mono';font-size:16px;padding:10px 12px;outline:none}
-.ar-in:focus{border-color:var(--mana)}
-.ar-seed .btn{flex:none;padding:10px 16px;font-size:14px}
+/* Первый вход: вопрос вместо ступени — окном Системы. */
+.ar-sysw{margin-top:16px;border:1px solid var(--sys-dim);border-radius:0;padding:16px 14px 18px;position:relative;
+  background:linear-gradient(180deg,rgba(76,201,255,.08),rgba(5,7,15,.85));
+  box-shadow:0 0 0 0 transparent inset,0 0 0 transparent}
+.ar-sysw:before{content:'';position:absolute;left:-1px;right:-1px;top:-1px;height:2px;
+  background:linear-gradient(90deg,transparent,var(--sys),transparent)}
+.ar-syst{display:flex;justify-content:center;align-items:center;gap:8px;font-family:Oswald,'Arial Narrow',sans-serif;
+  font-size:11px;letter-spacing:3px;color:var(--sys)}
+.ar-syst i{width:16px;height:16px;border:1px solid var(--sys);border-radius:50%;display:inline-flex;
+  align-items:center;justify-content:center;font-style:normal;font-size:10px}
+.ar-sysq{text-align:center;font-size:14.5px;margin-top:12px;line-height:1.45}
+.ar-sysq b{color:var(--sys)}
+.ar-sysin{display:flex;align-items:baseline;justify-content:center;gap:8px;margin-top:16px}
+.ar-sysin input{width:120px;background:transparent;border:none;border-bottom:2px solid var(--sys);border-radius:0;
+  color:#fff;text-align:center;font-family:Oswald,sans-serif;font-size:52px;outline:none;padding:0 0 2px;
+  -moz-appearance:textfield;appearance:textfield}
+.ar-sysin input::placeholder{color:rgba(234,240,255,.25)}
+.ar-sysin input::-webkit-outer-spin-button,.ar-sysin input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ar-sysin span{color:var(--muted);font-size:13px}
+.ar-sysbtn{display:block;margin:18px auto 0;padding:10px 26px;border:1px solid var(--sys);border-radius:0;
+  background:rgba(76,201,255,.12);color:var(--sys);font-family:Oswald,'Arial Narrow',sans-serif;font-size:13px;letter-spacing:2px;cursor:pointer}
+.ar-sysbtn:active{background:rgba(76,201,255,.3)}
+.ar-sysbtn:disabled{opacity:.5}
+.ar-syshint{font-size:11px;color:var(--muted);text-align:center;margin-top:12px;line-height:1.45}
 .duel-hero{text-align:center;margin-top:18px}
-.duel-hero-num{font-family:'Russo One';font-size:64px;line-height:1;color:#B08BE0}
+.duel-hero-num{font-family:Oswald,'Arial Narrow',sans-serif;font-size:64px;line-height:1;color:#B08BE0}
 .duel-hero-cap{font-size:12.5px;color:var(--muted);margin-top:6px}
 .duel-stats{display:flex;gap:10px;width:100%;margin-top:20px}
-.duel-stat{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:11px 8px;text-align:center}
-.duel-stat .v{font-family:'Russo One';font-size:20px;color:var(--text)}
+.duel-stat{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:0;padding:11px 8px;text-align:center}
+.duel-stat .v{font-family:Oswald,'Arial Narrow',sans-serif;font-size:20px;color:var(--text)}
 .duel-stat .k{font-size:11px;color:var(--muted);margin-top:3px}
-.duel-limits{width:100%;margin-top:14px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+.duel-limits{width:100%;margin-top:14px;background:var(--panel);border:1px solid var(--line);border-radius:0;padding:12px 14px}
 .duel-limit-row{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:var(--muted);padding:3px 0}
-.duel-limit-row b{font-family:'JetBrains Mono';font-size:15px}
+.duel-limit-row b{font-family:Oswald,'Arial Narrow',sans-serif;font-size:15px}
 .duel-limit-row b.ok{color:var(--gold)}
 /* Исчерпанный лимит показываем приглушённо, а не красным: это не ошибка
    человека, а обычное состояние конца дня. */
 .duel-limit-row b.off{color:var(--muted);opacity:.6}
 .duel-limit-note{font-size:11.5px;color:var(--muted);margin-top:8px;padding-top:8px;border-top:1px solid var(--line)}
-.duel-opponent{width:100%;margin-top:14px;border:1px solid rgba(176,139,224,.35);background:var(--panel);border-radius:14px;padding:12px 14px;text-align:center}
-.duel-opp-tag{font-family:'JetBrains Mono';font-size:10px;letter-spacing:2px;color:#B08BE0}
-.duel-opp-name{font-family:'Russo One';font-size:17px;margin-top:5px}
+.duel-opponent{width:100%;margin-top:14px;border:1px solid rgba(176,139,224,.35);background:var(--panel);border-radius:0;padding:12px 14px;text-align:center}
+.duel-opp-tag{font-family:Oswald,'Arial Narrow',sans-serif;font-size:10px;letter-spacing:2px;color:#B08BE0}
+.duel-opp-name{font-family:Oswald,'Arial Narrow',sans-serif;font-size:17px;margin-top:5px}
 .duel-opp-sub{font-size:12.5px;color:var(--muted);margin-top:5px;line-height:1.45}
 /* Чужой соперник выделен ярче своего призрака: это событие, а не рутина. */
-.duel-opponent.rival{border-color:#B08BE0;box-shadow:0 0 18px rgba(176,139,224,.18)}
+.duel-opponent.rival{border-color:#B08BE0;box-shadow:0 0 0 transparent}
 .duel-opp-note{font-size:11px;color:var(--muted);margin-top:8px;padding-top:8px;border-top:1px solid var(--line);line-height:1.4}
 .duel-find{
   display:block;width:100%;margin-top:10px;font-family:inherit;font-size:13.5px;
   color:#B08BE0;background:transparent;border:1px solid rgba(176,139,224,.45);
-  border-radius:11px;padding:10px;cursor:pointer;
+  border-radius:0;padding:10px;cursor:pointer;
 }
 .duel-find:disabled{opacity:.5}
 
@@ -936,14 +955,14 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
   display:flex;align-items:stretch;gap:10px;
 }
 .duel-side{
-  flex:1;background:rgba(2,3,10,.82);border:1px solid var(--line);border-radius:12px;
+  flex:1;background:rgba(2,3,10,.82);border:1px solid var(--line);border-radius:0;
   padding:8px 10px;text-align:center;transition:border-color .2s ease;
   display:flex;flex-direction:column;justify-content:center;
 }
 .duel-side.me{border-color:rgba(76,201,255,.5)}
 .duel-side.ghost{border-color:rgba(176,139,224,.5)}
 /* Кто впереди — тот и подсвечен. Считывается боковым зрением, без чтения цифр. */
-.duel-side.lead{box-shadow:0 0 16px rgba(255,255,255,.12)}
+.duel-side.lead{box-shadow:0 0 0 transparent}
 .duel-side.me.lead{border-color:var(--sys)}
 .duel-side.ghost.lead{border-color:#B08BE0}
 /* Канат: одна полоса на двоих, шов между цветами едет к тому, кто отстаёт.
@@ -952,7 +971,7 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
    Показывает РАЗНИЦУ, а не отношение: в минутной гонке важно «на сколько
    впереди», а не «во сколько раз». */
 .duel-bar{
-  height:14px;border-radius:7px;background:rgba(2,3,10,.82);border:1px solid var(--line);
+  height:14px;border-radius:0;background:rgba(2,3,10,.82);border:1px solid var(--line);
   overflow:hidden;display:flex;flex-shrink:0;
 }
 .duel-bar i{display:block;height:100%;transition:width .35s ease, background-color .3s ease}
@@ -965,13 +984,13 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
 .duel-bar .theirs.ahead{background:var(--danger)}
 .duel-side.ghost.behind{border-color:rgba(255,59,92,.55)}
 .duel-side.ghost.behind .duel-side-num{color:var(--danger)}
-.duel-side-tag{font-family:'JetBrains Mono';font-size:9px;letter-spacing:1.5px;color:var(--muted)}
-.duel-side-num{font-family:'Russo One';font-size:30px;line-height:1.15;color:var(--text)}
+.duel-side-tag{font-family:Oswald,'Arial Narrow',sans-serif;font-size:9px;letter-spacing:1.5px;color:var(--muted)}
+.duel-side-num{font-family:Oswald,'Arial Narrow',sans-serif;font-size:30px;line-height:1.15;color:var(--text)}
 .duel-side.ghost .duel-side-num{color:#B08BE0}
 .duel-side.me .duel-side-num{color:var(--sys)}
 .duel-timer{
-  flex-shrink:0;font-family:'JetBrains Mono';font-size:17px;color:var(--text);
-  background:rgba(2,3,10,.82);border:1px solid var(--line);border-radius:10px;padding:8px 9px;
+  flex-shrink:0;font-family:Oswald,'Arial Narrow',sans-serif;font-size:17px;color:var(--text);
+  background:rgba(2,3,10,.82);border:1px solid var(--line);border-radius:0;padding:8px 9px;
   display:flex;align-items:center;justify-content:center;
 }
 /* Последние десять секунд — красным. Это единственный момент, когда цвет
@@ -980,24 +999,24 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
 .duel-bottom{position:absolute;left:12px;right:12px;bottom:calc(22px + var(--sa-bottom));z-index:5;text-align:center}
 .duel-hint{
   display:inline-block;font-size:12.5px;color:var(--text);
-  background:rgba(2,3,10,.8);border-radius:8px;padding:7px 12px;
+  background:rgba(2,3,10,.8);border-radius:0;padding:7px 12px;
 }
 /* Выход подписан и приглушён: он должен находиться, но не соблазнять.
    Своя подложка обязательна — кнопка лежит поверх живого видео. */
 .duel-quit{
   display:block;margin:10px auto 0;font-family:inherit;font-size:12.5px;
   color:var(--muted);background:rgba(2,3,10,.8);border:1px solid var(--line);
-  border-radius:10px;padding:9px 18px;cursor:pointer;
+  border-radius:0;padding:9px 18px;cursor:pointer;
 }
 .duel-result-nums{display:flex;align-items:center;justify-content:center;gap:18px;margin:10px 0}
-.duel-result-num{font-family:'Russo One';font-size:40px;color:var(--sys);line-height:1.1}
+.duel-result-num{font-family:Oswald,'Arial Narrow',sans-serif;font-size:40px;color:var(--sys);line-height:1.1}
 .duel-result-num.ghost{color:#B08BE0}
 .duel-result-vs{font-size:12px;color:var(--muted)}
 
 .raid-side-col{width:80px;display:flex;flex-direction:column;align-items:center;gap:5px}
 .raid-side-label{
   font-size:9.5px;line-height:1;white-space:nowrap;color:var(--text);
-  background:rgba(2,3,10,.8);border-radius:5px;padding:3px 6px;
+  background:rgba(2,3,10,.8);border-radius:0;padding:3px 6px;
 }
 .raid-side-label.gold{color:var(--gold)}
 /* HP игрока — раньше была узкой колонкой (132px) прямо под золотым счётчиком
@@ -1023,10 +1042,10 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
   width:52px;height:52px;margin-top:11px;border-radius:50%;flex-shrink:0;cursor:pointer;
   display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;
   border:1px solid rgba(255,255,255,.25);background:rgba(4,6,16,.55);backdrop-filter:blur(6px);
-  color:var(--text);font-family:'Manrope',sans-serif;
+  color:var(--text);font-family:'Golos Text',sans-serif;
 }
 .raid-side-btn.retreat{color:var(--danger);border-color:rgba(255,59,92,.4)}
-.raid-side-btn.manual{color:var(--gold);border-color:rgba(245,194,66,.4);font-size:26px;font-family:'Russo One'}
+.raid-side-btn.manual{color:var(--gold);border-color:rgba(245,194,66,.4);font-size:26px;font-family:Oswald,'Arial Narrow',sans-serif}
 /* Откат между ручными нажатиями (см. MANUAL_PUSH_COOLDOWN_MS). pointer-events
    отключаем не ради красоты: без этого нажатие доходит до обработчика, тихо
    отбрасывается по таймеру, и человек не понимает, почему счёт не растёт. */
@@ -1066,7 +1085,7 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
 .rest-ring-sub{color:var(--muted);font-size:14px;text-shadow:0 2px 10px rgba(0,0,0,.85)}
 .rest-bottom-panel{
   position:absolute;left:14px;right:14px;z-index:5;bottom:calc(84px + var(--sa-bottom));
-  padding:10px 14px;border-radius:14px;background:rgba(4,6,16,.55);backdrop-filter:blur(6px);
+  padding:10px 14px;border-radius:0;background:rgba(4,6,16,.55);backdrop-filter:blur(6px);
   border:1px solid rgba(255,255,255,.15);
 }
 .rest-bottom-panel .hpbar{margin-top:0}
@@ -1095,10 +1114,10 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
   background:rgba(2,3,10,.55);text-align:center;padding:calc(230px + var(--sa-top)) 24px 0;animation:countPulse .3s ease;
 }
 @keyframes countPulse{0%{transform:scale(1.06);opacity:0}100%{transform:scale(1);opacity:1}}
-.raid-calib-label{font-family:'Manrope',sans-serif;font-weight:700;font-size:16px;color:var(--text);text-shadow:0 2px 8px rgba(0,0,0,.7)}
+.raid-calib-label{font-family:'Golos Text',sans-serif;font-weight:700;font-size:16px;color:var(--text);text-shadow:0 2px 8px rgba(0,0,0,.7)}
 .raid-calib[data-state="searching"] .raid-calib-label{color:var(--muted)}
-.raid-calib[data-state="ready"] .raid-calib-label{font-family:'Russo One',sans-serif;font-size:22px;color:var(--gold);text-shadow:0 0 24px rgba(245,194,66,.6)}
-.raid-calib[data-state="countdown"] .raid-calib-label{font-family:'Russo One',sans-serif;font-size:20px;color:var(--gold);text-shadow:0 0 24px rgba(245,194,66,.6)}
+.raid-calib[data-state="ready"] .raid-calib-label{font-family:Oswald,sans-serif;font-size:22px;color:var(--gold);text-shadow:0 0 0 transparent}
+.raid-calib[data-state="countdown"] .raid-calib-label{font-family:Oswald,sans-serif;font-size:20px;color:var(--gold);text-shadow:0 0 0 transparent}
 /* Большая цифра обратного отсчёта (10→0) на подготовку к бою — по умолчанию
    схлопнута в 0 (font-size:0, без лишнего пустого места, пока не идёт
    отсчёт), появляется только в состоянии countdown, см. calibOverlayHTML()/
@@ -1106,12 +1125,12 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
    меняется textContent), анимация countPulse на .raid-calib целиком уже даёт
    лёгкий пульс при появлении оверлея; здесь пульс на каждую секунду не нужен. */
 .raid-calib-countdown{
-  font-family:'Russo One',sans-serif;font-size:0;line-height:1;color:var(--gold);
-  text-shadow:0 0 32px rgba(245,194,66,.7);transition:font-size .15s ease;
+  font-family:Oswald,sans-serif;font-size:0;line-height:1;color:var(--gold);
+  text-shadow:0 0 0 transparent;transition:font-size .15s ease;
 }
 .raid-calib[data-state="countdown"] .raid-calib-countdown{font-size:72px}
-.raid-calib-bar{width:150px;height:6px;border-radius:3px;background:rgba(255,255,255,.15);overflow:hidden}
-.raid-calib-bar i{display:block;height:100%;width:0;background:var(--gold);border-radius:3px;transition:width .15s linear}
+.raid-calib-bar{width:150px;height:6px;border-radius:0;background:rgba(255,255,255,.15);overflow:hidden}
+.raid-calib-bar i{display:block;height:100%;width:0;background:var(--gold);border-radius:0;transition:width .15s linear}
 /* Техническая строка под шкалой калибровки: активный бэкенд TF.js и реальный
    FPS детектора позы. Намеренно мелкая и приглушённая — это диагностика, а не
    часть игрового интерфейса, и живёт только на экране калибровки. */
@@ -1124,8 +1143,8 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
   font-variant-numeric:tabular-nums;line-height:1.5;text-align:center;
   max-width:230px;word-break:break-word;
 }
-.raid-calib-sub{font-family:'Manrope',sans-serif;font-size:12.5px;color:var(--muted)}
-.raid-calib-distance{font-family:'Manrope',sans-serif;font-size:12px;color:var(--sys);opacity:0;transition:opacity .3s ease}
+.raid-calib-sub{font-family:'Golos Text',sans-serif;font-size:12.5px;color:var(--muted)}
+.raid-calib-distance{font-family:'Golos Text',sans-serif;font-size:12px;color:var(--sys);opacity:0;transition:opacity .3s ease}
 .raid-calib[data-state="searching"] .raid-calib-distance{opacity:1}
 /* Счётчик отжиманий за весь текущий заход во врата — снизу слева поверх камеры,
    обновляется на каждое повторение (см. registerPush()/updateRepCounterDOM()). */
@@ -1133,7 +1152,7 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
   position:absolute;left:12px;bottom:12px;z-index:3;width:52px;height:52px;border-radius:50%;
   background:radial-gradient(ellipse at 40% 35%, rgba(245,194,66,.95), rgba(184,134,11,.95) 70%);
   border:3px solid var(--gold);display:flex;align-items:center;justify-content:center;
-  font-family:'Russo One';font-size:21px;color:#1A1204;box-shadow:0 0 18px rgba(245,194,66,.6);
+  font-family:Oswald,'Arial Narrow',sans-serif;font-size:21px;color:#1A1204;box-shadow:0 0 0 transparent;
 }
 /* Плашка "враг повержен" — поверх камеры на пару секунд сразу после убийства
    моба, пока не сменился экран (см. showKillBanner() в registerPush()).
@@ -1144,10 +1163,10 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
   position:absolute;inset:0;z-index:4;display:flex;flex-direction:column;align-items:center;justify-content:center;
   gap:8px;background:rgba(2,3,10,.4);animation:killPop .35s ease;
 }
-.kill-skull{font-size:32px;filter:drop-shadow(0 0 10px rgba(255,59,92,.7))}
+.kill-skull{font-size:32px;filter:drop-shadow(0 0 0 transparent)}
 .kill-text{
-  font-family:'Russo One',sans-serif;font-size:32px;line-height:1.08;text-align:center;color:#FF3B5C;
-  text-shadow:0 0 18px rgba(255,59,92,.85), 0 0 40px rgba(255,59,92,.5);letter-spacing:1px;
+  font-family:Oswald,sans-serif;font-size:32px;line-height:1.08;text-align:center;color:#FF3B5C;
+  text-shadow:0 0 0 transparent, 0 0 0 transparent;letter-spacing:1px;
 }
 @keyframes killPop{0%{transform:scale(1.3);opacity:0}100%{transform:scale(1);opacity:1}}
 /* ---- предметы ----
@@ -1169,9 +1188,9 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
   animation:dropIn .3s cubic-bezier(.2,1.4,.4,1);transition:opacity .45s ease;
 }
 .drop-flash.out{opacity:0}
-.drop-flash-ico img{filter:drop-shadow(0 0 14px var(--rk));border-radius:12px}
+.drop-flash-ico img{filter:drop-shadow(0 0 0 transparent);border-radius:0}
 .drop-flash-name{
-  font-family:'Russo One',sans-serif;font-size:19px;color:var(--rk);letter-spacing:.5px;text-align:center;
+  font-family:Oswald,sans-serif;font-size:19px;color:var(--rk);letter-spacing:.5px;text-align:center;
   text-shadow:0 0 16px color-mix(in srgb, var(--rk) 70%, transparent);padding:0 18px;
 }
 .drop-flash-sub{font-size:11px;color:var(--muted);letter-spacing:1px;text-transform:uppercase}
@@ -1179,14 +1198,14 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
 @keyframes dropIn{0%{transform:scale(.55);opacity:0}100%{transform:scale(1);opacity:1}}
 /* Заглушка, если иконки предмета нет (частичный деплой каталога) — лучше
    пустая рамка нужного цвета, чем сломанная картинка. */
-.item-noimg{display:block;border-radius:8px;background:color-mix(in srgb, var(--rk,#6B7099) 18%, transparent)}
+.item-noimg{display:block;border-radius:0;background:color-mix(in srgb, var(--rk,#6B7099) 18%, transparent)}
 /* Слоты экипировки — три в ряд над сеткой. Заблокированный показывается
    замком с уровнем, а не прячется: человек должен видеть, что слот есть и
    когда откроется, иначе непонятно, почему вещи падают, а надеть некуда. */
 .eq-row{display:flex;gap:8px;margin:14px 0 18px}
 .eq-slot{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px}
 .eq-box{
-  width:100%;aspect-ratio:1;border-radius:12px;display:flex;align-items:center;justify-content:center;
+  width:100%;aspect-ratio:1;border-radius:0;display:flex;align-items:center;justify-content:center;
   border:1.5px solid var(--rk,var(--line));background:color-mix(in srgb, var(--rk,#000) 10%, rgba(10,13,31,.6));
 }
 /* Иконка тянется за коробкой, а не живёт своим фиксированным размером.
@@ -1218,14 +1237,14 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
 .chest-shelf{
   border:1px solid color-mix(in srgb, var(--gold) 40%, transparent);
   background:linear-gradient(180deg, color-mix(in srgb, var(--gold) 12%, transparent), transparent);
-  border-radius:12px;padding:12px;margin-bottom:14px;
+  border-radius:0;padding:12px;margin-bottom:14px;
 }
 .chest-shelf-head{font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--gold);margin-bottom:10px}
 .chest-shelf-row{display:flex;gap:10px;flex-wrap:wrap}
 .chest-shelf-sub{font-size:11px;color:var(--muted);margin-top:9px;line-height:1.4}
 .chest-shelf-err{font-size:12px;color:var(--danger);margin-top:8px}
 .chest-cell{
-  position:relative;width:66px;height:66px;border-radius:10px;padding:0;cursor:pointer;font-family:inherit;
+  position:relative;width:66px;height:66px;border-radius:0;padding:0;cursor:pointer;font-family:inherit;
   border:1.5px solid color-mix(in srgb, var(--gold) 55%, transparent);
   background:rgba(10,13,31,.6);display:flex;align-items:center;justify-content:center;
   transition:transform .12s ease;
@@ -1288,11 +1307,11 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
 .chest-scene-done{
   opacity:0;pointer-events:none;transition:opacity .2s ease .35s;
   background:none;border:1px solid var(--gold);color:var(--gold);font-family:inherit;
-  font-size:13px;padding:9px 26px;border-radius:9px;cursor:pointer;
+  font-size:13px;padding:9px 26px;border-radius:0;cursor:pointer;
 }
 .ph-loot .chest-scene-done{opacity:1;pointer-events:auto}
 .chest-loot-card{
-  width:92px;padding:12px 8px;border-radius:11px;text-align:center;
+  width:92px;padding:12px 8px;border-radius:0;text-align:center;
   border:1px solid color-mix(in srgb, var(--gold) 45%, transparent);
   background:rgba(10,13,31,.75);
   display:flex;flex-direction:column;align-items:center;gap:7px;
@@ -1312,7 +1331,7 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
 /* Сетка предметов */
 .inv-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
 .inv-cell{
-  position:relative;aspect-ratio:1;border-radius:10px;padding:0;cursor:pointer;
+  position:relative;aspect-ratio:1;border-radius:0;padding:0;cursor:pointer;
   border:1.5px solid var(--rk,var(--line));background:color-mix(in srgb, var(--rk,#000) 10%, rgba(10,13,31,.6));
   display:flex;align-items:center;justify-content:center;font-family:inherit;
 }
@@ -1321,15 +1340,15 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
 .inv-cell.ghost img{opacity:.16;filter:grayscale(1)}
 .inv-count{
   position:absolute;right:3px;bottom:2px;font-size:11px;color:var(--text);
-  text-shadow:0 1px 3px #000,0 0 6px #000;font-family:'Roboto Mono',monospace;
+  text-shadow:0 1px 3px #000,0 0 0 transparent;font-family:'Roboto Mono',monospace;
 }
-.inv-new{position:absolute;left:4px;top:4px;width:7px;height:7px;border-radius:50%;background:var(--danger);box-shadow:0 0 6px var(--danger)}
+.inv-new{position:absolute;left:4px;top:4px;width:7px;height:7px;border-radius:50%;background:var(--danger);box-shadow:0 0 0 transparent}
 .inv-worn{position:absolute;right:3px;top:3px;width:15px;height:15px;border-radius:50%;background:var(--ok);display:flex;align-items:center;justify-content:center;font-size:9px;color:#04231a}
 .inv-empty{text-align:center;padding:26px 12px;color:var(--muted);font-size:13px;line-height:1.5}
 /* Карточка предмета */
-.item-card{border:1px solid var(--rk,var(--line));border-radius:14px;padding:16px;background:rgba(10,13,31,.55);text-align:center}
-.item-card-ico img{border-radius:12px;filter:drop-shadow(0 0 12px color-mix(in srgb, var(--rk) 55%, transparent))}
-.item-card-name{font-family:'Russo One',sans-serif;font-size:18px;color:var(--rk);margin-top:10px}
+.item-card{border:1px solid var(--rk,var(--line));border-radius:0;padding:16px;background:rgba(10,13,31,.55);text-align:center}
+.item-card-ico img{border-radius:0;filter:drop-shadow(0 0 12px color-mix(in srgb, var(--rk) 55%, transparent))}
+.item-card-name{font-family:Oswald,sans-serif;font-size:18px;color:var(--rk);margin-top:10px}
 .item-card-meta{font-size:12px;color:var(--muted);margin-top:3px}
 .item-card-desc{font-size:13px;color:var(--muted);margin-top:12px;line-height:1.5;font-style:italic}
 /* ---- Гильдии ----
@@ -1338,20 +1357,20 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
    визуальный язык списка: горит зелёным у тех, кто уже отжимался сегодня,
    и остаётся тусклой у остальных. Человек делает подход, чтобы не быть
    единственным серым. */
-.gd-modal{border:1px solid var(--line);border-radius:14px;padding:18px;background:var(--panel-solid)}
-.gd-hero{border:1px solid var(--line);border-radius:14px;padding:14px;background:rgba(10,13,31,.55);margin-bottom:14px}
-.gd-name{font-family:'Russo One',sans-serif;font-size:20px;color:var(--text);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.gd-tag{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--sys);border:1px solid var(--sys-dim);border-radius:6px;padding:2px 6px}
+.gd-modal{border:1px solid var(--line);border-radius:0;padding:18px;background:var(--panel-solid)}
+.gd-hero{border:1px solid var(--line);border-radius:0;padding:14px;background:rgba(10,13,31,.55);margin-bottom:14px}
+.gd-name{font-family:Oswald,sans-serif;font-size:20px;color:var(--text);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.gd-tag{font-family:Oswald,monospace;font-size:12px;color:var(--sys);border:1px solid var(--sys-dim);border-radius:0;padding:2px 6px}
 .gd-sub{font-size:12px;color:var(--muted);margin-top:6px}
 /* ---- война гильдий ----
    Своя рамка и свой цвет: война идёт неделю и меняется каждый день, а всё
    остальное на экране постоянно. Спутать их нельзя. */
-.war{border:1px solid rgba(255,59,92,.35);border-radius:16px;padding:14px 13px;margin-bottom:14px;
+.war{border:1px solid rgba(255,59,92,.35);border-radius:0;padding:14px 13px;margin-bottom:14px;
   background:linear-gradient(180deg,rgba(255,59,92,.07),rgba(10,13,31,.5))}
 .war-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
 .war-banner{display:flex;align-items:center;gap:12px;margin-bottom:12px}
 .war-bn{flex:none;width:auto;height:72px;display:block}
-.war-bn-name{font-family:'Russo One',sans-serif;font-size:16px;color:var(--text)}
+.war-bn-name{font-family:Oswald,sans-serif;font-size:16px;color:var(--text)}
 .war-bn-name.bn-militia{color:#B59A78}
 .war-bn-name.bn-druzhina{color:var(--sys)}
 .war-bn-name.bn-legion{color:var(--gold)}
@@ -1363,7 +1382,7 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
 .war-vs{display:flex;align-items:center;gap:10px}
 .war-side{flex:1;min-width:0;text-align:center}
 .war-side.foe{text-align:center}
-.war-num{font-family:'Russo One',sans-serif;font-size:26px;line-height:1.1}
+.war-num{font-family:Oswald,sans-serif;font-size:26px;line-height:1.1}
 .war-side.me .war-num{color:var(--sys)}
 .war-side.foe .war-num{color:#B08BE0}
 /* Имя соперника обрезается многоточием: оно приходит от людей и бывает
@@ -1371,10 +1390,10 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
 .war-who{font-size:10px;letter-spacing:1px;color:var(--muted);margin-top:2px;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .war-state{flex:none;font-size:11px;color:var(--muted);padding:5px 8px;
-  border:1px solid var(--line);border-radius:8px}
+  border:1px solid var(--line);border-radius:0}
 .war-state.up{color:var(--sys);border-color:rgba(76,201,255,.45)}
 .war-state.down{color:var(--danger);border-color:rgba(255,59,92,.45)}
-.war-bar{height:12px;border-radius:6px;background:rgba(2,3,10,.6);border:1px solid var(--line);
+.war-bar{height:12px;border-radius:0;background:rgba(2,3,10,.6);border:1px solid var(--line);
   overflow:hidden;display:flex;margin-top:10px}
 .war-bar i{display:block;height:100%;transition:width .35s ease, background-color .3s ease}
 .war-bar .mine{background:var(--sys)}
@@ -1384,7 +1403,7 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
 .war-bar .theirs.ahead{background:var(--danger)}
 .war-exs{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:10px}
 .war-ex{display:flex;gap:6px;font-size:11.5px;color:var(--muted)}
-.war-ex span:last-child{color:var(--text);font-family:'JetBrains Mono'}
+.war-ex span:last-child{color:var(--text);font-family:Oswald,'Arial Narrow',sans-serif}
 .war-note{font-size:10.5px;color:var(--muted);margin-top:9px;line-height:1.4}
 .war-last{font-size:11.5px;color:var(--muted);margin-top:9px;padding-top:9px;
   border-top:1px solid var(--line);line-height:1.4}
@@ -1392,8 +1411,8 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
 .war-last.lose{color:var(--danger)}
 .gd-goal{margin-top:12px}
 .gd-goal-top{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:5px}
-.gd-bar{height:8px;background:rgba(255,255,255,.08);border-radius:4px;overflow:hidden}
-.gd-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--mana),var(--sys));border-radius:4px;transition:width .4s}
+.gd-bar{height:8px;background:rgba(255,255,255,.08);border-radius:0;overflow:hidden}
+.gd-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--mana),var(--sys));border-radius:0;transition:width .4s}
 .gd-bar.done i{background:var(--ok)}
 .gd-sect{font-size:11px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin:18px 0 8px}
 .gd-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);font-size:13px}
@@ -1402,7 +1421,7 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
    Одна колонка на всех: у кого лицо есть, у кого нет. */
 .gd-slot{flex:none;width:30px;height:30px;display:flex;align-items:center;justify-content:center}
 .gd-dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.16);flex:none}
-.gd-dot.on{background:var(--ok);box-shadow:0 0 8px rgba(52,211,153,.6)}
+.gd-dot.on{background:var(--ok);box-shadow:0 0 0 transparent}
 /* Аватар в составе гильдии — на месте точки. Зелёная обводка вместо неё
    означает то же самое: сегодня тренировался. */
 /* Обрезки и рамки у обёртки больше нет, и это не упрощение.
@@ -1417,7 +1436,7 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
    прямоугольнику): зелёное свечение обнимает кольцо снаружи и остаётся
    различимым при любой рамке. */
 .gd-av{flex:none;width:30px;height:30px;display:block}
-.gd-av.on{filter:drop-shadow(0 0 5px rgba(52,211,153,.85))}
+.gd-av.on{filter:drop-shadow(0 0 0 transparent)}
 .gd-av .av-badge{display:block}
 /* Обёртка нужна, чтобы имя и титул стояли столбиком внутри строки-флекса:
    сам .gd-nm обрезается многоточием и не может содержать второй этаж. */
@@ -1426,7 +1445,7 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
 .gd-nm .crown{color:var(--gold);font-size:11px;margin-left:4px}
 .gd-title{font-size:11px;color:var(--muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .gd-away{font-size:11px;color:var(--muted);flex:none}
-.gd-reps{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text);flex:none}
+.gd-reps{font-family:Oswald,monospace;font-size:12px;color:var(--text);flex:none}
 .gd-kick{border:none;background:transparent;color:var(--danger);font-size:16px;cursor:pointer;padding:0 2px;flex:none}
 /* Заявка — это решение, а не строка состава. Поэтому под именем идёт своя
    полоса из двух подписанных кнопок во всю ширину: «Принять» и «Отклонить»
@@ -1444,26 +1463,26 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
    именем, а не самостоятельная цифра, и спорить за внимание с «N дней без
    боёв» она не должна. */
 .gd-ago{color:var(--muted)}
-.gd-card{border:1px solid var(--line);border-radius:12px;padding:12px;margin-top:8px;background:rgba(10,13,31,.5)}
+.gd-card{border:1px solid var(--line);border-radius:0;padding:12px;margin-top:8px;background:rgba(10,13,31,.5)}
 .gd-card-top{display:flex;align-items:center;gap:8px}
 .gd-card-meta{display:flex;gap:12px;font-size:11px;color:var(--muted);margin-top:7px;flex-wrap:wrap}
 .gd-card-meta b{color:var(--text);font-weight:700}
 .gd-full{opacity:.55}
-.gd-inp{width:100%;box-sizing:border-box;background:rgba(2,3,10,.6);border:1px solid var(--line);border-radius:10px;padding:11px 12px;color:var(--text);font-family:'Manrope';font-size:15px;margin-top:6px}
+.gd-inp{width:100%;box-sizing:border-box;background:rgba(2,3,10,.6);border:1px solid var(--line);border-radius:0;padding:11px 12px;color:var(--text);font-family:'Golos Text';font-size:15px;margin-top:6px}
 .gd-inp:focus{outline:none;border-color:var(--sys-dim)}
 .gd-lbl{font-size:11px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-top:14px}
 .gd-err{color:var(--danger);font-size:12px;margin-top:8px;min-height:15px}
 .gd-empty{text-align:center;padding:26px 12px;color:var(--muted);font-size:13px;line-height:1.5}
-.gd-lock{border:1px solid var(--line);border-radius:12px;padding:14px;background:rgba(10,13,31,.5);font-size:13px;color:var(--muted);line-height:1.5;margin-top:12px}
-.gd-frozen{border:1px solid var(--gold);border-radius:10px;padding:10px 12px;background:rgba(245,194,66,.08);font-size:12px;color:var(--gold);line-height:1.45;margin-top:10px}
-.gd-last{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:rgba(10,13,31,.5);font-size:12px;color:var(--muted);line-height:1.45;margin-top:10px}
+.gd-lock{border:1px solid var(--line);border-radius:0;padding:14px;background:rgba(10,13,31,.5);font-size:13px;color:var(--muted);line-height:1.5;margin-top:12px}
+.gd-frozen{border:1px solid var(--gold);border-radius:0;padding:10px 12px;background:rgba(245,194,66,.08);font-size:12px;color:var(--gold);line-height:1.45;margin-top:10px}
+.gd-last{border:1px solid var(--line);border-radius:0;padding:10px 12px;background:rgba(10,13,31,.5);font-size:12px;color:var(--muted);line-height:1.45;margin-top:10px}
 .gd-last.win{border-color:rgba(52,211,153,.4);background:rgba(52,211,153,.07);color:var(--ok)}
 /* Рецепты */
-.rcp{border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-top:8px;background:rgba(10,13,31,.5);cursor:pointer}
+.rcp{border:1px solid var(--line);border-radius:0;padding:10px 12px;margin-top:8px;background:rgba(10,13,31,.5);cursor:pointer}
 .rcp.ready{border-color:var(--ok)}
 .rcp-head{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:13px}
-.rcp-prog{height:4px;background:rgba(255,255,255,.08);border-radius:2px;margin-top:7px;overflow:hidden}
-.rcp-prog i{display:block;height:100%;background:var(--gold);border-radius:2px}
+.rcp-prog{height:4px;background:rgba(255,255,255,.08);border-radius:0;margin-top:7px;overflow:hidden}
+.rcp-prog i{display:block;height:100%;background:var(--gold);border-radius:0}
 .rcp-need{display:flex;align-items:center;gap:8px;font-size:13px;padding:7px 0;border-bottom:1px solid var(--line);cursor:pointer}
 .rcp-need:last-child{border-bottom:none}
 .rcp-need img{width:20px;height:20px;object-fit:contain;flex:none}
@@ -1475,64 +1494,64 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
 .gate-hl .gate-frame{animation:gateHl 1s ease-in-out 2}
 @keyframes gateHl{
   0%,100%{filter:none}
-  50%{filter:drop-shadow(0 0 14px var(--gold)) drop-shadow(0 0 26px var(--gold))}
+  50%{filter:drop-shadow(0 0 0 transparent) drop-shadow(0 0 0 transparent)}
 }
 /* Значок оружия в строке таблицы лидеров и на карточке соперника Арены.
    Размер жёстко маленький: строка узкая, и значок не должен отбирать ширину
    у имени — он тут подпись, а не главный герой. */
 .lb-weapon{
-  flex:none;width:22px;height:22px;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;
+  flex:none;width:22px;height:22px;border-radius:0;display:inline-flex;align-items:center;justify-content:center;
   border:1px solid var(--rk,var(--line));background:color-mix(in srgb, var(--rk,#000) 14%, transparent);margin-right:2px;
 }
 .lb-weapon img{width:16px;height:16px;object-fit:contain}
 /* Где добыть */
-.where{margin-top:8px;padding:10px;border-radius:8px;background:rgba(76,201,255,.07);border:1px solid rgba(76,201,255,.25);font-size:12px;line-height:1.6}
+.where{margin-top:8px;padding:10px;border-radius:0;background:rgba(76,201,255,.07);border:1px solid rgba(76,201,255,.25);font-size:12px;line-height:1.6}
 .where .lbl{font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:5px}
 .where .gate{color:var(--sys)}
 .dots{display:flex;gap:8px;justify-content:center;margin-top:14px}
 .dot{width:10px;height:10px;border-radius:50%;background:var(--line)}
-.dot.done{background:var(--ok);box-shadow:0 0 8px var(--ok)}
-.dot.cur{background:var(--gold);box-shadow:0 0 8px var(--gold)}
+.dot.done{background:var(--ok);box-shadow:0 0 0 transparent}
+.dot.cur{background:var(--gold);box-shadow:0 0 0 transparent}
 /* Свайпаемая галерея из 2 фото (верхняя/нижняя точка упражнения) — чистый
    CSS scroll-snap по горизонтали, без JS-библиотек. Используется и в
    «Инструкциях» настроек (rInstructions()), и в модалке смены направления
    (showTrackIntro()) — общий helper instrGalleryHTML(). */
-.instr-gallery{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none;border-radius:14px;border:1px solid var(--line)}
+.instr-gallery{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none;border-radius:0;border:1px solid var(--line)}
 .instr-gallery::-webkit-scrollbar{display:none}
 .instr-gallery img{flex:0 0 100%;width:100%;aspect-ratio:1/1;object-fit:cover;scroll-snap-align:center;display:block}
 .instr-gallery-hint{font-size:11.5px;color:var(--muted);text-align:center;margin-top:6px;letter-spacing:.3px}
-.rest-timer{font-family:'Russo One';font-size:64px;text-align:center;color:var(--sys);text-shadow:0 0 26px rgba(76,201,255,.4);margin:8px 0}
-.dmg-float{position:absolute;font-family:'Russo One';font-size:30px;color:var(--gold);text-shadow:0 0 14px rgba(245,194,66,.6);animation:floatUp 1s forwards;pointer-events:none}
-.dmg-float.xp-float{font-size:16px;color:var(--sys);text-shadow:0 0 10px rgba(76,201,255,.6);animation-delay:.1s}
+.rest-timer{font-family:Oswald,'Arial Narrow',sans-serif;font-size:64px;text-align:center;color:var(--sys);text-shadow:0 0 0 transparent;margin:8px 0}
+.dmg-float{position:absolute;font-family:Oswald,'Arial Narrow',sans-serif;font-size:30px;color:var(--gold);text-shadow:0 0 0 transparent;animation:floatUp 1s forwards;pointer-events:none}
+.dmg-float.xp-float{font-size:16px;color:var(--sys);text-shadow:0 0 0 transparent;animation-delay:.1s}
 @keyframes floatUp{to{transform:translateY(-70px);opacity:0}}
 
 /* ---- победа ---- */
 .loot{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:16px 0}
-.loot .card{width:86px;padding:12px 6px;border-radius:14px;border:1px solid var(--sys-dim);background:var(--panel);text-align:center}
+.loot .card{width:86px;padding:12px 6px;border-radius:0;border:1px solid var(--sys-dim);background:var(--panel);text-align:center}
 /* Разблокировка титула на экране победы — см. titleUnlockHTML(). Заметно
    тише баннера ранг-апа (тот золотой, во всю ширину, с сиянием) — здесь
    только короткая вспышка рамки, гаснущая до статичного вида. */
 .title-unlock{position:relative;width:100%;margin-top:10px;border:1px solid var(--line);background:var(--panel);
-  border-radius:12px;padding:10px 14px;display:flex;align-items:center;gap:12px;overflow:hidden;
+  border-radius:0;padding:10px 14px;display:flex;align-items:center;gap:12px;overflow:hidden;
   opacity:0;transform:translateY(10px);animation:titleUnlockIn .45s ease forwards}
-.title-unlock .tu-flash{position:absolute;inset:0;border-radius:12px;border:2px solid var(--gold);opacity:0;animation:titleUnlockFlash .9s ease forwards;pointer-events:none}
+.title-unlock .tu-flash{position:absolute;inset:0;border-radius:0;border:2px solid var(--gold);opacity:0;animation:titleUnlockFlash .9s ease forwards;pointer-events:none}
 .title-unlock .tu-badge{width:34px;height:34px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:16px;background:var(--panel-solid);border:1px solid var(--gold);color:var(--gold)}
 .title-unlock .tu-tag{font-size:10.5px;letter-spacing:1px;text-transform:uppercase;color:var(--muted)}
-.title-unlock .tu-name{font-family:'Manrope',sans-serif;font-weight:800;font-size:14.5px;color:var(--gold)}
+.title-unlock .tu-name{font-family:'Golos Text',sans-serif;font-weight:800;font-size:14.5px;color:var(--gold)}
 @keyframes titleUnlockIn{0%{opacity:0;transform:translateY(10px)}100%{opacity:1;transform:translateY(0)}}
 @keyframes titleUnlockFlash{0%{opacity:0}15%{opacity:.9}75%{opacity:.9}100%{opacity:0}}
-.loot .card .v{font-family:'Russo One';font-size:20px;color:var(--gold)}
+.loot .card .v{font-family:Oswald,'Arial Narrow',sans-serif;font-size:20px;color:var(--gold)}
 .loot .card .k{font-size:11px;color:var(--muted);margin-top:4px}
-.xpbar{width:100%;height:12px;border-radius:6px;background:var(--line);overflow:hidden;margin-top:8px}
-.xpbar i{display:block;height:100%;background:linear-gradient(90deg,var(--sys),var(--mana));border-radius:6px;transition:width 1.2s ease}
+.xpbar{width:100%;height:12px;border-radius:0;background:var(--line);overflow:hidden;margin-top:8px}
+.xpbar i{display:block;height:100%;background:linear-gradient(90deg,var(--sys),var(--mana));border-radius:0;transition:width 1.2s ease}
 
 /* ---- профиль ---- */
 .profile-head{display:flex;align-items:center;gap:16px;margin:8px 0 18px}
-.avatar{width:74px;height:74px;border-radius:20px;border:2px solid var(--sys);display:flex;align-items:center;justify-content:center;font-family:'Russo One';font-size:36px;color:var(--sys);box-shadow:0 0 20px rgba(76,201,255,.3)}
+.avatar{width:74px;height:74px;border-radius:0;border:2px solid var(--sys);display:flex;align-items:center;justify-content:center;font-family:Oswald,'Arial Narrow',sans-serif;font-size:36px;color:var(--sys);box-shadow:0 0 0 transparent}
 /* С купленным аватаром рамка остаётся та же, но внутри картинка — поэтому
    обрезаем её по скруглению и убираем внутренние отступы буквы. */
 .avatar.has-av{overflow:hidden;padding:0}
-.avatar.has-av img,.avatar.has-av .av-stub{width:70px;height:70px;border-radius:18px;display:block}
+.avatar.has-av img,.avatar.has-av .av-stub{width:70px;height:70px;border-radius:0;display:block}
 .avatar.has-av .av-stub{font-size:30px}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
 /* Три колонки — раздельная статистика отжиманий/приседаний в профиле
@@ -1540,31 +1559,31 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
 .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:10px}
 .grid3 .gcard{padding:11px 8px}
 .grid3 .gcard .v{font-size:19px}
-.gcard{border:1px solid var(--line);background:var(--panel);border-radius:14px;padding:14px}
-.gcard .v{font-family:'Russo One';font-size:24px;color:var(--gold)}
+.gcard{border:1px solid var(--line);background:var(--panel);border-radius:0;padding:14px}
+.gcard .v{font-family:Oswald,'Arial Narrow',sans-serif;font-size:24px;color:var(--gold)}
 .gcard .k{font-size:12px;color:var(--muted);margin-top:4px}
 /* ---- Экран "Титулы и бестиарий" (rTitlesScreen) ---- */
 .tb-tabs{display:flex;gap:8px;margin-top:4px}
-.tb-tabs button{flex:1;padding:11px;border-radius:12px;border:1px solid var(--line);background:var(--panel);color:var(--muted);font-weight:800;font-size:13px;cursor:pointer}
-.tb-tabs button.on{border-color:var(--sys);color:var(--sys);box-shadow:0 0 12px rgba(76,201,255,.2)}
-.title-card{border:1px solid var(--line);background:var(--panel);border-radius:14px;padding:13px;margin-top:9px;display:flex;align-items:center;gap:12px}
+.tb-tabs button{flex:1;padding:11px;border-radius:0;border:1px solid var(--line);background:var(--panel);color:var(--muted);font-weight:800;font-size:13px;cursor:pointer}
+.tb-tabs button.on{border-color:var(--sys);color:var(--sys);box-shadow:0 0 0 transparent}
+.title-card{border:1px solid var(--line);background:var(--panel);border-radius:0;padding:13px;margin-top:9px;display:flex;align-items:center;gap:12px}
 .title-card.locked{opacity:.55}
 .title-card.unlocked{border-color:rgba(245,194,66,.4)}
 .title-card .tc-badge{width:36px;height:36px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:15px;background:var(--panel-solid);border:1px solid var(--line)}
 .title-card.unlocked .tc-badge{border-color:var(--gold);color:var(--gold)}
 .title-card .tc-body{flex:1;min-width:0}
-.title-card .tc-name{font-family:'Manrope',sans-serif;font-weight:800;font-size:14px;color:var(--text)}
+.title-card .tc-name{font-family:'Golos Text',sans-serif;font-weight:800;font-size:14px;color:var(--text)}
 .title-card.unlocked .tc-name{color:var(--gold)}
 .title-card .tc-sub{font-size:11.5px;color:var(--muted);margin-top:2px;line-height:1.35}
 .title-card .tc-select{flex-shrink:0;width:30px;height:30px;border-radius:50%;border:1px solid var(--line);background:var(--panel-solid);color:var(--gold);font-size:13px;cursor:pointer}
-.title-card .tc-select.on{border-color:var(--gold);box-shadow:0 0 10px rgba(245,194,66,.4)}
+.title-card .tc-select.on{border-color:var(--gold);box-shadow:0 0 0 transparent}
 .beast-group-title{margin-top:18px;font-size:12px;letter-spacing:.6px;text-transform:uppercase;color:var(--muted);display:flex;justify-content:space-between;align-items:center}
-.beast-card{border:1px solid var(--line);background:var(--panel);border-radius:14px;padding:11px;display:flex;align-items:center;gap:10px;margin-top:8px}
+.beast-card{border:1px solid var(--line);background:var(--panel);border-radius:0;padding:11px;display:flex;align-items:center;gap:10px;margin-top:8px}
 .beast-card.unseen{opacity:.5}
 .beast-card.seen{opacity:.8}
-.beast-card .bc-portrait{width:44px;height:44px;border-radius:10px;overflow:hidden;flex-shrink:0;background:var(--panel-solid);display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--muted)}
+.beast-card .bc-portrait{width:44px;height:44px;border-radius:0;overflow:hidden;flex-shrink:0;background:var(--panel-solid);display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--muted)}
 .beast-card .bc-body{flex:1;min-width:0}
-.beast-card .bc-name{font-family:'Manrope',sans-serif;font-weight:800;font-size:13px}
+.beast-card .bc-name{font-family:'Golos Text',sans-serif;font-weight:800;font-size:13px}
 .beast-card .bc-lore{font-size:11px;color:var(--muted);margin-top:2px;line-height:1.35}
 /* Факты о поверженном виде. Карточка растёт в высоту, поэтому у .beast-card
    выравнивание по центру сменено на align-items:flex-start ниже — иначе
@@ -1580,19 +1599,19 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
    даже от данных, которые каким-то образом мимо неё прошли: 28.07.2026 игрок
    прислал ранг "SQUAD" вместо одной буквы и счёт из двадцати цифр, и строки
    рейтинга расползлись по всему экрану. */
-.lb-row{display:flex;align-items:center;gap:10px;padding:11px 13px;border:1px solid var(--line);background:var(--panel);border-radius:14px;margin-top:8px;overflow:hidden}
-.lb-row.me{border-color:var(--gold);box-shadow:0 0 12px rgba(245,194,66,.25)}
+.lb-row{display:flex;align-items:center;gap:10px;padding:11px 13px;border:1px solid var(--line);background:var(--panel);border-radius:0;margin-top:8px;overflow:hidden}
+.lb-row.me{border-color:var(--gold);box-shadow:0 0 0 transparent}
 /* ---- экран «Лавка» ---- */
-.shop-wallet{border:1px solid var(--line);background:var(--panel);border-radius:14px;padding:14px 16px;margin-top:6px;text-align:center}
-.shop-wallet .sw-bal{font-family:'Russo One',sans-serif;font-size:26px;color:var(--gold)}
-.shop-wallet .sw-bal span{font-size:14px;color:var(--muted);font-family:'Manrope',sans-serif}
+.shop-wallet{border:1px solid var(--line);background:var(--panel);border-radius:0;padding:14px 16px;margin-top:6px;text-align:center}
+.shop-wallet .sw-bal{font-family:Oswald,sans-serif;font-size:26px;color:var(--gold)}
+.shop-wallet .sw-bal span{font-size:14px;color:var(--muted);font-family:'Golos Text',sans-serif}
 .shop-wallet .sw-norm{font-size:11.5px;color:var(--muted);margin-top:4px}
 .shop-tier{display:flex;justify-content:space-between;align-items:baseline;margin-top:18px;margin-bottom:8px;
   font-size:12px;letter-spacing:1px;text-transform:uppercase;color:var(--sys)}
 .shop-tier span{color:var(--muted);letter-spacing:0;text-transform:none;font-size:11.5px}
 .shop-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
 .shop-cell{
-  position:relative;aspect-ratio:1;border-radius:12px;padding:0;cursor:pointer;
+  position:relative;aspect-ratio:1;border-radius:0;padding:0;cursor:pointer;
   border:1.5px solid var(--line);background:rgba(10,13,31,.6);
   display:flex;align-items:center;justify-content:center;font-family:inherit;
 }
@@ -1602,24 +1621,24 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
    настолько, чтобы не разглядеть, что там нарисовано. */
 .shop-cell.locked{opacity:.45}
 .shop-price{
-  position:absolute;right:3px;bottom:3px;padding:1px 5px;border-radius:6px;
-  background:rgba(2,3,10,.85);color:var(--gold);font-family:'JetBrains Mono';font-size:10px;
+  position:absolute;right:3px;bottom:3px;padding:1px 5px;border-radius:0;
+  background:rgba(2,3,10,.85);color:var(--gold);font-family:Oswald,'Arial Narrow',sans-serif;font-size:10px;
 }
 .shop-cell.owned .shop-price{color:var(--ok)}
-.shop-lock{margin-top:16px;padding:11px;border-radius:12px;border:1px dashed var(--line);
+.shop-lock{margin-top:16px;padding:11px;border-radius:0;border:1px dashed var(--line);
   color:var(--muted);font-size:12.5px;text-align:center}
 /* Заглушка вместо ненарисованной картинки. Нужна и после генерации: одна
    недогруженная картинка не должна оставлять дырку, читаемую как поломка. */
 .av-stub{
-  display:flex;align-items:center;justify-content:center;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;border-radius:0;
   background:rgba(139,92,246,.14);border:1px solid var(--line);
-  color:var(--mana);font-family:'Russo One',sans-serif;
+  color:var(--mana);font-family:Oswald,sans-serif;
 }
 /* ---- экран «Друзья» ---- */
 .fr-switch{display:flex;gap:8px;margin-top:6px}
 .fr-switch button{
-  flex:1;padding:9px 0;border-radius:12px;border:1px solid var(--line);
-  background:var(--panel);color:var(--muted);font-family:'Manrope',sans-serif;
+  flex:1;padding:9px 0;border-radius:0;border:1px solid var(--line);
+  background:var(--panel);color:var(--muted);font-family:'Golos Text',sans-serif;
   font-weight:800;font-size:13px;cursor:pointer;
 }
 .fr-switch button.on{border-color:var(--sys);color:var(--text);background:rgba(76,201,255,.08)}
@@ -1627,16 +1646,16 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
    лежит переход в профиль по тапу на строку, и мелкая цель означала бы
    регулярные промахи не туда. */
 .fr-x{
-  flex-shrink:0;width:30px;height:30px;margin-left:2px;border-radius:9px;
+  flex-shrink:0;width:30px;height:30px;margin-left:2px;border-radius:0;
   border:1px solid var(--line);background:transparent;color:var(--muted);
   font-size:13px;line-height:1;cursor:pointer;
 }
 .fr-x:active{background:rgba(255,59,92,.12);border-color:var(--danger);color:var(--danger)}
-.lb-rnk{width:24px;flex-shrink:0;font-family:'JetBrains Mono';font-size:13px;color:var(--muted);text-align:center}
+.lb-rnk{width:24px;flex-shrink:0;font-family:Oswald,'Arial Narrow',sans-serif;font-size:13px;color:var(--muted);text-align:center}
 /* Бейдж рассчитан ровно на один символ ранга. overflow:hidden обязателен:
    без него текст длиннее буквы вываливается за пределы коробки в обе стороны
    поверх соседних элементов — именно так выглядел присланный "SQUAD". */
-.lb-rank-badge{width:26px;height:26px;border-radius:8px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-family:'Russo One';font-size:12px;color:var(--sys);border:1px solid var(--line);overflow:hidden;white-space:nowrap}
+.lb-rank-badge{width:26px;height:26px;border-radius:0;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-family:Oswald,'Arial Narrow',sans-serif;font-size:12px;color:var(--sys);border:1px solid var(--line);overflow:hidden;white-space:nowrap}
 /* Аватар в строке рейтинга занимает МЕСТО значка ранга, а не добавляется
    рядом: строка и без того плотная (место, ранг, оружие, имя, титул, счёт),
    и лишняя картинка отняла бы ширину у имени. Сам ранг переезжает на аватар
@@ -1651,27 +1670,27 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
 .lb-av .av-badge{display:block}
 .lb-av .lb-av-rank{
   position:absolute;right:-2px;bottom:-1px;min-width:11px;height:11px;padding:0 2px;
-  border-radius:4px;background:var(--void);border:1px solid var(--line);
-  font-family:'Russo One',sans-serif;font-size:8px;line-height:9px;color:var(--sys);
+  border-radius:0;background:var(--void);border:1px solid var(--line);
+  font-family:Oswald,sans-serif;font-size:8px;line-height:9px;color:var(--sys);
   text-align:center;
 }
 /* Обёртка для имени и титула. Растягивание и min-width:0 переехали сюда с
    .lb-name — теперь ширину делит колонка целиком, а не одна строка имени,
    иначе титул не смог бы обрезаться многоточием независимо от ника. */
 /* ---- Экран предпросмотра закрытых врат (см. rGatePreview) ---- */
-.gp-toptag{flex:1;text-align:center;font-family:'JetBrains Mono';font-size:11px;letter-spacing:3px;color:var(--sys)}
+.gp-toptag{flex:1;text-align:center;font-family:Oswald,'Arial Narrow',sans-serif;font-size:11px;letter-spacing:3px;color:var(--sys)}
 /* Портрет врат приглушён и накрыт молнией: врата существуют и выглядят
    привлекательно, но ясно, что вход закрыт. Рамка та же круглая, что у мобов
    в бою, — одна визуальная система на всё приложение. */
 .gp-hero{
   position:relative;width:150px;height:150px;border-radius:50%;overflow:hidden;
-  border:3px solid var(--mana);background:#000;box-shadow:0 0 30px rgba(139,92,246,.4);
+  border:3px solid var(--mana);background:#000;box-shadow:0 0 0 transparent;
 }
 .gp-hero img{width:100%;height:100%;object-fit:cover;filter:brightness(.62) saturate(.75)}
-.gp-hero-lock{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:40px;text-shadow:0 0 16px rgba(245,194,66,.9)}
-.gp-title{font-family:'Russo One';font-size:23px;margin:14px 0 4px;text-align:center}
-.gp-meta{font-family:'JetBrains Mono';font-size:11.5px;color:var(--muted);letter-spacing:.5px;text-align:center}
-.gp-sec{width:100%;font-family:'JetBrains Mono';font-size:10.5px;letter-spacing:2.5px;text-transform:uppercase;color:var(--muted);margin:20px 0 8px}
+.gp-hero-lock{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:40px;text-shadow:0 0 0 transparent}
+.gp-title{font-family:Oswald,'Arial Narrow',sans-serif;font-size:23px;margin:14px 0 4px;text-align:center}
+.gp-meta{font-family:Oswald,'Arial Narrow',sans-serif;font-size:11.5px;color:var(--muted);letter-spacing:.5px;text-align:center}
+.gp-sec{width:100%;font-family:Oswald,'Arial Narrow',sans-serif;font-size:10.5px;letter-spacing:2.5px;text-transform:uppercase;color:var(--muted);margin:20px 0 8px}
 /* Ряд монстров прокручивается вбок: во вратах их бывает больше, чем влезает
    в ширину экрана, а переносить на вторую строку — значит ломать ритм. */
 .gp-mobs{width:100%;display:flex;gap:9px;overflow-x:auto;padding-bottom:4px}
@@ -1682,22 +1701,22 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
    бы один портрет, хотя внутри их пятеро, — и объём боя оставался неясен. */
 .gp-mob-count{
   position:absolute;right:-1px;bottom:-1px;background:var(--panel-solid);border:1px solid var(--line);
-  border-radius:9px;padding:0 5px;font-family:'JetBrains Mono';font-size:9.5px;color:var(--gold);
+  border-radius:0;padding:0 5px;font-family:Oswald,'Arial Narrow',sans-serif;font-size:9.5px;color:var(--gold);
 }
 .gp-mob-art img{width:100%;height:100%;object-fit:cover;border-radius:0;filter:brightness(.55) saturate(.5)}
 .gp-mob-name{font-size:9.5px;color:var(--muted);margin-top:5px;line-height:1.25}
-.gp-prog{width:100%;margin-top:20px;border:1px solid var(--line);background:var(--panel);border-radius:14px;padding:12px 14px}
-.gp-prog-row{display:flex;justify-content:space-between;font-family:'JetBrains Mono';font-size:11.5px;color:var(--muted)}
+.gp-prog{width:100%;margin-top:20px;border:1px solid var(--line);background:var(--panel);border-radius:0;padding:12px 14px}
+.gp-prog-row{display:flex;justify-content:space-between;font-family:Oswald,'Arial Narrow',sans-serif;font-size:11.5px;color:var(--muted)}
 .gp-prog-num{color:var(--gold);font-weight:700}
-.gp-prog-bar{height:6px;border-radius:3px;background:rgba(255,255,255,.1);margin-top:8px;overflow:hidden}
-.gp-prog-bar i{display:block;height:100%;background:var(--gold);border-radius:3px;transition:width .3s ease}
+.gp-prog-bar{height:6px;border-radius:0;background:rgba(255,255,255,.1);margin-top:8px;overflow:hidden}
+.gp-prog-bar i{display:block;height:100%;background:var(--gold);border-radius:0;transition:width .3s ease}
 .gp-prog-sub{font-size:11.5px;color:var(--muted);margin-top:8px}
 .gp-offer{
   width:100%;margin-top:16px;border:1px solid rgba(76,201,255,.35);background:var(--panel);
-  border-radius:16px;padding:16px 14px;text-align:center;box-shadow:0 0 24px rgba(76,201,255,.1);
+  border-radius:0;padding:16px 14px;text-align:center;box-shadow:0 0 0 transparent;
 }
 .gp-offer-txt{font-size:12.5px;color:var(--muted);line-height:1.5;margin-bottom:14px}
-.gp-btn2{width:100%;padding:12px;margin-top:9px;border:1px solid var(--line);border-radius:14px;background:transparent;color:var(--muted);font-size:14px;font-family:inherit;cursor:pointer}
+.gp-btn2{width:100%;padding:12px;margin-top:9px;border:1px solid var(--line);border-radius:0;background:transparent;color:var(--muted);font-size:14px;font-family:inherit;cursor:pointer}
 
 .lb-name-wrap{flex:1;min-width:0}
 .lb-name{font-weight:800;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -1713,10 +1732,10 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
 .lb-title-duel{color:#C9A7F5}
 /* Тег гильдии — тем же голубым, что и вся «системная» часть интерфейса, чтобы
    не путался с золотыми титулами: титул это заслуга, тег — принадлежность. */
-.lb-gtag{color:var(--sys);font-family:'JetBrains Mono',monospace;font-size:10px}
+.lb-gtag{color:var(--sys);font-family:Oswald,monospace;font-size:10px}
 /* Счёт не растягивает строку: max-width не даёт длинному числу вытолкнуть имя
    и разорвать ряд, а многоточие показывает, что число обрезано. */
-.lb-score{font-family:'JetBrains Mono';font-weight:800;color:var(--gold);font-size:14px;flex-shrink:0;max-width:38%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lb-score{font-family:Oswald,'Arial Narrow',sans-serif;font-weight:800;color:var(--gold);font-size:14px;flex-shrink:0;max-width:38%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .lb-divider{text-align:center;color:var(--muted);font-size:13px;letter-spacing:3px;margin:12px 0 4px}
 .gold{color:var(--gold)}.cy{color:var(--sys)}.vio{color:#CBB7FF}
 
@@ -1737,9 +1756,9 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
    всем остальным в колонке. */
 .name-tap{
   display:flex;align-items:center;gap:7px;
-  font-family:'Russo One';font-size:22px;color:var(--text);text-align:left;
+  font-family:Oswald,'Arial Narrow',sans-serif;font-size:22px;color:var(--text);text-align:left;
   background:none;border:none;cursor:pointer;
-  padding:5px 9px;margin:-5px -9px;border-radius:10px;
+  padding:5px 9px;margin:-5px -9px;border-radius:0;
   transition:background-color .15s ease;
 }
 /* Нажатие подсвечивается: без отклика непонятно, что попал. */
@@ -1764,8 +1783,212 @@ input.field:focus{border-color:var(--sys);box-shadow:0 0 14px rgba(76,201,255,.2
   width:100%;height:100%;z-index:1;overflow:hidden;border-radius:22%;
   display:flex;align-items:center;justify-content:center}
 .av-badge.ringed .av-core{width:68%;height:68%;border-radius:50%}
-.av-core img{width:100%;height:100%;display:block;object-fit:cover;border-radius:inherit}
-.av-core .av-stub{border-radius:inherit}
+.av-core img{width:100%;height:100%;display:block;object-fit:cover;border-radius:0}
+.av-core .av-stub{border-radius:0}
+
+/* =====================================================================
+   ТЕМА «МАНХВА-ПАНЕЛИ» — слой поверх старых правил (редизайн, окт. 2026).
+   Резкие углы, плоские заливки, толстые линии, Oswald заглавными.
+   Активное — белым, акцент — фиолетовым. Золото и орнамент — только у
+   окна Системы (.syswin). Свечения убраны везде, кроме Системы.
+   ===================================================================== */
+body{font-family:'Golos Text',system-ui,sans-serif}
+#phone::before{opacity:1;background-color:rgba(11,10,16,.62);
+  background-image:radial-gradient(rgba(255,255,255,.05) 1px,transparent 1.3px);background-size:5px 5px}
+h1,h2,.display{font-family:Oswald,sans-serif;font-weight:600;text-transform:uppercase;letter-spacing:.03em}
+.sub{color:var(--muted)}
+.btn{border-radius:0;background:var(--mana);color:#0B0A10;font-family:Oswald,sans-serif;font-weight:600;text-transform:uppercase;
+  letter-spacing:.1em;font-size:16px;padding:15px;box-shadow:3px 3px 0 var(--text)}
+.btn:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--text)}
+.btn.ghost{background:var(--panel);border:2px solid var(--line-2);color:var(--text);box-shadow:none;font-family:Oswald,sans-serif;
+  font-weight:500;font-size:14px;letter-spacing:.08em}
+.btn.ghost:active{transform:none;background:var(--panel-2)}
+.back,.icon-btn{border-radius:0;border:2px solid var(--line);background:var(--panel)}
+.progress{border-radius:0;background:var(--line)}
+.progress i{background:var(--mana);box-shadow:none;border-radius:0}
+.chip{border-radius:0;border:2px solid var(--line);font-family:Oswald,sans-serif}
+.chip.sel{border-color:var(--mana);color:var(--text);background:rgba(142,107,255,.18);box-shadow:none}
+.opt{border-radius:0;border:2px solid var(--line)}
+.opt.sel{background:var(--text);border-color:var(--text);color:#0B0A10;box-shadow:none}
+.opt.sel .side{color:#55525f}
+input.field{border-radius:0;border:2px solid var(--line)}
+input.field:focus{border-color:var(--mana);box-shadow:none}
+.plan-day{border:2px solid var(--line)}
+.plan-day.sel{background:var(--text);border-color:var(--text);color:#0B0A10;box-shadow:none}
+.plan-day.sel .s{color:#55525f}
+.wheel-highlight{border-color:var(--mana);background:rgba(142,107,255,.1)}
+.nav{border-top:2px solid var(--line)}
+.nav button{border-radius:0;border:2px solid var(--line);font-family:Oswald,sans-serif;font-weight:500;text-transform:uppercase;letter-spacing:.06em}
+.nav button.on{background:var(--text);border-color:var(--text);color:#0B0A10;box-shadow:none}
+
+/* окно Системы: золото, двойная рамка и резные уголки */
+.syswin{border-radius:0;color:#F4E7C8;border:1px solid rgba(233,184,97,.55);
+  background:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2060%2060%22%3E%3Cg%20transform%3D%22%22%20fill%3D%22none%22%20stroke%3D%22%23E9B861%22%20stroke-linecap%3D%22round%22%3E%3Cpath%20d%3D%22M3%2057V16Q3%203%2016%203H57%22%20stroke-width%3D%221.6%22/%3E%3Cpath%20d%3D%22M9%2057V21Q9%209%2021%209H57%22%20stroke-width%3D%22.8%22%20opacity%3D%22.6%22/%3E%3Cpath%20d%3D%22M15%2015c9-4%2015%201%2014%208-1%205-7%206-9%202-1-3%202-5%204-3%22%20stroke-width%3D%221.2%22/%3E%3Cpath%20d%3D%22M15%2015c-4%209%201%2015%208%2014%205-1%206-7%202-9-3-1-5%202-3%204%22%20stroke-width%3D%221.2%22/%3E%3Cpath%20d%3D%22M29%209c4%203%209%203%2013%200M9%2029c3%204%203%209%200%2013%22%20stroke-width%3D%221%22/%3E%3Ccircle%20cx%3D%2215%22%20cy%3D%2215%22%20r%3D%222.6%22%20fill%3D%22%23E9B861%22%20stroke%3D%22none%22/%3E%3C/g%3E%3C/svg%3E") top left/44px no-repeat,url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2060%2060%22%3E%3Cg%20transform%3D%22translate%2860%200%29%20scale%28-1%201%29%22%20fill%3D%22none%22%20stroke%3D%22%23E9B861%22%20stroke-linecap%3D%22round%22%3E%3Cpath%20d%3D%22M3%2057V16Q3%203%2016%203H57%22%20stroke-width%3D%221.6%22/%3E%3Cpath%20d%3D%22M9%2057V21Q9%209%2021%209H57%22%20stroke-width%3D%22.8%22%20opacity%3D%22.6%22/%3E%3Cpath%20d%3D%22M15%2015c9-4%2015%201%2014%208-1%205-7%206-9%202-1-3%202-5%204-3%22%20stroke-width%3D%221.2%22/%3E%3Cpath%20d%3D%22M15%2015c-4%209%201%2015%208%2014%205-1%206-7%202-9-3-1-5%202-3%204%22%20stroke-width%3D%221.2%22/%3E%3Cpath%20d%3D%22M29%209c4%203%209%203%2013%200M9%2029c3%204%203%209%200%2013%22%20stroke-width%3D%221%22/%3E%3Ccircle%20cx%3D%2215%22%20cy%3D%2215%22%20r%3D%222.6%22%20fill%3D%22%23E9B861%22%20stroke%3D%22none%22/%3E%3C/g%3E%3C/svg%3E") top right/44px no-repeat,url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2060%2060%22%3E%3Cg%20transform%3D%22translate%280%2060%29%20scale%281%20-1%29%22%20fill%3D%22none%22%20stroke%3D%22%23E9B861%22%20stroke-linecap%3D%22round%22%3E%3Cpath%20d%3D%22M3%2057V16Q3%203%2016%203H57%22%20stroke-width%3D%221.6%22/%3E%3Cpath%20d%3D%22M9%2057V21Q9%209%2021%209H57%22%20stroke-width%3D%22.8%22%20opacity%3D%22.6%22/%3E%3Cpath%20d%3D%22M15%2015c9-4%2015%201%2014%208-1%205-7%206-9%202-1-3%202-5%204-3%22%20stroke-width%3D%221.2%22/%3E%3Cpath%20d%3D%22M15%2015c-4%209%201%2015%208%2014%205-1%206-7%202-9-3-1-5%202-3%204%22%20stroke-width%3D%221.2%22/%3E%3Cpath%20d%3D%22M29%209c4%203%209%203%2013%200M9%2029c3%204%203%209%200%2013%22%20stroke-width%3D%221%22/%3E%3Ccircle%20cx%3D%2215%22%20cy%3D%2215%22%20r%3D%222.6%22%20fill%3D%22%23E9B861%22%20stroke%3D%22none%22/%3E%3C/g%3E%3C/svg%3E") bottom left/44px no-repeat,url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2060%2060%22%3E%3Cg%20transform%3D%22translate%2860%2060%29%20scale%28-1%20-1%29%22%20fill%3D%22none%22%20stroke%3D%22%23E9B861%22%20stroke-linecap%3D%22round%22%3E%3Cpath%20d%3D%22M3%2057V16Q3%203%2016%203H57%22%20stroke-width%3D%221.6%22/%3E%3Cpath%20d%3D%22M9%2057V21Q9%209%2021%209H57%22%20stroke-width%3D%22.8%22%20opacity%3D%22.6%22/%3E%3Cpath%20d%3D%22M15%2015c9-4%2015%201%2014%208-1%205-7%206-9%202-1-3%202-5%204-3%22%20stroke-width%3D%221.2%22/%3E%3Cpath%20d%3D%22M15%2015c-4%209%201%2015%208%2014%205-1%206-7%202-9-3-1-5%202-3%204%22%20stroke-width%3D%221.2%22/%3E%3Cpath%20d%3D%22M29%209c4%203%209%203%2013%200M9%2029c3%204%203%209%200%2013%22%20stroke-width%3D%221%22/%3E%3Ccircle%20cx%3D%2215%22%20cy%3D%2215%22%20r%3D%222.6%22%20fill%3D%22%23E9B861%22%20stroke%3D%22none%22/%3E%3C/g%3E%3C/svg%3E") bottom right/44px no-repeat,
+    linear-gradient(180deg,rgba(32,24,10,.95),rgba(14,11,6,.97));
+  box-shadow:0 0 0 4px rgba(14,11,6,.92),0 0 0 5px rgba(233,184,97,.28),0 0 34px rgba(233,184,97,.12)}
+.syswin::before{content:"";position:absolute;inset:5px;border:1px solid rgba(233,184,97,.2);border-radius:0;width:auto;height:auto;pointer-events:none}
+.syswin::after{display:none}
+.syswin .sub{color:rgba(244,231,200,.68)}
+.syswin b,.syswin strong{color:#FBE7B5}
+.sys-tag{color:var(--gold);font-family:Oswald,sans-serif;letter-spacing:.22em;text-transform:uppercase}
+.sys-tag .bang{border-color:var(--gold);color:var(--gold);animation:none}
+
+/* ---- нижнее меню: пять мест, ромб «В бой» по центру (редизайн) ---- */
+.nav.nav5{display:grid;grid-template-columns:1fr 1fr 78px 1fr 1fr;align-items:end;gap:0;padding:0 6px calc(4px + var(--sa-bottom))}
+.nav.nav5 button{border:none;background:none;border-radius:0;box-shadow:none;padding:10px 0 9px;display:flex;flex-direction:column;align-items:center;gap:4px;
+  color:var(--muted);font-family:Oswald,sans-serif;font-size:11px;letter-spacing:.06em;text-transform:uppercase;font-weight:500;min-width:0}
+.nav.nav5 .nb svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.6}
+.nav.nav5 .nb.on{color:var(--mana);background:none;box-shadow:inset 0 2px 0 var(--mana)}
+.nav.nav5 .nav-fight{justify-self:center;position:relative;top:-16px;width:56px;height:56px;padding:0;background:var(--mana);color:#0B0A10;
+  transform:rotate(45deg);box-shadow:4px 4px 0 var(--text);margin-bottom:4px;justify-content:center}
+.nav.nav5 .nav-fight span{transform:rotate(-45deg);font-size:13px;font-weight:700;line-height:1;letter-spacing:.05em;color:#0B0A10}
+.nav.nav5 .nav-fight.on{background:var(--text);box-shadow:4px 4px 0 var(--mana)}
+.nav-spacer{height:calc(80px + var(--sa-bottom))}
+
+/* ---- хаб охотника ---- */
+.hb-hd{display:flex;align-items:center;gap:12px}
+.hb-ava{flex:none;width:56px;height:56px;padding:2px;background:var(--mana);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  clip-path:polygon(8px 0,100% 0,100% calc(100% - 8px),calc(100% - 8px) 100%,0 100%,0 8px)}
+.hb-ava-l{width:100%;height:100%;background:var(--void);display:flex;align-items:center;justify-content:center;font-family:Oswald,sans-serif;font-size:26px;font-weight:600;color:var(--mana)}
+.hb-who{flex:1;min-width:0;cursor:pointer}
+.hb-nm{font-family:Oswald,sans-serif;font-size:19px;font-weight:500;text-transform:uppercase;letter-spacing:.03em;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hb-bar{height:8px;background:var(--panel-2);border:2px solid var(--line);margin-top:6px;position:relative}
+.hb-bar i{position:absolute;left:0;top:0;bottom:0;background:var(--mana)}
+.hb-bt{display:flex;justify-content:space-between;font-size:10.5px;color:var(--muted);margin-top:4px}
+.hb-rk{flex:none;width:54px;height:54px;border:2px solid var(--mana);display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:Oswald,sans-serif;color:var(--mana);font-size:26px;font-weight:600;line-height:1}
+.hb-rk span{font-size:8.5px;letter-spacing:.16em;color:var(--muted);margin-top:2px}
+.hb-lbl{font-family:Oswald,sans-serif;font-size:12px;letter-spacing:.16em;color:var(--muted);text-transform:uppercase;margin:16px 0 7px}
+.hb-two{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px}
+.hb-card{background:var(--panel);border:2px solid var(--line);padding:10px 11px}
+.hb-card .k{font-family:Oswald,sans-serif;font-size:10.5px;letter-spacing:.14em;color:var(--muted);text-transform:uppercase}
+.hb-card .v{font-family:Oswald,sans-serif;font-size:25px;font-weight:600;margin-top:4px;line-height:1}
+.hb-card .v small{font-size:13px;color:var(--muted);font-weight:400}
+.hb-card .s{font-size:11px;color:var(--muted);margin-top:6px}
+.hb-paths{display:flex;flex-direction:column;gap:5px}
+.hb-path{display:flex;align-items:center;gap:10px;height:46px;padding:0 12px;background:var(--panel);border:2px solid var(--line);color:var(--text);cursor:pointer;width:100%;text-align:left;font-family:inherit}
+.hb-path.on{border-color:var(--text)}
+.hb-path .ic{display:flex;width:26px;justify-content:center;flex:none}
+.hb-path .t{font-family:Oswald,sans-serif;font-size:14px;text-transform:uppercase;letter-spacing:.04em;width:92px;flex:none}
+.hb-path .b{flex:1;height:6px;background:var(--panel-2);position:relative}
+.hb-path .b i{position:absolute;left:0;top:0;bottom:0;background:var(--text)}
+.hb-path .c{font-family:Oswald,sans-serif;font-size:13px;color:var(--muted);width:44px;text-align:right;flex:none}
+.hb-empty{padding:16px;border:2px dashed var(--line);color:var(--muted);font-size:13px;text-align:center;line-height:1.45}
+.hb .rift-card,.hb .trial-warn,.hb .hint-card{margin-top:6px}
+
+/* ---- карта-главы ---- */
+.ch-top{display:flex;align-items:center;justify-content:space-between}
+.ch-title{font-family:Oswald,sans-serif;font-size:24px;font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+.ch-chip{display:flex;gap:6px;align-items:baseline;background:var(--panel);border:2px solid var(--line);padding:5px 9px;font-family:Oswald,sans-serif;font-size:14px}
+.ch-chip span{font-size:9.5px;letter-spacing:.14em;color:var(--muted)}
+.ch .track-row{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin:14px 0 0}
+.ch .track-cell.soon{display:none}
+.ch .track-cell{background:var(--panel);border:2px solid var(--line);padding:8px 0 7px}
+.ch .track-cell.on{background:var(--text);border-color:var(--text)}
+.ch .track-box{border:none;background:none;box-shadow:none;width:auto;height:30px;aspect-ratio:auto}
+.ch .track-box img{width:28px;height:28px;filter:grayscale(1) brightness(.7)}
+.ch .track-cell.on .track-box img{filter:none}
+.ch .track-cap{font-family:Oswald,sans-serif;font-size:11px;text-transform:uppercase;letter-spacing:.04em;margin-top:4px}
+.ch .track-cell.on .track-cap{color:#0B0A10}
+.ch-track{display:flex;justify-content:space-between;align-items:baseline;margin:14px 0 10px;font-family:Oswald,sans-serif;font-size:19px;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.ch-cnt{font-size:14px;color:var(--muted);font-weight:400}
+.ch-list{display:flex;flex-direction:column;gap:6px}
+.ch-fold{display:flex;justify-content:space-between;align-items:center;height:40px;padding:0 14px;border:2px dashed var(--line);background:none;color:var(--muted);
+  font-family:Oswald,sans-serif;font-size:13px;text-transform:uppercase;letter-spacing:.06em;cursor:pointer;width:100%}
+.ch-hero{position:relative;height:252px;background-color:#16141f;overflow:hidden;cursor:pointer;flex:none;clip-path:polygon(0 0,100% 0,100% calc(100% - 26px),0 100%);
+  background-image:radial-gradient(rgba(255,255,255,.06) 1px,transparent 1.3px);background-size:5px 5px}
+.ch-hero.compact{height:180px;clip-path:none}
+.ch-art{position:absolute;right:-30px;top:-12px;width:250px;height:250px;object-fit:contain}
+.ch-hero.compact .ch-art{right:-24px;top:-10px;width:200px;height:200px}
+.ch-fx{position:absolute;inset:0;background:linear-gradient(90deg,#16141f 30%,rgba(22,20,31,.15) 75%)}
+.ch-mon{position:absolute;left:42%;top:96px;width:128px;height:128px;object-fit:cover;filter:drop-shadow(0 6px 0 rgba(0,0,0,.6));
+  -webkit-mask-image:radial-gradient(circle at 50% 50%,#000 52%,transparent 71%);mask-image:radial-gradient(circle at 50% 50%,#000 52%,transparent 71%)}
+.ch-in{position:absolute;left:16px;top:16px;right:118px}
+.ch-no{font-family:Oswald,sans-serif;font-size:11.5px;letter-spacing:.14em;color:var(--mana);text-transform:uppercase}
+.ch-name{font-family:Oswald,sans-serif;font-size:29px;line-height:1.02;text-transform:uppercase;font-weight:600;margin-top:6px}
+.ch-hero.compact .ch-name{font-size:24px}
+.ch-meta{font-size:12px;color:var(--muted);margin-top:9px;line-height:1.45}
+.ch-btn{position:absolute;left:16px;top:164px;width:auto;padding:11px 24px;font-size:15px}
+.ch-hero.compact .ch-btn{top:auto;bottom:15px}
+.ch-hero.red .ch-no{color:var(--danger)}
+.ch-pnl{display:flex;align-items:center;gap:12px;min-height:60px;padding:6px 14px 6px 8px;background:var(--panel);border-left:4px solid var(--line);cursor:pointer}
+.ch-n{font-family:Oswald,sans-serif;font-size:21px;color:var(--muted);width:32px;flex:none;text-align:center}
+.ch-img{width:44px;height:44px;object-fit:contain;flex:none;filter:grayscale(1) brightness(.5)}
+.ch-q{width:44px;height:44px;flex:none;display:flex;align-items:center;justify-content:center;font-family:Oswald,sans-serif;font-size:24px;color:var(--line-2)}
+.ch-tx{flex:1;min-width:0}
+.ch-t{font-family:Oswald,sans-serif;font-size:15px;text-transform:uppercase;letter-spacing:.03em;color:#B9B5C6;line-height:1.15}
+.ch-s{font-size:11px;color:var(--muted);margin-top:2px}
+.ch-lock{width:15px;height:15px;stroke:var(--muted);fill:none;stroke-width:1.8;flex:none}
+.ch-go{font-family:Oswald,sans-serif;font-size:22px;color:var(--text)}
+.ch-pay{font-size:15px}
+.ch-ok{font-family:Oswald,sans-serif;font-size:10px;letter-spacing:.12em;color:var(--mana);border:2px solid currentColor;padding:2px 6px;transform:rotate(-4deg);flex:none}
+.ch-pnl.st-done{border-left-color:var(--mana)}
+.ch-pnl.st-done .ch-img{filter:grayscale(.4) brightness(.8)}
+.ch-pnl.st-open{border-left-color:var(--text)}
+.ch-pnl.st-open .ch-img{filter:none}
+.ch-pnl.st-open .ch-t{color:var(--text)}
+.ch-pnl.red{border-left-color:var(--danger)}
+.ch-pnl.red .ch-n{color:var(--danger)}
+.ch-pnl.red .ch-t{color:var(--text)}
+.ch-pnl.st-mystery{opacity:.55}
+
+/* ---- профиль и общие списки (редизайн, шаг 3) ---- */
+.pf-top{display:flex;align-items:center;gap:10px}
+.pf-top h2{margin:0;flex:1;font-size:24px}
+.pf-hero{display:flex;gap:16px;align-items:center;margin:16px 0 14px}
+.pf-ava{flex:none;cursor:pointer;width:104px;height:104px;display:flex;align-items:center;justify-content:center}
+.pf-ava-l{width:96px;height:96px;border:2px solid var(--mana);display:flex;align-items:center;justify-content:center;font-family:Oswald,sans-serif;font-size:46px;font-weight:600;color:var(--mana)}
+.pf-who{flex:1;min-width:0}
+.pf .name-tap{font-family:Oswald,sans-serif;font-size:28px;font-weight:600;text-transform:uppercase;letter-spacing:.02em;padding:0;background:none;border:none;color:var(--text)}
+.pf .name-tap .name-edit{font-style:normal;font-size:14px;color:var(--muted);margin-left:6px}
+.pf-title{font-size:12.5px;color:var(--muted);margin-top:3px}
+.pf-guild{font-size:12px;color:var(--muted);margin-top:4px;cursor:pointer}
+.pf-chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.ch-chip.a{border-color:var(--mana);color:var(--mana)}
+.pf-lbl{display:flex;justify-content:space-between;align-items:baseline;font-family:Oswald,sans-serif;font-size:12px;letter-spacing:.16em;color:var(--muted);text-transform:uppercase}
+.pf-lbl b{color:var(--text);font-weight:500;letter-spacing:.06em}
+.xpbar{height:10px;border:2px solid var(--line);background:var(--panel-2);margin-top:7px}
+.xpbar i{background:var(--mana)}
+.pf-menu{margin-top:8px}
+.pf-row{width:100%;display:flex;justify-content:space-between;align-items:center;padding:13px 0;border:none;border-bottom:2px solid var(--line);background:none;color:var(--text);cursor:pointer;
+  font-family:Oswald,sans-serif;font-size:16px;text-transform:uppercase;letter-spacing:.04em;text-align:left}
+.pf-row .v{font-family:'Golos Text',sans-serif;font-size:12px;color:var(--muted);text-transform:none;letter-spacing:0}
+.pf-row .v.red{color:var(--danger)}
+.pf-two{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}
+.pf-two>div,.pf-gates>div{background:var(--panel);border:2px solid var(--line);padding:10px 12px}
+.pf-two b,.pf-gates b{display:block;font-family:Oswald,sans-serif;font-size:24px;font-weight:600;line-height:1}
+.pf-two small,.pf-gates small{font-size:11px;color:var(--muted)}
+.pf-gates{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}
+.pf-gates>div{display:flex;align-items:center;gap:10px}
+.pf-gates .ic{display:flex}
+.pf-panel{background:var(--panel);border:2px solid var(--line);padding:14px;margin-top:16px}
+.pf-tag{font-family:Oswald,sans-serif;font-size:12px;letter-spacing:.16em;color:var(--mana);text-transform:uppercase;margin-bottom:6px}
+.toggle-row{border:2px solid var(--line);font-family:Oswald,sans-serif;font-weight:500;text-transform:uppercase;letter-spacing:.04em}
+.toggle-pill{min-width:44px;text-align:center;background:var(--panel-2);border:2px solid var(--line-2);color:var(--muted)}
+.toggle-pill.on{background:var(--mana);border-color:var(--mana);color:#0B0A10}
+.gcard{border:2px solid var(--line)}
+.gcard .v{color:var(--text)}
+.tb-tabs button,.fr-switch button{border:2px solid var(--line);font-family:Oswald,sans-serif;font-weight:500;text-transform:uppercase;letter-spacing:.06em}
+.tb-tabs button.on,.fr-switch button.on{background:var(--text);border-color:var(--text);color:#0B0A10}
+.inv-tab{font-family:Oswald,sans-serif;text-transform:uppercase;letter-spacing:.06em}
+.inv-tab.on{border-bottom-color:var(--text)}
+.pill{border:2px solid var(--line)}
+.pill b{color:var(--text)}
+.gold{color:var(--gold)}
+
+/* ---- списки рейтинга/друзей/гильдии: своя строка залита фиолетовым ---- */
+.lb-row{border:2px solid var(--line)}
+.lb-row.me{background:var(--mana);border-color:var(--mana);color:#0B0A10}
+.lb-row.me .lb-rnk,.lb-row.me .lb-score,.lb-row.me .lb-name,.lb-row.me .lb-title,.lb-row.me .lb-gtag{color:#0B0A10}
+.lb-score{color:var(--text);font-size:16px;font-weight:600}
+
+/* ---- бой: портреты — квадраты со срезом, счётчик — фиолетовый блок ---- */
+.mob-art,.victory-mob,.gp-hero,.gp-mob-art{border-radius:0!important;clip-path:polygon(10px 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%,0 10px)}
+.mob-art img,.victory-mob img,.gp-hero img,.gp-mob-art img{border-radius:0!important}
+.mob-art::after{border-radius:0!important}
+.rep-counter{border-radius:0;background:var(--mana);border:none;color:#0B0A10;font-weight:700;box-shadow:3px 3px 0 var(--text)}
+.raid-side-btn,.raid-back{border-radius:0!important;border-width:2px}
+.raid-side-btn.manual{color:var(--text);border-color:var(--line-2)}
+.kill-text{font-size:40px;font-weight:700;color:var(--danger);transform:rotate(-4deg)}
 </style>
 </head>
 <body>
@@ -2334,7 +2557,7 @@ function drainContractTitleQueue(){
   wrap.innerHTML = `<div class="syswin" style="max-width:340px;width:100%;background:var(--panel-solid);text-align:center">
     ${paywallEmblemHTML()}
     <div class="sys-tag" style="justify-content:center"><span class="bang">!</span> НОВЫЙ ТИТУЛ</div>
-    <div style="font-family:'Russo One';font-size:20px;color:var(--gold);margin:10px 0 6px">${escapeHtml(t.name)}</div>
+    <div style="font-family:Oswald,'Arial Narrow',sans-serif;font-size:20px;color:var(--gold);margin:10px 0 6px">${escapeHtml(t.name)}</div>
     <div style="font-size:13px;line-height:1.5;color:var(--muted);margin-bottom:16px">${escapeHtml(t.desc)}</div>
     <div style="font-size:12.5px;line-height:1.5;color:var(--muted);margin-bottom:16px">Титул виден другим охотникам в таблице лидеров.</div>
     <button class="btn" style="margin:0;width:100%" data-act="wear">${already?'Отлично':'Надеть титул'}</button>
@@ -2854,8 +3077,8 @@ function showGuildResultModal(g, last){
          У тебя вышло ${last.myReps}. На следующей неделе успеешь.
        </div>`;
   showModal(`<div class="gd-modal" style="text-align:center">
-    <div style="font-size:34px;line-height:1">🏆</div>
-    <div style="font-family:'Russo One',sans-serif;font-size:19px;color:var(--gold);margin:8px 0 12px">Цель недели взята</div>
+    
+    <div style="font-family:Oswald,sans-serif;font-size:19px;color:var(--gold);margin:8px 0 12px">Цель недели взята</div>
     ${body}
     ${last.gotChest ? `<button class="btn" style="margin-top:16px" onclick="closeModal();go('inventory')">Открыть инвентарь</button>` : ''}
     <button class="btn ghost" style="margin-top:8px" onclick="closeModal()">Закрыть</button>
@@ -3074,15 +3297,15 @@ function setRankTab(tab){
 // rRank()) — открывает/закрывает список из двух пунктов, выбор пункта сразу
 // закрывает его через setRankPeriod().
 const RANK_TABS = [
-  { id:'pushups', label:'👊 Отжимания' },
-  { id:'squats',  label:'🦵 Приседания' },
-  { id:'situps',  label:'🛡️ Пресс' },
+  { id:'pushups', label:'Отжимания' },
+  { id:'squats',  label:'Приседания' },
+  { id:'situps',  label:'Пресс' },
   /* Планка стоит в общем ряду и меряется теми же единицами, что и соседи:
      сервер делит секунды на PLANK_SEC_PER_UNIT ещё до сортировки. Покажи мы
      здесь секунды — планка возглавила бы список просто потому, что её единица
      мельче, и сравнивать столбцы стало бы нельзя. */
-  { id:'plank',   label:'🔥 Планка' },
-  { id:'duel',    label:'⚔️ Арена' },
+  { id:'plank',   label:'Планка' },
+  { id:'duel',    label:'Арена' },
 ];
 function togglePeriodMenu(){
   S.rankPeriodMenuOpen = !S.rankPeriodMenuOpen;
@@ -3248,13 +3471,15 @@ function tgBack(){
     case 'instructions': go(S.prevScreen||'settings'); return;
     case 'gatePreview': go('map'); return;
     case 'duel': abortDuel(); return;
-    case 'duelHome': go('map'); return;
+    case 'duelHome': go('hub'); return;
+    case 'profile': go(S.profileBack && S.profileBack!=='profile' ? S.profileBack : 'hub'); return;
+    case 'map': go('hub'); return;
     default: return; // на splash/reveal/map/rest/victory/profile своей стрелки нет — прячем и нативную
   }
 }
 function updateTgBackButton(){
   if(!TG || !TG.BackButton) return;
-  const show = ['quiz','journey','raid','settings','titles','instructions','gatePreview','duel','duelHome','rename','inventory','otherProfile','guildPreview','friends','shop'].includes(S.screen);
+  const show = ['quiz','journey','raid','settings','titles','instructions','gatePreview','duel','duelHome','rename','inventory','otherProfile','guildPreview','friends','shop','profile','map'].includes(S.screen);
   try{ show ? TG.BackButton.show() : TG.BackButton.hide(); }catch(e){}
 }
 /* Блокировка свайпа-вниз нужна ТОЛЬКО во время подхода — иначе на экранах с
@@ -3671,7 +3896,7 @@ function syncFromCloud(attempt){
              просто забыли позвать на этом пути. */
           ensureDay();
           try{ localStorage.setItem(SAVE_KEY, value); }catch(e){}
-          if(S.onboarded && S.screen!=='raid' && S.screen!=='rest'){ S.screen='map'; }
+          if(S.onboarded && S.screen!=='raid' && S.screen!=='rest'){ S.screen='hub'; }
         }
       }
       finishCloudRestore();
@@ -3709,7 +3934,7 @@ function syncFromServer(attempt){
             appliedRev = rev; appliedSrc = 'server';
             ensureDay(); // см. тот же комментарий в syncFromCloud()
             try{ localStorage.setItem(SAVE_KEY, data.payload); }catch(e){}
-            if(S.onboarded && S.screen!=='raid' && S.screen!=='rest'){ S.screen='map'; }
+            if(S.onboarded && S.screen!=='raid' && S.screen!=='rest'){ S.screen='hub'; }
           } else {
             // Снимок не разобрался — битый или обрезанный. Молча остаёмся на
             // том, что есть, но помечаем в аналитике: иначе такие случаи
@@ -4645,7 +4870,7 @@ function mobVisual(kind, size=170, name){
   const img = (name && MOB_IMAGES[kind+'|'+name]) || MOB_IMAGES[kind];
   if(img){
     const r = size<50 ? 8 : 16;
-    return `<img src="${img}" width="${size}" height="${size}" style="object-fit:cover;border-radius:${r}px;display:block" alt="">`;
+    return `<img src="${img}" width="${size}" height="${size}" style="object-fit:cover;border-radius:0}px;display:block" alt="">`;
   }
   return mobSVG(kind, size);
 }
@@ -4724,7 +4949,7 @@ function gateImageKey(g){
 function gateArt(g, size){
   const img = GATE_IMAGES[gateImageKey(g)];
   return img
-    ? `<img src="${img}" width="${size}" height="${size}" style="border-radius:inherit;object-fit:cover" alt="">`
+    ? `<img src="${img}" width="${size}" height="${size}" style="border-radius:0;object-fit:cover" alt="">`
     : gateSVG(g.gateColor); // фолбэк на SVG, если картинка почему-то не подставлена
 }
 
@@ -5021,7 +5246,7 @@ const AVATAR_IMAGES = {
 };
 function avatarVisual(id, size=44, name){
   const img = AVATAR_IMAGES[id];
-  if(img) return `<img src="${img}" width="${size}" height="${size}" alt="" style="display:block;border-radius:${size<50?8:14}px">`;
+  if(img) return `<img src="${img}" width="${size}" height="${size}" alt="" style="display:block;border-radius:0}px">`;
   const letter = escapeHtml(String(name || '?').trim().charAt(0).toUpperCase() || '?');
   return `<span class="av-stub" style="width:${size}px;height:${size}px;font-size:${Math.round(size*0.42)}px">${letter}</span>`;
 }
@@ -5104,7 +5329,7 @@ function sysNotice(message){
     el = document.createElement('div');
     el.id = 'sysNotice';
     el.style.cssText = 'position:fixed;left:16px;right:16px;bottom:92px;z-index:60;padding:12px 16px;'
-      + 'background:var(--panel-solid);border:1px solid var(--line);border-radius:14px;'
+      + 'background:var(--panel-solid);border:1px solid var(--line);border-radius:0;'
       + 'font-size:13.5px;line-height:1.45;text-align:center;box-shadow:0 12px 28px rgba(0,0,0,.45);'
       + 'opacity:0;transition:opacity .18s ease;pointer-events:none';
     document.body.appendChild(el);
@@ -5169,7 +5394,7 @@ function sysConfirm(message, onConfirm){
     <div style="font-size:14px;line-height:1.5;margin-bottom:16px">${escapeHtml(message)}</div>
     <div style="display:flex;gap:10px">
       <button class="btn ghost" style="margin:0">Отмена</button>
-      <button class="btn" style="margin:0;background:linear-gradient(180deg,var(--danger),#B0203A);box-shadow:0 6px 0 #7A1428, 0 0 26px rgba(255,59,92,.35)">Да</button>
+      <button class="btn" style="margin:0;background:linear-gradient(180deg,var(--danger),#B0203A);box-shadow:0 6px 0 #7A1428, 0 0 0 transparent">Да</button>
     </div>
   </div>`;
   document.body.appendChild(wrap);
@@ -5266,7 +5491,7 @@ function showToast(msg){
   if(old) old.remove();
   const t = document.createElement('div');
   t.id = 'sysToast';
-  t.style.cssText = "position:fixed;left:50%;bottom:28px;transform:translateX(-50%);z-index:60;max-width:86%;padding:12px 18px;border-radius:12px;background:var(--panel-solid);border:1px solid var(--line);color:var(--text);font-size:13.5px;font-weight:700;text-align:center;box-shadow:0 8px 30px rgba(0,0,0,.5);font-family:'Manrope',sans-serif;animation:fadeIn .2s ease";
+  t.style.cssText = "position:fixed;left:50%;bottom:28px;transform:translateX(-50%);z-index:60;max-width:86%;padding:12px 18px;border-radius:0;background:var(--panel-solid);border:1px solid var(--line);color:var(--text);font-size:13.5px;font-weight:700;text-align:center;box-shadow:0 8px 30px rgba(0,0,0,.5);font-family:'Golos Text',sans-serif;animation:fadeIn .2s ease";
   t.textContent = msg;
   document.body.appendChild(t);
   clearTimeout(showToast._t);
@@ -5328,7 +5553,7 @@ function closePaywallModal(){
 // что и у бейджей рангов/испытаний/экзаменов (см. badgeHTML() выше), просто
 // не привязана к системе титулов, поэтому не заведена в BADGE_CAT_MAP.
 function paywallEmblemHTML(){
-  return `<div style="text-align:center;margin-bottom:8px"><span style="filter:drop-shadow(0 0 10px var(--gold))">${icon('badge_contract',76,'⚡')}</span></div>`;
+  return `<div style="text-align:center;margin-bottom:8px"><span style="filter:drop-shadow(0 0 0 transparent)">${icon('badge_contract',76,'⚡')}</span></div>`;
 }
 /* ЧТО ИМЕННО ПОКУПАЮТ — зависит от того, кто смотрит.
 
@@ -5621,7 +5846,7 @@ function render(opts){
   const isSlideTransition = S.screen==='quiz' && !!S._navDir;
   ({
     splash: rSplash, quiz: rQuiz, reveal: rReveal, journey: rJourney,
-    map: rMap, raid: rRaid, rest: rRest, victory: rVictory, profile: rProfile, settings: rSettings,
+    hub: rHub, map: rMap, raid: rRaid, rest: rRest, victory: rVictory, profile: rProfile, settings: rSettings,
     death: rDeath, titles: rTitlesScreen, rank: rRank, instructions: rInstructions,
     gatePreview: rGatePreview, duelHome: rDuelHome, duel: rDuel, duelResult: rDuelResult,
     inventory: rInventory, otherProfile: rOtherProfile, guild: rGuild, guildPreview: rGuildPreview,
@@ -5985,7 +6210,7 @@ function trialWarnHTML(){
   if(!trialLastDay()) return '';
   trialTell('trial_warn');
   return `<div class="trial-warn">
-    <div class="trial-warn-t">⏳ Последний день доступа</div>
+    <div class="trial-warn-t">Последний день доступа</div>
     <div class="trial-warn-b">Завтра врата закроются. Контракт снимает ограничение.</div>
   </div>`;
 }
@@ -6047,7 +6272,7 @@ function trialWallHTML(){
      показывать всем один экран: срок кончился, вот что дальше. */
   trialTell('trial_end', reps === 0 ? 'nocam' : 'wall');
   return `<div class="trial-wall">
-    <div class="trial-wall-ico">🔒</div>
+    <div class="trial-wall-ico">${icon('lock',40,'🔒')}</div>
     <div class="trial-wall-t">Испытательный срок окончен</div>
     <div class="trial-wall-stats">
       <div><b>${allDoneGatesCount()}</b><span>врат</span></div>
@@ -6085,129 +6310,202 @@ function mapOfferHTML(){
   </button>`;
 }
 
+/* ============ ХАБ ОХОТНИКА И КАРТА-ГЛАВЫ (редизайн, окт. 2026) ============
+
+   Хаб — главная: кто ты, следующие врата, сегодняшний счёт, серия, событие
+   и все пути. Ромб «В бой» в нижнем меню ведёт на карту (S.screen 'map'),
+   которая теперь не змейка с узлами, а лента панелей, как страница манхвы:
+   текущие врата — большой кадр, где монстр вылезает из портала.
+
+   Все правила доступа к вратам взяты из прежней карты БЕЗ изменений и
+   собраны в одну функцию gateClick(): замок по очереди важнее подписки,
+   «будущие» врата только показывают тост. Хаб и карта зовут её же, чтобы
+   два экрана не разъехались в том, куда ведёт нажатие. */
+function gateStateOf(track, g, i){
+  if(g.locked) return 'mystery';
+  if(doneGatesForTrack(track).includes(g.id)) return 'done';
+  if(isSeqLocked(g, i, track)) return 'seq';
+  if(gateBlocked(g)) return 'pay';
+  return 'open';
+}
+function gateClick(track, g, i){
+  const st = gateStateOf(track, g, i);
+  if(st==='mystery') return `showToast('Эти врата откроются позже')`;
+  if(st==='seq' || st==='pay') return `showGatePreview('${track}',${g.id})`;
+  return `enterGate('${track}',${g.id})`;
+}
+function gateImgSrc(g){ return GATE_IMAGES[gateImageKey(g)] || ''; }
+function gateMonsterSrc(g){
+  const m = (g.mobs || [])[0];
+  if(!m) return '';
+  return (m.name && MOB_IMAGES[m.kind+'|'+m.name]) || MOB_IMAGES[m.kind] || '';
+}
+function gateMobsText(g){
+  const n = (g.mobs || []).length;
+  return n ? n+' '+pluralRuClient(n,['монстр','монстра','монстров']) : '';
+}
+function gateStageText(g){
+  return g.stage==='exam' ? 'Экзамен ранга '+g.rank : g.stage==='trial' ? 'Испытание ранга '+g.rank : 'Ранг '+g.rank;
+}
+function trackProgress(track){
+  const real = gatesForTrack(track).filter(g=>!g.locked);
+  const done = doneGatesForTrack(track).filter(id=>real.some(g=>g.id===id)).length;
+  return { done, total: real.length };
+}
+// Первые незакрытые врата пути (будущие «?»-врата не в счёт).
+function nextGateOf(track){
+  const GATES = gatesForTrack(track);
+  const i = GATES.findIndex((g,i)=>{ const st = gateStateOf(track,g,i); return st!=='done' && st!=='mystery'; });
+  return i < 0 ? null : { g: GATES[i], i };
+}
+const CH_LOCK = '<svg class="ch-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>';
+/* Большой кадр врат. На карте — с монстром, вылезающим из портала; в хабе —
+   компактный, только портал. Нажатие по всему кадру, кнопка — подсказка. */
+function gateHeroHTML(track, g, i, opts){
+  const compact = !!(opts && opts.compact);
+  const st = gateStateOf(track, g, i);
+  const rs = st==='open' ? raidSaveFor(track, g.id) : null;
+  const art = gateImgSrc(g), mon = compact ? '' : gateMonsterSrc(g);
+  const total = trackProgress(track).total;
+  const red = g.stage==='trial' || g.stage==='exam';
+  const btn = st==='pay' ? 'По контракту' : st==='seq' ? 'Закрыто' : rs ? 'Продолжить '+rs.idx+'/'+rs.n : 'Войти';
+  const no = (opts && opts.label ? opts.label+' · ' : '') + String(i+1).padStart(2,'0')+' / '+total;
+  return `<div class="ch-hero ${compact?'compact':''} ${red?'red':''}" onclick="${gateClick(track,g,i)}">
+    ${art ? `<img class="ch-art" src="${art}" alt="">` : ''}<div class="ch-fx"></div>
+    ${mon ? `<img class="ch-mon" src="${mon}" alt="">` : ''}
+    <div class="ch-in">
+      <div class="ch-no">${escapeHtml(no)}</div>
+      <div class="ch-name">${escapeHtml(g.name)}</div>
+      <div class="ch-meta">${escapeHtml(gateStageText(g))}${gateMobsText(g) ? '<br>'+gateMobsText(g) : ''}</div>
+    </div>
+    <span class="btn ch-btn ${st==='pay'||st==='seq'?'ghost':''}">${btn}</span>
+  </div>`;
+}
+function gatePanelHTML(track, g, i){
+  const st = gateStateOf(track, g, i);
+  const art = gateImgSrc(g);
+  const red = g.stage==='trial' || g.stage==='exam';
+  const num = String(i+1).padStart(2,'0');
+  const sub = st==='mystery' ? 'откроются позже'
+    : st==='done' ? 'закрыто'
+    : st==='pay' ? (red ? gateStageText(g)+' · ' : '')+'по контракту'
+    : (red ? gateStageText(g)+' · ' : '')+gateMobsText(g);
+  const right = st==='done' ? '<span class="ch-ok">ЗАКРЫТО</span>'
+    : st==='open' ? '<span class="ch-go">›</span>'
+    : st==='pay' ? '<span class="ch-pay">⚡</span>' : CH_LOCK;
+  return `<div class="ch-pnl st-${st} ${red?'red':''}" onclick="${gateClick(track,g,i)}">
+    <span class="ch-n">${num}</span>
+    ${st!=='mystery' && art ? `<img class="ch-img" src="${art}" alt="">` : '<span class="ch-q">?</span>'}
+    <div class="ch-tx"><div class="ch-t">${st==='mystery' ? '· · ·' : escapeHtml(g.name)}</div><div class="ch-s">${escapeHtml(sub)}</div></div>
+    ${right}
+  </div>`;
+}
+// Профиль открывается с разных экранов; запоминаем, откуда пришли, чтобы
+// «назад» вёл туда же (внутренние экраны профиля этот адрес не трогают).
+function openProfile(){
+  if(S.screen !== 'profile') S.profileBack = S.screen;
+  go('profile');
+}
+function hubOpenTrack(track){
+  if(S.currentTrack === track){ go('map'); return; }
+  go('map');
+  setTrack(track);
+}
+function rHub(){
+  const a = S.ans;
+  const T = TRACKS[S.currentTrack] || TRACKS.strength;
+  const nx = nextGateOf(S.currentTrack);
+  const eq = (typeof Items !== 'undefined' && Items.equip) || {};
+  const ava = (eq.avatar || eq.frame || eq.aura)
+    ? avatarBadge({ size:52, avatar:eq.avatar, frame:eq.frame, aura:eq.aura, name:a.name })
+    : `<span class="hb-ava-l">${escapeHtml(((a.name||'?').trim().charAt(0)||'?').toUpperCase())}</span>`;
+  const today = (S.pushupsToday||0) + (S.squatsToday||0) + (S.situpsToday||0);
+  let next;
+  if(gatesLockedNow()) next = trialWallHTML();
+  else if(nx) next = gateHeroHTML(S.currentTrack, nx.g, nx.i, { compact:true, label:T.short });
+  else next = `<div class="hb-empty">Путь «${escapeHtml(T.short)}» пройден до конца. Выбери другой ниже.</div>`;
+  h(`<div class="screen hb">
+    <div class="hb-hd">
+      <button class="hb-ava" onclick="openProfile()" aria-label="Профиль">${ava}</button>
+      <div class="hb-who" onclick="openProfile()">
+        <div class="hb-nm">${escapeHtml(a.name) || 'Охотник'}</div>
+        <div class="hb-bar"><i style="width:${Math.max(0,Math.min(100,S.xp))}%"></i></div>
+        <div class="hb-bt"><span>Уровень ${S.level}</span><span>${S.xp} / 100</span></div>
+      </div>
+      <div class="hb-rk">${S.rank}<span>РАНГ</span></div>
+    </div>
+    ${trialWarnHTML()}
+    <div class="hb-lbl">Следующие врата</div>
+    ${next}
+    <div class="hb-two">
+      <div class="hb-card"><div class="k">Сегодня</div><div class="v">${today}<small> повт.</small></div><div class="s">призыв в ${escapeHtml(a.time||'—')}</div></div>
+      <div class="hb-card"><div class="k">Серия</div><div class="v">${S.streak}<small> ${pluralRuClient(S.streak,['день','дня','дней'])}</small></div><div class="s">режим: ${a.days ? a.days+' дн. в неделю' : '—'}</div></div>
+    </div>
+    ${riftHTML()}
+    ${hintHTML()}
+    <div class="hb-lbl">Пути</div>
+    <div class="hb-paths">${Object.values(TRACKS).map(t=>{
+      const p = trackProgress(t.key);
+      const pct = p.total ? Math.round(p.done/p.total*100) : 0;
+      return `<button class="hb-path ${S.currentTrack===t.key?'on':''}" onclick="hubOpenTrack('${t.key}')">
+        <span class="ic">${icon(t.iconKey,24,t.iconFallback)}</span><span class="t">${escapeHtml(TRACK_CAPS[t.key]||t.short)}</span>
+        <span class="b"><i style="width:${pct}%"></i></span><span class="c">${p.done}/${p.total}</span></button>`;
+    }).join('')}</div>
+    ${navBar('hub')}
+  </div>`);
+  loadRift();
+}
 function rMap(){
   const track = S.currentTrack;
+  const T = TRACKS[track] || TRACKS.strength;
   const GATES = gatesForTrack(track);
-  const done = doneGatesForTrack(track);
-  // 30/70 вместо 28/72 — с запасом, чтобы 104px-широкая карточка врат (gate-node)
-  // не подрезалась по краям на узких экранах (320px, iPhone SE).
-  const pos = GATES.map((g,i)=>({ x: i%2===0? 30 : 70, y: 70 + i*115 }));
-  let path='';
-  for(let i=0;i<pos.length-1;i++){
-    const a=pos[i],b=pos[i+1];
-    path += `M ${a.x} ${a.y} C ${a.x} ${a.y+60}, ${b.x} ${b.y-60}, ${b.x} ${b.y} `;
-  }
-  /* Упёрся ли человек в платную стену ИМЕННО на этой карте. Отдельного
-     условия не завожу: стена — это ровно те врата, которые уже открылись бы
-     по прогрессу, но закрыты подпиской. Такой признак уже вычисляется ниже
-     для каждой ноды (paywalled), и второй, «похожий» способ то же самое
-     посчитать неминуемо разъехался бы с первым. */
-  let wallReached = false;
-  /* Срок истёк и контракта нет — вместо лестницы врат показываем стену.
-     Именно вместо: оставить карту под ней значило бы предложить человеку
-     потыкать в каждый замок по отдельности. Навигация при этом остаётся —
-     врата заперты, приложение нет. */
+  const states = GATES.map((g,i)=>gateStateOf(track,g,i));
+  /* Упёрся ли человек в платную стену на этой карте — тот же признак, что
+     раньше: врата открылись бы по прогрессу, но закрыты подпиской. */
+  const wallReached = states.includes('pay');
   const trialOver = gatesLockedNow();
-  const nodes = GATES.map((g,i)=>{
-    const p=pos[i];
-    const gDone = done.includes(g.id);
-    const seqLocked = !g.locked && isSeqLocked(g,i,track);
-    const mystery = g.locked; // будущий контент (S-ранг, бесконечные врата)
-    // Паёвол считаем только для врат, которые иначе были бы уже доступны —
-    // прогрессионный замок (seqLocked) и нераскрытый контент (mystery)
-    // важнее и показываются как обычно, подписка тут ни при чём.
-    const paywalled = !mystery && !seqLocked && gateBlocked(g);
-    if(paywalled) wallReached = true;
-    const locked = mystery || seqLocked || paywalled;
-    const cls = `gate-node ${locked?'locked':''} ${paywalled?'paywalled':''} ${g.gateColor==='gold'?'gold':''} ${g.gateColor==='red'?'red':''} ${gDone?'done':''}`;
-    // Заблокированные врата тоже кликабельны — но вместо боя показывают тултип
-    // (или заглушку подписки), почему нельзя войти, а не молчат.
-    const click = mystery ? `onclick="showToast('Эти врата откроются позже')"`
-      : seqLocked ? `onclick="showGatePreview('${track}',${g.id})"`
-      : paywalled ? `onclick="showGatePreview('${track}',${g.id})"`
-      : `onclick="enterGate('${track}',${g.id})"`;
-    let frame, rankLabel;
-    if(mystery){
-      frame = '<span style="font-family:Russo One;font-size:30px;color:#3A4570">?</span>';
-      rankLabel = '· · ·';
-    } else if(seqLocked){
-      frame = gateArt(g, 56) + `<span class="lockbadge">${icon('lock',16,'🔒')}</span>`;
-      rankLabel = `${icon('lock',13,'🔒')} закрыто`;
-    } else if(paywalled){
-      frame = gateArt(g, 56) + `<span class="lockbadge">⚡</span>`;
-      rankLabel = `⚡ по подписке`;
-    } else {
-      frame = gateArt(g, 56);
-      rankLabel = g.stage==='exam' ? 'ЭКЗАМЕН · РАНГ '+g.rank : g.stage==='trial' ? 'ИСПЫТАНИЕ · РАНГ '+g.rank : 'ВРАТА '+g.rank;
-      /* Незакрытый заход виден прямо на карте: без метки человек не вспомнит,
-         в какие именно врата он не дошёл, и «продолжить» пришлось бы искать
-         перебором. Счёт «3/6» на месте подписи ранга — она тут наименее ценная,
-         ранг и так читается по цвету рамки. */
-      const rs = raidSaveFor(track, g.id);
-      if(rs){
-        frame += `<span class="gate-resume">${rs.idx}/${rs.n}</span>`;
-        rankLabel = 'ЗАХОД НЕ ЗАКРЫТ';
-      }
-    }
-    return `<div class="${cls}" data-gate-id="${g.id}" style="left:${p.x}%;top:${p.y-43}px" ${click}>
-      <div class="gate-frame" style="position:relative">${frame}</div>
-      <div class="gate-name">${gDone?'✓ ':''}${g.name}</div>
-      <div class="gate-rank">${rankLabel}</div>
-    </div>`;
-  }).join('');
-  h(`<div class="screen">
-    <div class="map-fixed-top">
-      <div class="hdr">
-        <div class="pill">РАНГ <b>${S.rank}</b></div>
-        <div class="pill">🔥 <b>${S.streak}</b> дн.</div>
-        <div class="pill">УР. <b>${S.level}</b></div>
-      </div>
-      <div class="icon-row">
-        <button class="icon-btn" onclick="go('profile')" aria-label="Профиль">${icon('nav_profile',18,'👤')}</button>
-        <button class="icon-btn" onclick="S.prevScreen=S.screen;go('settings')" aria-label="Настройки">${icon('settings_gear',18,'⚙️')}</button>
-      </div>
-      ${trackRowHTML()}
-      <div class="track-tag">${icon(TRACKS[track].iconKey,16,TRACKS[track].iconFallback)} ${TRACKS[track].label}</div>
-      ${wallReached ? mapOfferHTML() : ''}
-      ${riftHTML()}
-      ${trialWarnHTML()}
-      ${hintHTML()}
+  const p = trackProgress(track);
+  const doneIdx = [], restIdx = [];
+  let cur = -1;
+  states.forEach((st,i)=>{
+    if(st==='done') doneIdx.push(i);
+    else if(cur<0 && st!=='mystery') cur = i;
+    else restIdx.push(i);
+  });
+  // «?»-врат может быть десятки — показываем одну строку-намёк.
+  const firstMystery = restIdx.find(i=>states[i]==='mystery');
+  const restAll = restIdx.filter(i=>states[i]!=='mystery' || i===firstMystery);
+  // Длинный путь (десятки врат) не вываливаем целиком: ближайшие восемь,
+  // остальное — по кнопке. Иначе карта превращается в бесконечную ленту.
+  const REST_LIMIT = 8;
+  const rest = S.mapShowAll ? restAll : restAll.slice(0, REST_LIMIT);
+  const restHidden = restAll.length - rest.length;
+  const doneBlock = !doneIdx.length ? '' : (S.mapShowDone
+    ? `<button class="ch-fold" onclick="S.mapShowDone=false;render({keepScroll:true})"><span>Закрыто ${doneIdx.length}</span><span>скрыть ‹</span></button>`
+      + doneIdx.map(i=>gatePanelHTML(track,GATES[i],i)).join('')
+    : `<button class="ch-fold" onclick="S.mapShowDone=true;render({keepScroll:true})"><span>Закрыто ${doneIdx.length} ${pluralGatesRu(doneIdx.length)}</span><span>показать ›</span></button>`);
+  h(`<div class="screen ch">
+    <div class="ch-top">
+      <div class="ch-title">Карта врат</div>
+      <div class="ch-chip"><span>СЕРИЯ</span>${S.streak}</div>
     </div>
-    <div class="map-top-spacer" id="mapTopSpacer"></div>
+    ${trackRowHTML()}
+    <div class="ch-track"><span>${escapeHtml(T.label)}</span><span class="ch-cnt">${String(p.done).padStart(2,'0')} / ${p.total}</span></div>
+    ${wallReached && !trialOver ? mapOfferHTML() : ''}
+    ${trialWarnHTML()}
     ${trialOver ? trialWallHTML() : `
-    <div class="map-wrap"><div class="map-inner" style="min-height:${70+GATES.length*115}px">
-      <svg class="map-svg" viewBox="0 0 100 ${70+GATES.length*115}" preserveAspectRatio="none">
-        <path d="${path}" fill="none" stroke="#2A3560" stroke-width="7" stroke-linecap="round" vector-effect="non-scaling-stroke"/>
-        <path d="${path}" fill="none" stroke="#8B5CF6" stroke-width="2.5" stroke-dasharray="1 10" stroke-linecap="round" vector-effect="non-scaling-stroke"/>
-      </svg>
-      ${nodes}
-    </div></div>`}
+    <div class="ch-list">
+      ${doneBlock}
+      ${cur>=0 ? gateHeroHTML(track, GATES[cur], cur) : `<div class="hb-empty">Все открытые врата этого пути закрыты.</div>`}
+      ${rest.map(i=>gatePanelHTML(track,GATES[i],i)).join('')}
+      ${restHidden>0 ? `<button class="ch-fold" onclick="S.mapShowAll=true;render({keepScroll:true})"><span>Дальше ещё ${restHidden} ${pluralGatesRu(restHidden)}</span><span>показать ›</span></button>`
+        : (S.mapShowAll && restAll.length>REST_LIMIT ? `<button class="ch-fold" onclick="S.mapShowAll=false;render()"><span>Свернуть</span><span>‹</span></button>` : '')}
+    </div>`}
     ${navBar('map')}
   </div>`);
-  // Высота верхней панели (map-fixed-top) не константа — зависит от того,
-  // сколько строк займут пилюли/иконки на узком экране, поэтому не хардкодим
-  // пиксели, а меряем по факту отрисовки и подгоняем спейсер под неё.
   if(wallReached) paywallHint('map');
-  /* Тянем разлом при показе карты, а не на старте приложения: если события
-     нет, запрос не делается вовсе, а если есть — карта единственный экран,
-     где карточка видна. Свой троттлинг внутри loadRift(). */
-  loadRift();
-  requestAnimationFrame(()=>{
-    const topEl = document.querySelector('.map-fixed-top');
-    const spacer = document.getElementById('mapTopSpacer');
-    if(topEl && spacer) spacer.style.height = topEl.getBoundingClientRect().height + 'px';
-  });
-  // Автопрокрутка к первым незакрытым вратам — на 44 вратах скроллить руками
-  // с самого верха каждый раз неудобно.
-  requestAnimationFrame(()=>{
-    const current = GATES.find((g,i)=> !done.includes(g.id) && !(g.locked || isSeqLocked(g,i,track)) ) || GATES[GATES.length-1];
-    const el = document.querySelector(`.gate-node[data-gate-id="${current.id}"]`);
-    if(el){
-      try{ el.scrollIntoView({block:'center', behavior:'auto'}); }
-      catch(e){ el.scrollIntoView(); }
-    }
-  });
 }
+
 /* Нижнее меню: Врата / Арена / Топ / Клан. Профиль отсюда убран — его место
    занял режим дуэлей, а вход в профиль есть на каждом экране иконкой в верхнем
    ряду (см. profileIconHTML()).
@@ -6220,12 +6518,21 @@ function rMap(){
    Иконки нет у дуэли и клана: в ICON_IMAGES их не рисовали, поэтому icon()
    отдаёт запасной символ — тот же ⚔️, что у вкладки дуэлей в рейтинге, и 🛡️ у
    гильдий. */
+const NAV_SVG = {
+  hub:'<svg viewBox="0 0 24 24"><path d="M4 11l8-7 8 7v9h-5v-6H9v6H4z"/></svg>',
+  arena:'<svg viewBox="0 0 24 24"><path d="M4 4l10 10M14 14l-2 4M14 14l4-2M20 4L10 14M10 14l2 4M10 14l-4-2"/></svg>',
+  top:'<svg viewBox="0 0 24 24"><path d="M4 20h16M7 20v-6h4v6M11 20V9h4v11M15 20v-8h4"/></svg>',
+  guild:'<svg viewBox="0 0 24 24"><path d="M6 3v18M6 4h12l-3 4 3 4H6"/></svg>'
+};
+/* Нижнее меню (редизайн): Хаб · Арена · ромб «В бой» · Топ · Клан.
+   «В бой» открывает карту-главы текущего пути (экран 'map'). Профиль — по
+   аватару в хабе и по иконке profileIconHTML() на остальных экранах. */
 function navBar(on){
-  return `<div class="nav-spacer"></div><div class="nav">
-    <button class="${on==='map'?'on':''}" onclick="go('map')"><span class="nav-ico">${icon('nav_map',16,'⛩️')}</span>Врата</button>
-    <button class="${on==='duel'?'on':''}" onclick="openDuelHome()"><span class="nav-ico">${icon('nav_duel',16,'⚔️')}</span>Арена</button>
-    <button class="${on==='rank'?'on':''}" onclick="go('rank')"><span class="nav-ico">${icon('nav_rank',16,'🏆')}</span>Топ</button>
-    <button class="${on==='guild'?'on':''}" onclick="openGuild()"><span class="nav-ico">${icon('nav_guild',16,'🛡️')}</span>Клан</button>
+  const b = (k,lbl,ico,act)=>`<button class="nb ${on===k?'on':''}" onclick="${act}">${NAV_SVG[ico]}<span>${lbl}</span></button>`;
+  return `<div class="nav-spacer"></div><div class="nav nav5">
+    ${b('hub','Хаб','hub',"go('hub')")}${b('duel','Арена','arena','openDuelHome()')}
+    <button class="nav-fight ${on==='map'?'on':''}" onclick="go('map')" aria-label="В бой"><span>В<br>бой</span></button>
+    ${b('rank','Топ','top',"go('rank')")}${b('guild','Клан','guild','openGuild()')}
   </div>`;
 }
 /* Иконка профиля для шапок экранов, где нет полного ряда переключателей
@@ -6233,7 +6540,7 @@ function navBar(on){
    откуда угодно; теперь пункт убран, поэтому иконку обязан нести каждый экран
    с нижним меню — иначе с рейтинга и дуэлей в профиль было бы не попасть. */
 function profileIconHTML(){
-  return `<button class="icon-btn" onclick="go('profile')" aria-label="Профиль">${icon('nav_profile',18,'👤')}</button>`;
+  return `<button class="icon-btn" onclick="openProfile()" aria-label="Профиль">${icon('nav_profile',18,'👤')}</button>`;
 }
 
 /* ---- Таблица лидеров ---- */
@@ -6268,7 +6575,7 @@ function lbTitleLineHTML(row){
   if(!duel && !own && !tag) return '';
   const parts = [];
   if(tag)  parts.push(`<span class="lb-gtag">[${escapeHtml(tag)}]</span>`);
-  if(duel) parts.push(`<span class="lb-title-duel">⚔️ ${escapeHtml(duel)}</span>`);
+  if(duel) parts.push(`<span class="lb-title-duel">${escapeHtml(duel)}</span>`);
   if(own)  parts.push(escapeHtml(own));
   return `<div class="lb-title">${parts.join('<span style="opacity:.4"> · </span>')}</div>`;
 }
@@ -6304,7 +6611,7 @@ function lbDuelRowHTML(row, isMe){
       ${lbTitleLineHTML(row)}
     </div>
     <div class="lb-score">${row.score}</div>
-    ${can ? `<div style="margin-left:8px;font-size:15px;${busy?'opacity:1':'opacity:.5'}">${busy?'⏳':'⚔️'}</div>` : ''}
+    ${can ? `<div style="margin-left:8px;font-size:15px;${busy?'opacity:1':'opacity:.5'}">${busy?'…':'›'}</div>` : ''}
   </div>`;
 }
 /* Значок надетого оружия рядом с именем в таблицах. Только оружие: три
@@ -6687,7 +6994,7 @@ function rRank(){
           <span>${RANK_TABS.find(t=>t.id===S.rankTab).label}</span>
           <span style="opacity:.6;font-size:11px;transform:${S.rankTabMenuOpen?'rotate(180deg)':'none'};transition:transform .15s ease">▾</span>
         </button>
-        ${S.rankTabMenuOpen ? `<div style="position:absolute;top:100%;left:0;margin-top:6px;z-index:6;background:var(--panel-solid);border:1px solid var(--line);border-radius:14px;overflow:hidden;min-width:172px;box-shadow:0 12px 28px rgba(0,0,0,.45)">
+        ${S.rankTabMenuOpen ? `<div style="position:absolute;top:100%;left:0;margin-top:6px;z-index:6;background:var(--panel-solid);border:1px solid var(--line);border-radius:0;overflow:hidden;min-width:172px;box-shadow:0 12px 28px rgba(0,0,0,.45)">
           ${RANK_TABS.map((t,i)=>`<button style="display:block;width:100%;text-align:left;padding:12px 16px;background:none;border:none;${i?'border-top:1px solid var(--line);':''}color:var(--text);font-size:14.5px;font-weight:700;cursor:pointer" onclick="setRankTab('${t.id}')">${t.label}</button>`).join('')}
         </div>` : ''}
       </div>
@@ -6696,7 +7003,7 @@ function rRank(){
           <span>${S.rankPeriod==='week'?'Неделя':'День'}</span>
           <span style="opacity:.6;font-size:11px;transform:${S.rankPeriodMenuOpen?'rotate(180deg)':'none'};transition:transform .15s ease">▾</span>
         </button>
-        ${S.rankPeriodMenuOpen ? `<div style="position:absolute;top:100%;left:0;margin-top:6px;z-index:5;background:var(--panel-solid);border:1px solid var(--line);border-radius:14px;overflow:hidden;min-width:150px;box-shadow:0 12px 28px rgba(0,0,0,.45)">
+        ${S.rankPeriodMenuOpen ? `<div style="position:absolute;top:100%;left:0;margin-top:6px;z-index:5;background:var(--panel-solid);border:1px solid var(--line);border-radius:0;overflow:hidden;min-width:150px;box-shadow:0 12px 28px rgba(0,0,0,.45)">
           <button style="display:block;width:100%;text-align:left;padding:12px 16px;background:none;border:none;color:var(--text);font-size:14.5px;font-weight:700;cursor:pointer" onclick="setRankPeriod('day')">День</button>
           <button style="display:block;width:100%;text-align:left;padding:12px 16px;background:none;border:none;border-top:1px solid var(--line);color:var(--text);font-size:14.5px;font-weight:700;cursor:pointer" onclick="setRankPeriod('week')">Неделя</button>
         </div>` : ''}
@@ -7096,7 +7403,7 @@ function showCamError(msg){
      до которого доходили немногие.
      Особенно важно при NotAllowedError — это три четверти всех сбоев, и
      чинится он ровно так: разрешить в настройках и попробовать ещё раз. */
-  wrap.innerHTML = `<div class="cam-fallback">⚠️ ${escapeHtml(msg)}
+  wrap.innerHTML = `<div class="cam-fallback">${escapeHtml(msg)}
     <div class="sub" style="margin-top:8px;font-size:12px">Или считай повторы кнопкой «+» внизу — вручную.</div>
     <button class="btn ghost" style="margin-top:12px;padding:8px 18px" onclick="retryCamera()">Попробовать снова</button>
   </div>`;
@@ -8425,7 +8732,7 @@ function camLoop(){
         Cam.armState='down';
         const now=performance.now();
         if(now - Cam.lastRepAt > 450){
-          Cam.lastRepAt = now; setCamStatus('Повтор засчитан ✔️ · вниз'); onCameraRep();
+          Cam.lastRepAt = now; setCamStatus('Повтор засчитан ✓ · вниз'); onCameraRep();
         }
       } else if(Cam.armState==='down' && repConfirmed(Cam.upStreak, Cam.upSince)){
         Cam.armState='up'; setCamStatus('Вверху — опускайся вниз ↓ · '+Math.round(Cam.emaAngle)+'°');
@@ -8454,7 +8761,7 @@ function camLoop(){
           Cam.depthDisplaced = true;
           const now = performance.now();
           if(now - Cam.lastRepAt > 450){
-            Cam.lastRepAt = now; setCamStatus('Повтор засчитан ✔️ · вниз'); onCameraRep();
+            Cam.lastRepAt = now; setCamStatus('Повтор засчитан ✓ · вниз'); onCameraRep();
           }
         }
       } else if(Math.abs(dev) < DEPTH_RETURN){
@@ -8783,7 +9090,7 @@ function showKillBanner(){
   if(!wrap) return;
   const el = document.createElement('div');
   el.className = 'kill-banner';
-  el.innerHTML = `<div class="kill-skull">💀</div><div class="kill-text">ВРАГ<br>ПОВЕРЖЕН</div>`;
+  el.innerHTML = `<div class="kill-text">ВРАГ<br>ПОВЕРЖЕН</div>`;
   wrap.appendChild(el);
 }
 
@@ -8927,9 +9234,9 @@ function playerDied(){
 }
 function rDeath(){
   h(`<div class="screen" style="align-items:center;justify-content:center;text-align:center;gap:18px">
-    <div style="font-size:60px">💀</div>
+    <div style="font-family:Oswald,sans-serif;font-size:72px;font-weight:700;color:var(--danger);line-height:1">✕</div>
     <h2 style="color:var(--danger)">Ты пал в бою</h2>
-    <div class="syswin" style="border-color:var(--danger);box-shadow:0 0 30px rgba(255,59,92,.2)">
+    <div class="syswin" style="border-color:var(--danger);box-shadow:0 0 0 transparent">
       <div class="sys-tag" style="color:var(--danger)"><span class="bang" style="border-color:var(--danger)">!</span> СИСТЕМА</div>
       <div style="font-size:14px;line-height:1.5">Монстр оказался сильнее. Опыт этого захода потерян, но отжимания и приседания уже засчитаны — восстанови силы и возвращайся во врата.</div>
     </div>
@@ -9429,7 +9736,7 @@ function retreatRaid(){
     go('map');
     if(wasNewRetreat){
       const a = ACHIEVEMENTS_LIST.find(x=>x.id==='first_retreat');
-      showToast('🏆 Новое достижение: ' + (a ? a.name : ''));
+      showToast('Новое достижение: ' + (a ? a.name : ''));
     }
   });
 }
@@ -9451,7 +9758,7 @@ function rRaid(){
     return `<span class="raid-qdot ${state}${mm.isBoss?' boss':''}"></span>`;
   }).join('');
   const camInner = Cam.error
-    ? `<div class="cam-fallback">⚠️ ${escapeHtml(Cam.error)}
+    ? `<div class="cam-fallback">${escapeHtml(Cam.error)}
         <div class="sub" style="margin-top:8px;font-size:12px">Или считай повторы кнопкой «+» внизу — вручную.</div>
         <button class="btn ghost" style="margin-top:12px;padding:8px 18px" onclick="retryCamera()">Попробовать снова</button>
       </div>`
@@ -9463,21 +9770,21 @@ function rRaid(){
     <button class="raid-back" onclick="go('map')">‹</button>
     ${queueDots ? `<div class="raid-mini-queue">${queueDots}</div>` : ''}
     <div class="raid-top-panel">
-      ${(g.stage==='exam' && (EXAM_XP_MULT[g.rank]||1)>1) ? `<div class="raid-banner exam"><b>⚡ БОНУС СИСТЕМЫ</b> · Экзамен даёт ×${EXAM_XP_MULT[g.rank]} опыта за подход.</div>` : ''}
+      ${(g.stage==='exam' && (EXAM_XP_MULT[g.rank]||1)>1) ? `<div class="raid-banner exam"><b>БОНУС СИСТЕМЫ</b> · Экзамен даёт ×${EXAM_XP_MULT[g.rank]} опыта за подход.</div>` : ''}
       ${r.replay ? `<div class="raid-banner replay">ℹ️ Повторное прохождение — опыт за этот заход не начисляется. Повторы идут в профиль как обычно.</div>` : ''}
       ${riftStripHTML()}
       <div class="raid-mob-card">
         <div class="mob-art" id="mobArt" style="border-color:${gateColor}">${mobVisual(m.kind,120,m.name)}</div>
         <div class="raid-gate-tag" style="color:${gateColor}">${g.stage==='exam'?'ЭКЗАМЕН':g.stage==='trial'?'ИСПЫТАНИЕ':'ВРАТА '+g.rank} · ${g.name.toUpperCase()}</div>
         <div class="raid-mob-card-body">
-          <div class="mob-name">${m.isBoss?'👑 '+m.name:m.name} <span class="mono" style="color:var(--muted);font-size:12px">· ${r.idx+1}/${r.mobs.length}</span><span class="mob-exercise" id="mobExBadge">${exLbl.icon} ${exLbl.name}</span></div>
+          <div class="mob-name">${m.isBoss?'Босс · '+m.name:m.name} <span class="mono" style="color:var(--muted);font-size:12px">· ${r.idx+1}/${r.mobs.length}</span><span class="mob-exercise" id="mobExBadge">${exLbl.icon} ${exLbl.name}</span></div>
           <div class="hp-strip"><i id="hpFill" style="width:${pct}%"></i><span id="hpNum">HP ${m.hp} / ${m.maxHp}</span></div>
         </div>
       </div>
     </div>
     <div class="raid-counter-row">
       <div class="raid-side-col">
-        <button class="raid-side-btn retreat" onclick="retreatRaid()" aria-label="Отступить">🚪</button>
+        <button class="raid-side-btn retreat" onclick="retreatRaid()" aria-label="Отступить">✕</button>
         <span class="raid-side-label">Отступить</span>
       </div>
       <div class="raid-counter-col">
@@ -9664,7 +9971,7 @@ function guildRowHTML(r, opts){
   const duel = duelTitleName(r.duel_title);
   const own  = titleNameById(r.title_id);
   const bits = [];
-  if(duel) bits.push(`<span class="lb-title-duel">⚔️ ${escapeHtml(duel)}</span>`);
+  if(duel) bits.push(`<span class="lb-title-duel">${escapeHtml(duel)}</span>`);
   if(own)  bits.push(escapeHtml(own));
   /* Срок подачи — только у заявок. Он отвечает на вопрос «сколько человек уже
      ждёт»: неделя молчания это уже не «не успел посмотреть», а забытая заявка,
@@ -10017,7 +10324,7 @@ function guildMineHTML(g){
   const chatLinked = !!(g.chat && g.chat.linked);
   const chatBlock = chatLinked ? `
     <div class="gd-card" style="margin-top:12px">
-      <div style="font-size:13px;color:var(--text)">💬 Чат гильдии</div>
+      <div style="font-size:13px;color:var(--text)">Чат гильдии</div>
       <div style="font-size:11px;color:var(--muted);margin-top:6px;line-height:1.45">
         Отдельная группа в Telegram. Бот присылает туда недельную цель и итоги.
       </div>
@@ -10026,7 +10333,7 @@ function guildMineHTML(g){
     </div>`
     : (g.isOwner ? `
     <div class="gd-card" style="margin-top:12px">
-      <div style="font-size:13px;color:var(--text)">💬 Чат гильдии</div>
+      <div style="font-size:13px;color:var(--text)">Чат гильдии</div>
       <div style="font-size:11px;color:var(--muted);margin-top:6px;line-height:1.45">
         У гильдии пока нет чата. Создай его — состав получит приглашения сам.
       </div>
@@ -10321,7 +10628,7 @@ function openGuildRename(){
 function showGuildForm(mode){
   const isCreate = mode === 'create';
   showModal(`<div class="gd-modal">
-    <div style="font-family:'Russo One',sans-serif;font-size:18px;color:var(--text)">${isCreate?'Новая гильдия':'Переименовать'}</div>
+    <div style="font-family:Oswald,sans-serif;font-size:18px;color:var(--text)">${isCreate?'Новая гильдия':'Переименовать'}</div>
     <div class="gd-lbl">Название</div>
     <input class="gd-inp" id="gdName" maxlength="24" value="${escapeHtml(Guild.form.name)}" placeholder="Охотники Багровой Луны">
     <div style="font-size:11px;color:var(--muted);margin-top:5px">От 3 до 24 символов. Название не должно повторять чужое.</div>
@@ -10579,9 +10886,9 @@ function rOtherProfile(){
              </div>`}
         <div style="font-size:19px;margin-top:9px">${escapeHtml(d.name||'Безымянный')}</div>
         <div class="sub" style="font-size:13px;margin-top:3px">
-          Ранг ${escapeHtml(d.rank||'E')}${d.level>1 ? ' · Уровень '+d.level : ''}${d.streak>1 ? ' · 🔥 '+d.streak : ''}
+          Ранг ${escapeHtml(d.rank||'E')}${d.level>1 ? ' · Уровень '+d.level : ''}${d.streak>1 ? ' · серия '+d.streak : ''}
         </div>
-        ${title ? `<div style="display:inline-block;margin-top:8px;background:rgba(245,194,66,.12);border:1px solid rgba(245,194,66,.4);border-radius:12px;padding:3px 12px;font-size:12px;color:var(--gold)">${escapeHtml(title.name)}</div>` : ''}
+        ${title ? `<div style="display:inline-block;margin-top:8px;background:rgba(245,194,66,.12);border:1px solid rgba(245,194,66,.4);border-radius:0;padding:3px 12px;font-size:12px;color:var(--gold)">${escapeHtml(title.name)}</div>` : ''}
         ${d.guild ? `<div style="margin-top:8px">
           <span class="gd-tag" style="cursor:pointer" onclick="openGuild()">${escapeHtml(d.guild.tag)}</span>
           <span style="font-size:12px;color:var(--muted);margin-left:6px">${escapeHtml(d.guild.name)}</span>
@@ -10592,7 +10899,7 @@ function rOtherProfile(){
       <div class="eq-row">${slots}</div>
 
       <div class="sub" style="margin-top:6px;font-size:12px;letter-spacing:1px;text-transform:uppercase">Коллекция</div>
-      <div style="background:rgba(10,13,31,.5);border:1px solid var(--line);border-radius:12px;padding:12px;margin-top:9px">
+      <div style="background:rgba(10,13,31,.5);border:1px solid var(--line);border-radius:0;padding:12px;margin-top:9px">
         <div style="display:flex;justify-content:space-between;font-size:13px">
           <span class="sub">Предметов собрано</span>
           <span style="color:var(--gold)">${d.collected} из ${d.total}</span>
@@ -10600,7 +10907,7 @@ function rOtherProfile(){
         <div class="rcp-prog" style="margin-top:8px"><i style="width:${pct}%"></i></div>
       </div>
 
-      <button class="btn ghost" style="width:100%;margin-top:18px" onclick="go('duelHome')">⚔️ Перейти на Арену</button>`;
+      <button class="btn ghost" style="width:100%;margin-top:18px" onclick="go('duelHome')">Перейти на Арену</button>`;
   }
   h(`<div class="screen">
     <div class="topbar">
@@ -10808,7 +11115,7 @@ function rRest(){
       ${!Cam.error ? `<video id="raidVideo" autoplay playsinline muted></video><canvas id="raidCanvas"></canvas>` : ''}
     </div>
     <div class="raid-top-panel">
-      <div class="raid-banner"><b>⚡ ПЕРЕЗАРЯДКА МАНЫ</b><br>Моб повержен. На очереди <b class="cy">${next.isBoss?'👑 '+next.name:next.name+' '+next.n}</b>: ${nextTaskText}.</div>
+      <div class="raid-banner"><b>ПЕРЕЗАРЯДКА МАНЫ</b><br>Моб повержен. На очереди <b class="cy">${next.isBoss?'Босс · '+next.name:next.name+' '+next.n}</b>: ${nextTaskText}.</div>
     </div>
     ${repCounterHTML()}
     <div class="rest-ring-wrap">
@@ -11347,14 +11654,19 @@ function arenaTierHTML(t){
      всех. Вопрос вместо приговора, и заодно первый бой не сведёт его с
      Монархом. */
   if(!t.best && !t.seeded){
-    return `<div class="ar-tier">
-      <div class="ar-top"><span class="ar-tag">ПЕРВЫЙ ВХОД</span></div>
-      <div class="ar-ask">Сколько отжиманий ты сделаешь за минуту?</div>
-      <div class="ar-seed">
-        <input id="arSeed" class="ar-in" type="number" inputmode="numeric" min="0" max="90" placeholder="20">
-        <button class="btn" ${S.duelSeeding?'disabled':''} onclick="submitArenaSeed()">${S.duelSeeding?'…':'Готово'}</button>
+    /* Окно Системы, а не форма: вопрос задаёт Система, и выглядеть он должен
+       как её сообщение. Подсказки «какая выйдет ступень» здесь нет намеренно —
+       таблица ступеней живёт только на сервере (см. выше). */
+    return `<div class="ar-sysw">
+      <div class="ar-syst"><i>!</i>СИСТЕМА</div>
+      <div class="ar-sysq">Охотник впервые входит на Арену.<br>Система должна знать твою силу.<br><b>Сколько отжиманий за минуту?</b></div>
+      <div class="ar-sysin">
+        <input id="arSeed" type="number" inputmode="numeric" min="0" max="90" placeholder="20"
+          onkeydown="if(event.key==='Enter'){this.blur();submitArenaSeed()}">
+        <span>повт.</span>
       </div>
-      <div class="ar-next">Нужно только чтобы подобрать первого соперника. Дальше ступень посчитается по твоим боям.</div>
+      <button class="ar-sysbtn" ${S.duelSeeding?'disabled':''} onclick="submitArenaSeed()">${S.duelSeeding?'[ … ]':'[ ПРИНЯТЬ ]'}</button>
+      <div class="ar-syshint">Нужно только для первого соперника. Дальше ступень посчитается по твоим боям.</div>
     </div>`;
   }
 
@@ -11413,8 +11725,7 @@ function rDuelHome(){
   const resetTxt = st && st.resetAt ? duelResetText(st.resetAt) : '';
   h(`<div class="screen">
     <div class="hdr" style="width:100%">
-      <div style="width:40px"></div>
-      <div class="gp-toptag" style="color:#B08BE0">АРЕНА ТЕНЕЙ</div>
+      <h2 style="margin:0">Арена теней</h2>
       ${profileIconHTML()}
     </div>
 
@@ -11449,7 +11760,7 @@ function rDuelHome(){
 
     ${st.oppKind === 'challenge'
       ? `<div class="duel-limit-note" style="text-align:center;margin:-4px 0 10px">
-           ⚔️ Дружеский бой · рейтинг не меняется
+           Дружеский бой · рейтинг не меняется
          </div>`
       : ''}
 
@@ -11526,7 +11837,7 @@ function rDuel(){
   const d = S.duel;
   if(!d){ go('map'); return; }
   const camInner = Cam.error
-    ? `<div class="cam-fallback">⚠️ ${escapeHtml(Cam.error)}
+    ? `<div class="cam-fallback">${escapeHtml(Cam.error)}
         <div class="sub" style="margin-top:8px;font-size:12px">Дуэль засчитывает только повторы, распознанные камерой — без неё бой не пойдёт.</div>
         <button class="btn ghost" style="margin-top:12px;padding:8px 18px" onclick="retryCamera()">Попробовать снова</button>
       </div>`
@@ -11820,7 +12131,7 @@ function rVictory(){
     <div class="victory-mob">${mobVisual(lastMob.kind,150,lastMob.name)}</div>
     <h2 style="font-size:24px">ПОБЕДА</h2>
     ${lastMobInfoHTML(lastMob)}
-    ${S.justRanked ? `<div class="syswin" style="width:100%;border-color:var(--gold);box-shadow:0 0 30px rgba(245,194,66,.25)">
+    ${S.justRanked ? `<div class="syswin" style="width:100%;border-color:var(--gold);box-shadow:0 0 0 transparent">
       <div class="sys-tag" style="color:var(--gold)"><span class="bang" style="border-color:var(--gold)">!</span> РАНГ ПОВЫШЕН</div>
       <div style="font-size:16px">Охотник переведён в ранг <b class="gold" style="font-size:20px">${S.justRanked}</b>.</div>
     </div>` : ''}
@@ -11830,7 +12141,7 @@ function rVictory(){
     <div class="loot">
       <div class="card"><div class="v">+${total}</div><div class="k">повторений</div></div>
       <div class="card"><div class="v">+${S.raid.xpGained||0}</div><div class="k">опыта</div></div>
-      <div class="card"><div class="v">${S.justStreakInc?'+1':S.streak}</div><div class="k">${S.justStreakInc?'к стрику 🔥':'стрик, дн. 🔥'}</div></div>
+      <div class="card"><div class="v">${S.justStreakInc?'+1':S.streak}</div><div class="k">${S.justStreakInc?'к серии':'серия, дн.'}</div></div>
     </div>
     <div style="width:100%;text-align:left">
       <div style="display:flex;justify-content:space-between;font-size:12px" class="mono"><span>УРОВЕНЬ ${S.level}</span><span>${S.xp}/100 XP</span></div>
@@ -11872,17 +12183,17 @@ function firstWinPathHTML(){
   return `<div class="path">
     <div class="path-t">ПУТЬ ОХОТНИКА</div>
     <div class="path-step">
-      <div class="path-i">⛩️</div>
+      <div class="path-i">1</div>
       <div><b>Ещё ${n} ${pluralGatesRu(n)}</b> ранга E
         <div class="path-s">дальше мобы крепче, а находки чаще</div></div>
     </div>
     <div class="path-step">
-      <div class="path-i">🔴</div>
+      <div class="path-i">2</div>
       <div>Красные врата — <b>Вожак огров</b>
         <div class="path-s">первый настоящий босс</div></div>
     </div>
     <div class="path-step">
-      <div class="path-i">🗡️</div>
+      <div class="path-i">3</div>
       <div>Ранги <b>D, C, B и A</b>
         <div class="path-s">снаряжение, гильдии, арена</div></div>
     </div>
@@ -12070,7 +12381,7 @@ function rRename(){
     body = `
       <div class="gd-card" style="margin-top:18px">
         <div class="sub" style="font-size:11px;letter-spacing:1px">СЕЙЧАС</div>
-        <div style="font-family:'Russo One';font-size:20px;margin-top:4px">${escapeHtml(d.name || 'Безымянный')}</div>
+        <div style="font-family:Oswald,'Arial Narrow',sans-serif;font-size:20px;margin-top:4px">${escapeHtml(d.name || 'Безымянный')}</div>
       </div>
 
       <input class="gd-inp" id="renameField" maxlength="${d.max}" ${cd||busy?'disabled':''}
@@ -12115,104 +12426,55 @@ function rRename(){
 }
 
 function rProfile(){
-  const a=S.ans;
-  h(`<div class="screen">
-    <div class="hdr">
-      <h2 style="margin:0">Охотник</h2>
-      <div style="display:flex;gap:10px">
-        ${trackIconsHTML()}
-        <button class="icon-btn" onclick="S.prevScreen=S.screen;go('settings')" aria-label="Настройки">${icon('settings_gear',18,'⚙️')}</button>
+  const a = S.ans;
+  const eq = Items.equip || {};
+  const hasLook = !!(eq.avatar || eq.frame || eq.aura);
+  const t = selectedTitleObj();
+  h(`<div class="screen pf">
+    <div class="pf-top">
+      <button class="back" onclick="tgBack()" aria-label="Назад">‹</button>
+      <h2>Охотник</h2>
+      <button class="back pf-gear" onclick="S.prevScreen=S.screen;go('settings')" aria-label="Настройки">${icon('settings_gear',18,'⚙️')}</button>
+    </div>
+    <div class="pf-hero">
+      <div class="pf-ava" onclick="openShop()" role="button" aria-label="Лавка аватаров">${hasLook
+        ? avatarBadge({ size:96, avatar:eq.avatar, frame:eq.frame, aura:eq.aura, name:(eq.avatar && (shopAvatar(eq.avatar)||{}).name) || a.name })
+        : `<span class="pf-ava-l">${S.rank}</span>`}</div>
+      <div class="pf-who">
+        <button class="name-tap" onclick="openRename()" aria-label="Сменить имя"><span>${escapeHtml(a.name)||'Безымянный'}</span><i class="name-edit">✎</i></button>
+        ${t ? `<div class="pf-title">«${escapeHtml(t.name)}»</div>` : ''}
+        ${Guild.data ? `<div class="pf-guild" onclick="openGuild()"><span class="gd-tag">${escapeHtml(Guild.data.tag)}</span> ${escapeHtml(Guild.data.name)}</div>` : ''}
+        <div class="pf-chips"><span class="ch-chip a"><span>РАНГ</span>${S.rank}</span><span class="ch-chip"><span>УР.</span>${S.level}</span><span class="ch-chip"><span>СЕРИЯ</span>${S.streak}</span></div>
       </div>
     </div>
-    <div class="profile-head">
-      <!-- Свой аватар, если куплен. Без него — прежняя буква ранга: у всех,
-           кто ещё ничего не покупал, профиль выглядит ровно как раньше. -->
-      ${/* Рамку и ауру показываем и тому, у кого нет купленного лица: они
-            выпадают из врат, а не покупаются, и заслужены отдельно. Если нет
-            вообще ничего — остаётся прежний круг с буквой ранга, и профиль
-            выглядит ровно как раньше. */ ''}
-      ${(Items.equip && (Items.equip.avatar || Items.equip.frame || Items.equip.aura))
-        ? `<div class="avatar-badge-wrap" onclick="openShop()" style="cursor:pointer">${avatarBadge({
-             size:96,
-             avatar: Items.equip.avatar,
-             frame:  Items.equip.frame,
-             aura:   Items.equip.aura,
-             name:   (Items.equip.avatar && (shopAvatar(Items.equip.avatar)||{}).name) || S.ans.name,
-           })}</div>`
-        : `<div class="avatar">${S.rank}</div>`}
-      <div>
-        ${/* НАЖИМАЕТСЯ ВСЁ ИМЯ, а не карандаш рядом с ним.
-
-              Карандаш остался, но теперь он подсказка, а не мишень. Мишенью он
-              был плох: тринадцать пикселей рядом с крупным именем читаются как
-              украшение, и попасть по нему пальцем труднее, чем прочитать. Имя
-              же — первое, на что смотрят в профиле, и «нажать на то, что хочешь
-              изменить» не нужно объяснять вовсе.
-
-              Настройки для этого не годятся по той же причине: имя меняют
-              глядя на него, и искать возможность в другом разделе никто не
-              станет. */ ''}
-        <button class="name-tap" onclick="openRename()" aria-label="Сменить имя">
-          <span>${escapeHtml(a.name)||'Безымянный'}</span>
-          <i class="name-edit">${icon('settings_gear',13,'✎')}</i>
-        </button>
-        ${selectedTitleObj() ? `<div style="color:var(--gold);font-size:13px;font-weight:700;margin-top:2px">${escapeHtml(selectedTitleObj().name)}</div>` : ''}
-        ${Guild.data ? `<div style="margin-top:3px;cursor:pointer" onclick="openGuild()">
-          <span class="gd-tag">${escapeHtml(Guild.data.tag)}</span>
-          <span style="font-size:12px;color:var(--muted);margin-left:5px">${escapeHtml(Guild.data.name)}</span>
-        </div>` : ''}
-        <div class="sub" style="font-size:13px">Ранг ${S.rank} · Уровень ${S.level}${S.streak>1 ? ' · 🔥 '+S.streak : ''}</div>
-      </div>
-    </div>
-    <div style="display:flex;justify-content:space-between;font-size:12px" class="mono"><span>УРОВЕНЬ ${S.level}</span><span>${S.xp}/100 XP</span></div>
+    <div class="pf-lbl"><span>Опыт</span><b>${S.xp} / 100</b></div>
     <div class="xpbar"><i style="width:${S.xp}%"></i></div>
 
     ${statusBlockHTML()}
 
-    <button class="toggle-row" style="margin-top:9px" onclick="S.prevScreen=S.screen;go('titles')">
-      <span>🏵️ Титулы и достижения</span>
-      <span class="sub" style="font-size:12.5px">${S.titles.length + S.achievements.length}/${TITLES_LIST.length + ACHIEVEMENTS_LIST.length} →</span>
-    </button>
-
-    <button class="toggle-row" style="margin-top:9px" onclick="S.prevScreen=S.screen;Items.seen=true;go('inventory')">
-      <span>🎒 Инвентарь${!Items.seen ? ' <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--danger);vertical-align:2px;margin-left:2px"></span>' : ''}</span>
-      <span class="sub" style="font-size:12.5px">${Items.have ? Object.keys(Items.have).length + ' видов' : 'открыть'} →</span>
-    </button>
-
-    <!-- Вход в «Друзей» — здесь, а не в нижнем меню: там уже четыре пункта,
-         и пятый пришлось бы втискивать за счёт остальных. -->
-    <button class="toggle-row" style="margin-top:9px" onclick="openShop()">
-      <span>🪙 Лавка</span>
-      <span class="sub" style="font-size:12.5px">аватары за эссенции →</span>
-    </button>
-
-    <button class="toggle-row" style="margin-top:9px" onclick="openFriends()">
-      <span>🤝 Друзья</span>
-      <span class="sub" style="font-size:12.5px">позвать и сравнить →</span>
-    </button>
-
-    <div class="sub" style="margin-top:18px;font-size:12px;letter-spacing:1px;text-transform:uppercase">Дисциплина</div>
-    <div class="grid2">
-      <div class="gcard"><div class="v">🔥 ${S.streak}</div><div class="k">дней подряд</div></div>
-      <div class="gcard"><div class="v">${a.days||'—'}</div><div class="k">дней / неделя</div></div>
+    <div class="pf-menu">
+      <button class="pf-row" onclick="S.prevScreen=S.screen;go('titles')"><span>Титулы и бестиарий</span><span class="v">${S.titles.length + S.achievements.length}/${TITLES_LIST.length + ACHIEVEMENTS_LIST.length}</span></button>
+      <button class="pf-row" onclick="S.prevScreen=S.screen;Items.seen=true;go('inventory')"><span>Инвентарь</span><span class="v ${!Items.seen?'red':''}">${!Items.seen ? 'есть новое' : 'открыть'}</span></button>
+      <button class="pf-row" onclick="openShop()"><span>Лавка</span><span class="v">аватары за эссенции</span></button>
+      <button class="pf-row" onclick="openFriends()"><span>Друзья</span><span class="v">позвать и сравнить</span></button>
     </div>
 
-    <div class="sub" style="margin-top:18px;font-size:12px;letter-spacing:1px;text-transform:uppercase">Врат закрыто</div>
-    <!-- Карточки рисуются из TRACKS, а не перечислением: направлений стало
-         четыре, и раскладка ушла с трёх колонок на две. Захардкоженный список
-         пришлось бы править при каждом новом треке — и он бы забылся, как уже
-         забывался в countDoneAcrossTracks. -->
-    <div class="grid3" style="grid-template-columns:repeat(2,1fr)">
-      ${Object.values(TRACKS).map(t =>
-        `<div class="gcard"><div class="v">${icon(t.iconKey,15,t.iconFallback)} ${(doneGatesForTrack(t.key)||[]).length}</div><div class="k">${t.label}</div></div>`
-      ).join('')}
+    <div class="pf-lbl" style="margin-top:20px"><span>Дисциплина</span></div>
+    <div class="pf-two">
+      <div><b>${S.streak}</b><small>${pluralRuClient(S.streak,['день','дня','дней'])} подряд</small></div>
+      <div><b>${a.days||'—'}</b><small>дней в неделю</small></div>
     </div>
+
+    <div class="pf-lbl" style="margin-top:18px"><span>Врат закрыто</span></div>
+    <div class="pf-gates">${Object.values(TRACKS).map(tr =>
+      `<div><span class="ic">${icon(tr.iconKey,22,tr.iconFallback)}</span><span><b>${(doneGatesForTrack(tr.key)||[]).length}</b><small>${escapeHtml(tr.short)}</small></span></div>`
+    ).join('')}</div>
 
     ${rankProgressHTML()}
 
     <div class="syswin" style="margin-top:16px">
       <div class="sys-tag"><span class="bang">!</span> ЕЖЕДНЕВНЫЙ КВЕСТ</div>
-      <div class="sub" style="font-size:14px">Призыв во врата: <b class="cy">${a.time||'—'}</b>. Выполни рейд сегодня, чтобы сохранить стрик.</div>
+      <div class="sub" style="font-size:14px">Призыв во врата: <b>${escapeHtml(a.time||'—')}</b>. Выполни рейд сегодня, чтобы сохранить серию.</div>
     </div>
     <div style="flex:1"></div>
     ${navBar('')}
@@ -12223,13 +12485,13 @@ function rankProgressHTML(){
   const nextRank = RANK_ORDER[idx+1];
   const target = RANK_LEVEL_TARGET[S.rank];
   if(!nextRank || target==null){
-    return `<div class="syswin" style="margin-top:16px"><div class="sys-tag"><span class="bang">!</span> ВЫСШИЙ РАНГ</div>
+    return `<div class="pf-panel" style="margin-top:16px"><div class="pf-tag">ВЫСШИЙ РАНГ</div>
       <div class="sub" style="font-size:14px">Ты достиг ранга <b class="gold">${S.rank}</b> — предела известной системы охотников.</div></div>`;
   }
   const left = Math.max(0, target - S.level);
   const pct = Math.min(100, Math.round((S.level/target)*100));
-  return `<div class="syswin" style="margin-top:16px">
-    <div class="sys-tag"><span class="bang">!</span> ПУТЬ К РАНГУ ${nextRank}</div>
+  return `<div class="pf-panel" style="margin-top:16px">
+    <div class="pf-tag">ПУТЬ К РАНГУ ${nextRank}</div>
     <div class="sub" style="font-size:14px">Нужен уровень <b class="gold">${target}</b> (сейчас ${S.level})${left>0?` — ещё <b class="cy">${left}</b> ур.`:' — цель достигнута, закрой Exam-врата'}</div>
     <div class="xpbar" style="margin-top:10px"><i style="width:${pct}%"></i></div>
   </div>`;
@@ -12314,7 +12576,7 @@ function beastCardHTML(kind){
   const entry = S.bestiary[kind] || {};
   if(!entry.seen){
     return `<div class="beast-card unseen">
-      <div class="bc-portrait">❔</div>
+      <div class="bc-portrait">?</div>
       <div class="bc-body"><div class="bc-name">???</div><div class="bc-lore">Ещё не встречен во вратах.</div></div>
     </div>`;
   }
@@ -12362,7 +12624,7 @@ function rTitlesBestiaryTab(){
     const kinds = Object.keys(BESTIARY).filter(k=>BESTIARY[k].group===groupKey);
     const done = kinds.filter(k=>S.bestiary[k] && S.bestiary[k].killed).length;
     const groupDone = done===kinds.length;
-    return `<div class="beast-group-title"><span>${group.name}${groupDone?' · 🏵️ '+escapeHtml(group.title.name):''}</span><span class="mono">${done}/${kinds.length}</span></div>
+    return `<div class="beast-group-title"><span>${group.name}${groupDone?' · '+escapeHtml(group.title.name):''}</span><span class="mono">${done}/${kinds.length}</span></div>
       ${kinds.map(beastCardHTML).join('')}`;
   }).join('');
 }
@@ -12420,7 +12682,7 @@ function rSettings(){
 
     <div class="sub" style="margin-top:6px;font-size:12px;letter-spacing:1px;text-transform:uppercase">Контракт Охотника</div>
     <div class="syswin" style="margin-top:10px;text-align:center">
-      <span style="filter:drop-shadow(0 0 8px var(--gold))">${icon('badge_contract',56,'⚡')}</span>
+      <span style="filter:drop-shadow(0 0 0 transparent)">${icon('badge_contract',56,'⚡')}</span>
       ${isSubActive() ? `
         <div class="sys-tag" style="justify-content:center;margin-top:8px"><span class="bang">!</span> КОНТРАКТ АКТИВЕН</div>
         <div class="sub" style="font-size:13px">Врата D, C, B и A открыты${S.sub.paidUntil ? ', доступ до '+formatPaidUntil(S.sub.paidUntil) : ''}. Продление только вручную, автосписаний нет.</div>
@@ -12501,8 +12763,8 @@ function rSettings(){
 // Один блок «Инструкций» на упражнение: заголовок, свайп-галерея верх/низ,
 // текст — из TRACK_TIPS (единственный источник, общий с showTrackIntro()).
 function instructionBlockHTML(trackKey, exercise, emoji, label){
-  return `<div class="sub" style="margin-top:18px;font-size:12px;letter-spacing:1px;text-transform:uppercase">${emoji} ${label}</div>
-    <div class="syswin" style="margin-top:10px">
+  return `<div class="pf-lbl" style="margin-top:20px"><span>${label}</span></div>
+    <div class="pf-panel" style="margin-top:10px">
       ${instrGalleryHTML(exercise)}
       <div style="margin-top:12px">${TRACK_TIPS[trackKey].lines.map(line=>`<div class="sub" style="font-size:13px;line-height:1.5;margin-bottom:8px;text-align:left">${line}</div>`).join('')}</div>
     </div>`;
@@ -12523,7 +12785,7 @@ function rInstructions(){
     ${instructionBlockHTML('core','situp','🛡️','Подъём корпуса')}
     ${instructionBlockHTML('stamina','plank','🔥','Планка')}
 
-    <div class="sub" style="margin-top:18px;font-size:12.5px;line-height:1.4">⚠️ Если Система долго не видит тебя в кадре — попробуй немного отодвинуть или развернуть телефон, подсказка на экране калибровки подскажет, чего именно не хватает.</div>
+    <div class="sub" style="margin-top:18px;font-size:12.5px;line-height:1.4">Если Система долго не видит тебя в кадре — попробуй немного отодвинуть или развернуть телефон, подсказка на экране калибровки подскажет, чего именно не хватает.</div>
 
     <div style="flex:1"></div>
     ${navBar('')}
@@ -12604,7 +12866,7 @@ function doLocalReset(){
 function boot(){
   const hasProfile = loadState();
   ensureDay();
-  if(hasProfile) S.screen = 'map'; // профиль уже есть — сразу к карте, минуя онбординг
+  if(hasProfile) S.screen = 'hub'; // профиль уже есть — сразу к карте, минуя онбординг
   tgInit();
   /* Локального сохранения нет — но это ещё не значит, что человек новый.
      На iPhone система может вычистить хранилище сама, и тогда единственная
