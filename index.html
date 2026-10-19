@@ -1989,6 +1989,124 @@ input.field:focus{border-color:var(--mana);box-shadow:none}
 .raid-side-btn,.raid-back{border-radius:0!important;border-width:2px}
 .raid-side-btn.manual{color:var(--text);border-color:var(--line-2)}
 .kill-text{font-size:40px;font-weight:700;color:var(--danger);transform:rotate(-4deg)}
+
+/* ===== АРЕНА: ELO, два режима, «Комикс VS» ===== */
+.ae-modesw{display:grid;grid-template-columns:1fr 1fr;gap:4px;width:100%;margin-top:12px}
+.ae-modesw button{padding:10px 0 8px;text-align:center;background:var(--panel);border:2px solid var(--line);color:var(--text);cursor:pointer;font-family:inherit}
+.ae-modesw b{display:block;font-family:Oswald,'Arial Narrow',sans-serif;font-size:22px;font-weight:600;line-height:1}
+.ae-modesw span{font-size:10.5px;color:var(--muted)}
+.ae-modesw .on{background:var(--text);border-color:var(--text);color:#0B0A10}
+.ae-modesw .on span{color:#55525f}
+.ae-stale{opacity:.45;pointer-events:none}
+.ae-tier{display:flex;align-items:center;gap:14px;width:100%;margin-top:14px}
+.ae-tier .md{width:96px;height:96px;flex:none;display:flex;align-items:center;justify-content:center}
+.ae-tier .md img{width:96px;height:96px;object-fit:contain;vertical-align:0!important}
+.ae-tk{font-family:Oswald,'Arial Narrow',sans-serif;font-size:11px;letter-spacing:.16em;color:var(--mana)}
+.ae-tn{font-family:Oswald,'Arial Narrow',sans-serif;font-size:30px;font-weight:600;text-transform:uppercase;line-height:1}
+.ae-elo{font-family:Oswald,'Arial Narrow',sans-serif;font-size:40px;font-weight:600;line-height:1;margin-top:6px}
+.ae-elo span{font-size:13px;color:var(--muted);margin-left:6px;letter-spacing:.1em}
+.ae-pbar{height:8px;background:var(--panel-2);border:2px solid var(--line);margin-top:8px;position:relative;width:100%;box-sizing:content-box}
+.ae-pbar i{position:absolute;left:0;top:0;bottom:0;background:var(--mana)}
+.ae-pbar em{position:absolute;top:-6px;width:12px;height:12px;margin-left:-6px;background:var(--text);transform:rotate(45deg)}
+.ae-pbar b{position:absolute;top:0;bottom:0;background:var(--ok)}
+.ae-pbar u{position:absolute;top:0;bottom:0;background:repeating-linear-gradient(135deg,rgba(229,72,77,.85) 0 3px,transparent 3px 6px)}
+.ae-scale{display:flex;justify-content:space-between;gap:8px;font-family:Oswald,'Arial Narrow',sans-serif;font-size:11px;color:var(--muted);margin-top:5px;letter-spacing:.06em;width:100%}
+.ae-note{width:100%;font-size:11.5px;color:var(--muted);line-height:1.45;margin-top:8px}
+.ae-note b{color:var(--text);font-weight:600}
+.ae-tri{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;width:100%;margin-top:12px}
+.ae-tri div{background:var(--panel);border:2px solid var(--line);padding:9px 10px}
+.ae-tri b{font-family:Oswald,'Arial Narrow',sans-serif;font-size:21px;font-weight:600;display:block;line-height:1}
+.ae-tri span{font-size:10.5px;color:var(--muted)}
+.ae-lbl{width:100%;font-family:Oswald,'Arial Narrow',sans-serif;font-size:12px;letter-spacing:.16em;color:var(--muted);text-transform:uppercase;margin-top:16px}
+.ae-opp{display:flex;gap:12px;align-items:center;width:100%;margin-top:8px;padding:12px;background:var(--panel);border:2px solid var(--line);box-sizing:border-box}
+.ae-opp .av{width:60px;height:60px;flex:none;padding:2px;background:var(--danger);display:flex;align-items:center;justify-content:center;box-sizing:border-box}
+.ae-opp .av.self{background:var(--mana)}
+.ae-opp .nm{font-family:Oswald,'Arial Narrow',sans-serif;font-size:17px;text-transform:uppercase;line-height:1.1;word-break:break-word}
+.ae-opp .sb{font-size:11.5px;color:var(--muted);margin-top:3px;line-height:1.4}
+.ae-opp-acts{display:flex;gap:6px;width:100%;margin-top:6px}
+.ae-opp-acts button{flex:1;background:none;border:2px solid var(--line);color:var(--text);font-family:Oswald,'Arial Narrow',sans-serif;font-size:12px;letter-spacing:.08em;text-transform:uppercase;padding:8px 6px;cursor:pointer}
+.ae-opp-acts button:disabled{opacity:.5}
+.ae-odds{display:flex;justify-content:space-between;gap:6px;width:100%;margin-top:8px;padding:8px 10px;border:2px dashed var(--line);font-size:11.5px;color:var(--muted);box-sizing:border-box}
+.ae-odds b{font-family:Oswald,'Arial Narrow',sans-serif;font-size:14px;color:var(--text);margin-left:3px}
+.ae-grn{color:var(--ok)!important}.ae-red{color:var(--danger)!important}
+.ae-limits{width:100%;margin-top:12px;font-size:12px;color:var(--muted);line-height:1.5;text-align:center}
+.ae-limits b{color:var(--text);font-family:Oswald,'Arial Narrow',sans-serif;font-size:14px}
+
+/* бой: «Комикс VS» */
+.ae-vs{position:absolute;left:0;right:0;top:0;height:calc(236px + var(--sa-top));z-index:5;overflow:hidden;pointer-events:none}
+.ae-vs .L{position:absolute;inset:0;background:#1b1736;clip-path:polygon(0 0,58% 0,42% 100%,0 100%)}
+.ae-vs .R{position:absolute;inset:0;background:#2a1418;clip-path:polygon(58% 0,100% 0,100% 100%,42% 100%)}
+.ae-vs .ln{position:absolute;inset:0;background:var(--text);clip-path:polygon(57% 0,59% 0,43% 100%,41% 100%)}
+.ae-vs .dt{position:absolute;inset:0;background-image:radial-gradient(rgba(255,255,255,.07) 1px,transparent 1.3px);background-size:5px 5px}
+.ae-vs .in{position:absolute;left:0;right:0;bottom:0;height:236px}
+.ae-av{position:absolute;width:70px;height:70px;padding:3px;background:var(--mana);display:flex;align-items:center;justify-content:center;box-sizing:border-box}
+.ae-av.op{background:var(--danger)}
+.ae-vs .nm{position:absolute;font-family:Oswald,'Arial Narrow',sans-serif;font-size:13px;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap;max-width:calc(50% - 62px);overflow:hidden;text-overflow:ellipsis}
+.ae-vs .nm.e{font-size:11px;color:#b9a8ff;letter-spacing:.04em}
+.ae-vs .nm.op{color:#e7b3b5;text-align:right}
+.ae-vs .nm.e.op{color:#c99}
+.ae-vs .sc{position:absolute;font-family:Oswald,'Arial Narrow',sans-serif;font-size:80px;font-weight:700;line-height:.85}
+.ae-vs .sc.op{color:#e7b3b5}
+.ae-dia{position:absolute;left:50%;top:86px;width:68px;height:68px;margin-left:-34px;background:var(--text);transform:rotate(45deg);box-shadow:4px 4px 0 var(--mana);display:flex;align-items:center;justify-content:center}
+.ae-dia span{transform:rotate(-45deg);font-family:Oswald,'Arial Narrow',sans-serif;font-size:21px;font-weight:700;color:#0B0A10}
+.ae-dia.low{background:var(--danger)}
+.ae-dia.low span{color:var(--text)}
+.ae-vs .bt{position:absolute;left:0;right:0;bottom:0;height:8px;background:var(--danger)}
+.ae-vs .bt i{position:absolute;left:0;top:0;bottom:0;width:50%;background:var(--mana);transition:width .35s ease}
+.ae-lead{position:absolute;left:0;right:0;top:calc(250px + var(--sa-top));text-align:center;z-index:5;pointer-events:none}
+.ae-stamp{display:inline-block;font-family:Oswald,'Arial Narrow',sans-serif;font-size:14px;letter-spacing:.12em;text-transform:uppercase;padding:3px 10px;border:2px solid currentColor;background:var(--void);transform:rotate(-5deg)}
+.ae-stamp:empty{display:none}
+
+/* итог */
+.ae-res{padding-left:0!important;padding-right:0!important}
+.ae-res .ae-pad{padding:0 16px;width:100%;box-sizing:border-box}
+.ae-rhd{font-family:Oswald,'Arial Narrow',sans-serif;font-weight:600;font-size:22px;text-transform:uppercase;letter-spacing:.05em;padding:0 16px;width:100%;box-sizing:border-box}
+.ae-vs2{position:relative;height:250px;margin-top:12px;overflow:hidden;width:100%}
+.ae-vs2 .L{position:absolute;inset:0;background:#191630;clip-path:polygon(0 0,62% 0,38% 100%,0 100%)}
+.ae-vs2 .R{position:absolute;inset:0;background:#1d1216;clip-path:polygon(62% 0,100% 0,100% 100%,38% 100%)}
+.ae-vs2.lost .L{background:#1d1923}.ae-vs2.lost .R{background:#3a1519}
+.ae-vs2 .ln{position:absolute;inset:0;background:var(--text);clip-path:polygon(61% 0,63% 0,39% 100%,37% 100%)}
+.ae-vs2 .pa{position:absolute;width:96px;height:96px;padding:3px;background:var(--mana);display:flex;align-items:center;justify-content:center;box-sizing:border-box}
+.ae-vs2 .pa.op{background:var(--danger)}
+.ae-vs2 .pa.dim{filter:grayscale(.75);opacity:.85}
+.ae-vs2 .sc{position:absolute;font-family:Oswald,'Arial Narrow',sans-serif;font-size:60px;font-weight:600;line-height:1}
+.ae-vs2 .nm{position:absolute;font-family:Oswald,'Arial Narrow',sans-serif;font-size:14px;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;max-width:46%;overflow:hidden;text-overflow:ellipsis}
+.ae-big{position:absolute;z-index:3;left:50%;top:104px;transform:translateX(-50%) rotate(-8deg);font-family:Oswald,'Arial Narrow',sans-serif;font-size:29px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;background:var(--void);border:4px solid;padding:2px 14px;box-shadow:5px 5px 0 var(--text);white-space:nowrap}
+.ae-elobox{display:flex;align-items:baseline;gap:10px;margin:16px 16px 0;padding:12px 14px;background:var(--panel);border:2px solid var(--line);box-sizing:border-box;width:calc(100% - 32px)}
+.ae-elobox .fr{font-family:Oswald,'Arial Narrow',sans-serif;font-size:22px;color:var(--muted)}
+.ae-elobox .ar{color:var(--muted)}
+.ae-elobox .to{font-family:Oswald,'Arial Narrow',sans-serif;font-size:30px;font-weight:600}
+.ae-elobox .dl{margin-left:auto;font-family:Oswald,'Arial Narrow',sans-serif;font-size:34px;font-weight:700;line-height:1}
+.ae-elobox .dl small{font-size:11px;letter-spacing:.12em;margin-left:4px}
+.ae-list{margin:10px 16px 0;width:calc(100% - 32px)}
+.ae-list div{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:9px 0;border-bottom:2px solid var(--line);font-family:Oswald,'Arial Narrow',sans-serif;font-size:14px;text-transform:uppercase;letter-spacing:.03em}
+.ae-list b{font-size:17px;white-space:nowrap}
+.ae-list small{font-family:'Golos Text',sans-serif;font-size:10.5px;color:var(--muted);text-transform:none;margin-left:4px}
+.ae-shield{display:flex;gap:12px;text-align:left;margin:14px 16px 0;padding:12px;background:repeating-linear-gradient(135deg,rgba(142,107,255,.12) 0 8px,rgba(142,107,255,.04) 8px 16px);border:2px solid var(--mana);width:calc(100% - 32px);box-sizing:border-box}
+.ae-shield .ic{width:28px;height:28px;flex:none;background:var(--mana);color:#0B0A10;font-family:Oswald,'Arial Narrow',sans-serif;font-weight:700;display:flex;align-items:center;justify-content:center}
+.ae-shield b{display:block;font-family:Oswald,'Arial Narrow',sans-serif;font-size:15px;text-transform:uppercase;letter-spacing:.04em}
+.ae-shield span{font-size:12px;color:#bdb8cc;line-height:1.45}
+.ae-shield.lostt{border-color:var(--danger);background:repeating-linear-gradient(135deg,rgba(229,72,77,.12) 0 8px,rgba(229,72,77,.04) 8px 16px)}
+.ae-shield.lostt .ic{background:var(--danger)}
+.ae-two{display:grid;grid-template-columns:1fr 1fr;gap:6px;width:calc(100% - 32px);margin:18px 16px 6px}
+.ae-two .btn,.ae-two .ghost{width:100%;margin:0}
+.ae-veil{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;padding:20px;background:radial-gradient(80% 60% at 50% 45%,rgba(40,28,8,.55),rgba(3,3,6,.96))}
+.ae-up{width:100%;max-width:380px}
+.ae-medal{position:relative;width:150px;height:150px;margin:8px auto 0}
+.ae-medal .burst{position:absolute;inset:-10px;background:var(--gold);opacity:.25;clip-path:polygon(100.0% 50.0%,85.3% 57.0%,96.2% 69.1%,79.9% 70.0%,85.4% 85.4%,70.0% 79.9%,69.1% 96.2%,57.0% 85.3%,50.0% 100.0%,43.0% 85.3%,30.9% 96.2%,30.0% 79.9%,14.6% 85.4%,20.1% 70.0%,3.8% 69.1%,14.7% 57.0%,0.0% 50.0%,14.7% 43.0%,3.8% 30.9%,20.1% 30.0%,14.6% 14.6%,30.0% 20.1%,30.9% 3.8%,43.0% 14.7%,50.0% 0.0%,57.0% 14.7%,69.1% 3.8%,70.0% 20.1%,85.4% 14.6%,79.9% 30.0%,96.2% 30.9%,85.3% 43.0%)}
+.ae-medal img{position:relative;width:150px;height:150px;object-fit:contain;vertical-align:0!important}
+.ae-up h4{text-align:center;font-family:Oswald,'Arial Narrow',sans-serif;font-size:34px;letter-spacing:.08em;text-transform:uppercase;color:#FBE7B5;font-weight:600;margin:6px 0 0}
+.ae-up-sub{text-align:center;font-size:13px;color:rgba(244,231,200,.65);margin-top:6px}
+.ae-rule{height:1px;margin:15px 0 6px;background:linear-gradient(90deg,transparent,rgba(233,184,97,.6),transparent)}
+.ae-rw{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:8px 2px;font-size:14px;border-bottom:1px solid rgba(233,184,97,.12)}
+.ae-rw b{font-family:Oswald,'Arial Narrow',sans-serif;font-size:17px;color:#FBE7B5;font-weight:600}
+.ae-ok{display:block;width:100%;margin-top:18px;padding:11px 0;text-align:center;font-family:Oswald,'Arial Narrow',sans-serif;font-size:14px;letter-spacing:.2em;text-transform:uppercase;color:#FBE7B5;border:1px solid rgba(233,184,97,.75);background:linear-gradient(180deg,rgba(233,184,97,.16),rgba(233,184,97,.04));cursor:pointer}
+.ae-av .av-badge,.ae-vs2 .pa .av-badge,.ae-opp .av .av-badge{display:block}
+.ae-av .av-stub,.ae-vs2 .pa .av-stub,.ae-opp .av .av-stub{background:#0B0A10!important;color:var(--text)!important;font-family:Oswald,'Arial Narrow',sans-serif;display:flex;align-items:center;justify-content:center}
+/* таблица Арены */
+.lb-elo-sub{font-size:11px;color:var(--muted);margin-top:2px}
+.lb-elo-md{display:inline-block;vertical-align:-5px;margin-right:4px}
+.lb-elo-md img{width:20px;height:20px;vertical-align:0!important}
 </style>
 </head>
 <body>
@@ -3270,14 +3388,15 @@ function sendScoreThrottled(force){
 // X-Init-Data, если заголовок есть; без него просто не подсвечивает "свою"
 // строку (список всё равно приходит, см. /api/leaderboard в воркере).
 function loadLeaderboard(){
-  const tab = S.rankTab, period = S.rankPeriod;
+  const tab = S.rankTab, period = S.rankPeriod, dmode = S.rankDuelMode === 30 ? 30 : 60;
   S.rankLoading = true; S.rankError = false;
-  const qs = `?exercise=${tab}&period=${period}`;
+  const qs = `?exercise=${tab}&period=${period}` + (tab === 'duel' ? `&mode=${dmode}` : '');
   const headers = (TG && TG.initData) ? { 'X-Init-Data': TG.initData } : {};
   fetch(LEADERBOARD_API_URL + qs, { headers })
     .then(r=>{ if(!r.ok) throw new Error('bad response'); return r.json(); })
     .then(data=>{
       if(S.screen!=='rank' || S.rankTab!==tab || S.rankPeriod!==period) return;
+      if(tab === 'duel' && (S.rankDuelMode === 30 ? 30 : 60) !== dmode) return;
       S.rankData = data; S.rankLoading = false;
       render();
     })
@@ -3307,6 +3426,12 @@ const RANK_TABS = [
   { id:'plank',   label:'Планка' },
   { id:'duel',    label:'Арена' },
 ];
+/* Топ Арены — свой у каждого режима. */
+function setRankDuelMode(m){
+  m = m === 30 ? 30 : 60;
+  if((S.rankDuelMode === 30 ? 30 : 60) === m) return;
+  S.rankDuelMode = m; S.rankData = null; render(); loadLeaderboard();
+}
 function togglePeriodMenu(){
   S.rankPeriodMenuOpen = !S.rankPeriodMenuOpen;
   S.rankTabMenuOpen = false;   // два открытых меню наложились бы друг на друга
@@ -3348,6 +3473,11 @@ function challengeFromRank(runId, name){
       // приходит строкой, а разбирает её loadDuelState(). Подставили бы —
       // бой стартовал бы с нечитаемой тенью.
       done(()=>{
+        /* Заход из таблицы живёт в своём режиме — туда и ведём. */
+        if(d && (d.mode === 30 || d.mode === 60)){
+          S.duelMode = d.mode;
+          try{ localStorage.setItem('vrataDuelMode', String(d.mode)); }catch(e){}
+        }
         openDuelHome();
         sysNotice('Соперник назначен: ' + (name||'охотник') + '. Начинай бой.');
       });
@@ -3472,6 +3602,9 @@ function tgBack(){
     case 'gatePreview': go('map'); return;
     case 'duel': abortDuel(); return;
     case 'duelHome': go('hub'); return;
+    case 'duelResult':
+      if(S.duelResult && S.duelResult.pending) return;   // результат ещё сохраняется
+      openDuelHome(); return;
     case 'profile': go(S.profileBack && S.profileBack!=='profile' ? S.profileBack : 'hub'); return;
     case 'map': go('hub'); return;
     default: return; // на splash/reveal/map/rest/victory/profile своей стрелки нет — прячем и нативную
@@ -3479,7 +3612,7 @@ function tgBack(){
 }
 function updateTgBackButton(){
   if(!TG || !TG.BackButton) return;
-  const show = ['quiz','journey','raid','settings','titles','instructions','gatePreview','duel','duelHome','rename','inventory','otherProfile','guildPreview','friends','shop','profile','map'].includes(S.screen);
+  const show = ['quiz','journey','raid','settings','titles','instructions','gatePreview','duel','duelHome','duelResult','rename','inventory','otherProfile','guildPreview','friends','shop','profile','map'].includes(S.screen);
   try{ show ? TG.BackButton.show() : TG.BackButton.hide(); }catch(e){}
 }
 /* Блокировка свайпа-вниз нужна ТОЛЬКО во время подхода — иначе на экранах с
@@ -5399,10 +5532,12 @@ function sysConfirm(message, onConfirm){
   </div>`;
   document.body.appendChild(wrap);
   const [cancelBtn, yesBtn] = wrap.querySelectorAll('button');
-  const close = ()=>{ wrap.remove(); modalOpenCount = Math.max(0, modalOpenCount-1); };
+  let closed = false;
+  const close = ()=>{ if(closed) return; closed = true; wrap.remove(); modalOpenCount = Math.max(0, modalOpenCount-1); };
   wrap.addEventListener('click', e=>{ if(e.target===wrap) close(); });
   cancelBtn.onclick = close;
   yesBtn.onclick = ()=>{ close(); onConfirm(); };
+  return close;   // чтобы вызвавший мог убрать окно сам, если вопрос устарел
 }
 
 /* Карточка-подсказка про раскладку камеры для конкретного направления —
@@ -6609,6 +6744,7 @@ function lbDuelRowHTML(row, isMe){
     <div class="lb-name-wrap">
       <div class="lb-name">${escapeHtml(row.name)||'Безымянный'}</div>
       ${lbTitleLineHTML(row)}
+      <div class="lb-elo-sub">${row.tier_id ? `<span class="lb-elo-md">${icon('rank_' + String(row.tier_id), 20)}</span>` : ''}${escapeHtml(row.tier_name || '')}${row.best ? ` · лучш. ${row.best}` : ''}</div>
     </div>
     <div class="lb-score">${row.score}</div>
     ${can ? `<div style="margin-left:8px;font-size:15px;${busy?'opacity:1':'opacity:.5'}">${busy?'…':'›'}</div>` : ''}
@@ -6974,7 +7110,7 @@ function rRank(){
     const rowFn = duel ? lbDuelRowHTML : lbRowHTML;
     if(!top.length){
       body = duel
-        ? `<div class="sub" style="text-align:center;margin-top:36px">За последние 7 дней никто не выходил на дуэль.<br>Проведи бой — и займёшь первое место.</div>`
+        ? `<div class="sub" style="text-align:center;margin-top:36px">За последние 7 дней в этом режиме не было рейтинговых боёв.<br>Проведи бой — и займёшь первое место.</div>`
         : `<div class="sub" style="text-align:center;margin-top:36px">Пока никто не закрывал врата ${S.rankPeriod==='week'?'на этой неделе':'сегодня'}. Будь первым.</div>`;
     } else {
       body = top.map(r=>rowFn(r, String(r.chat_id)===String(chatId))).join('');
@@ -6982,7 +7118,7 @@ function rRank(){
         body += `<div class="lb-divider">· · ·</div>` + rowFn(me, true);
       }
       if(duel){
-        body = `<div class="sub" style="text-align:center;margin:0 0 10px;font-size:12.5px;opacity:.75">Лучшая минута за 7 дней · тапни по сопернику, чтобы вызвать его</div>` + body;
+        body = `<div class="sub" style="text-align:center;margin:0 0 10px;font-size:12.5px;opacity:.75">ELO режима «${S.rankDuelMode===30?'30 сек':'1 мин'}» · тапни по сопернику, чтобы вызвать его</div>` + body;
       }
     }
   }
@@ -6998,7 +7134,7 @@ function rRank(){
           ${RANK_TABS.map((t,i)=>`<button style="display:block;width:100%;text-align:left;padding:12px 16px;background:none;border:none;${i?'border-top:1px solid var(--line);':''}color:var(--text);font-size:14.5px;font-weight:700;cursor:pointer" onclick="setRankTab('${t.id}')">${t.label}</button>`).join('')}
         </div>` : ''}
       </div>
-      ${S.rankTab==='duel' ? '' : `<div class="rank-menu" style="position:relative">
+      ${S.rankTab==='duel' ? `<div class="ae-modesw" style="margin-top:0;width:auto;flex:1">${[30,60].map(m=>`<button class="${(S.rankDuelMode===30?30:60)===m?'on':''}" style="padding:7px 0 6px" onclick="setRankDuelMode(${m})"><b style="font-size:17px">${m===30?'30 СЕК':'1 МИН'}</b></button>`).join('')}</div>` : `<div class="rank-menu" style="position:relative">
         <button class="toggle-row" style="width:auto;display:inline-flex;align-items:center;gap:8px;padding:10px 16px" onclick="togglePeriodMenu()">
           <span>${S.rankPeriod==='week'?'Неделя':'День'}</span>
           <span style="opacity:.6;font-size:11px;transform:${S.rankPeriodMenuOpen?'rotate(180deg)':'none'};transition:transform .15s ease">▾</span>
@@ -11424,8 +11560,13 @@ function startDuel(rated){
      Сравнить с 'made' — и станет видно, сколько брошенных вызовов вообще
      доходят до боя. */
   if(S.duelState && S.duelState.oppKind === 'challenge') trackEvent('duel_challenge', 'taken');
+  const mode = duelModeNow();
+  /* Состояние другого режима (переключили и сразу нажали) — не бежим против
+     призрака не из того режима: сначала дождёмся своего. */
+  if(!S.duelState || S.duelState.mode !== mode){ loadDuelState(); return; }
   S.duel = {
     phase:'calib',            // calib -> countdown -> fight -> отправка результата
+    mode, secs: mode,
     rated: rated !== false,
     reps: 0,
     timeline: [],             // моменты своих повторов, десятые доли секунды
@@ -11497,7 +11638,7 @@ function duelTick(){
     }
   }
   updateDuelDOM(elapsedDs);
-  if(elapsedDs >= DUEL_SECONDS * 10){ clearInterval(S._duelTickT); finishDuel(); }
+  if(elapsedDs >= d.secs * 10){ clearInterval(S._duelTickT); finishDuel(); }
 }
 /* Засчитанный камерой повтор. Во время дуэли уходит сюда, в остальных
    случаях — в обычный счётчик врат (см. camLoop). */
@@ -11511,7 +11652,7 @@ function onCameraRep(){
     const d = S.duel;
     if(!d || d.phase !== 'fight') return;   // до старта и после финиша не считаем
     const ds = Math.floor((performance.now() - d.startedAt) / 100);
-    if(ds > DUEL_SECONDS * 10) return;
+    if(ds > d.secs * 10) return;
     d.reps++;
     d.timeline.push(ds);
     if(S.settings.vibration) hapticImpact('medium');
@@ -11527,18 +11668,28 @@ function onCameraRep(){
    пустотой при каждом заходе. */
 function loadDuelState(){
   if(!TG || !TG.initData){ S.duelLoading = false; render(); return; }
-  S.duelLoading = true;
-  fetch(DUEL_API_URL, { headers:{ 'X-Init-Data':TG.initData } })
+  S.duelLoading = true; S.duelError = false;
+  const mode = duelModeNow();
+  fetch(DUEL_API_URL + '?mode=' + mode, { headers:{ 'X-Init-Data':TG.initData } })
     .then(r=>{ if(!r.ok) throw new Error('bad'); return r.json(); })
     .then(st=>{
+      // Пока шёл запрос, режим могли переключить — тогда ответ уже чужой.
+      if(duelModeNow() !== mode) return;
       // Дорожку призрака сервер отдаёт строкой — разбираем один раз здесь,
       // чтобы в бою не парсить её на каждом тике.
-      if(st.ghost && typeof st.ghost.timeline === 'string'){
-        st.ghost.timeline = st.ghost.timeline ? st.ghost.timeline.split(',').map(Number) : [];
+      parseDuelGhost(st);
+      S.duelState = st; S.duelLoading = false; S.duelError = false;
+      /* Вызов друга пришёл в другом режиме — переключаем один раз сами:
+         иначе человек не найдёт, где его ждут. */
+      if(st.challengeMode && st.challengeMode !== mode && !S._duelChalSwitched){
+        S._duelChalSwitched = true;
+        showToast('Тебя вызвали в режиме «' + duelModeTitle(st.challengeMode) + '»');
+        setDuelMode(st.challengeMode);
+        return;
       }
-      S.duelState = st; S.duelLoading = false; S.duelError = false; render();
+      if(S.screen === 'duelHome' || S.screen === 'duelResult') render();
     })
-    .catch(()=>{ S.duelLoading = false; S.duelError = true; render(); });
+    .catch(()=>{ if(duelModeNow() !== mode) return; S.duelLoading = false; S.duelError = true; render(); });
 }
 /* Запрос соперника. Лимитов не тратит: человек должен иметь возможность
    посмотреть, кто ему достался, не рискуя попыткой. Но и перебирать нельзя —
@@ -11561,7 +11712,7 @@ function makeDuelChallenge(){
   fetch(DUEL_API_URL, {
     method:'POST',
     headers:{'Content-Type':'application/json', 'X-Init-Data':TG.initData},
-    body: JSON.stringify({ action:'challenge' }),
+    body: JSON.stringify({ action:'challenge', mode: duelModeNow() }),
   })
   .then(r=>r.json())
   .then(j=>{
@@ -11614,15 +11765,12 @@ function findDuelOpponent(){
   fetch(DUEL_API_URL, {
     method:'POST',
     headers:{'Content-Type':'application/json', 'X-Init-Data':TG.initData},
-    body: JSON.stringify({ action:'find' }),
+    body: JSON.stringify({ action:'find', mode: duelModeNow() }),
   })
   .then(r=>r.json())
   .then(j=>{
-    if(j && j.state){
-      if(j.state.ghost && typeof j.state.ghost.timeline === 'string'){
-        j.state.ghost.timeline = j.state.ghost.timeline ? j.state.ghost.timeline.split(',').map(Number) : [];
-      }
-      S.duelState = j.state;
+    if(j && j.state && j.state.mode === duelModeNow()){
+      S.duelState = parseDuelGhost(j.state);
     }
     if(j && j.none) showToast('Пока не с кем — заходов других охотников ещё нет');
     // Соперник не сменился: других свежих заходов в базе просто нет. Молчать
@@ -11633,182 +11781,188 @@ function findDuelOpponent(){
   })
   .catch(()=>{ S.duelFinding = false; showToast('Нет связи с Системой'); render(); });
 }
-/* СТУПЕНЬ АРЕНЫ.
+/* ===== АРЕНА: ДВА РЕЖИМА И ELO =====
 
-   Всё, что здесь показано, приходит с сервера готовым: название, порог, порог
-   следующей ступени, очки. Своей таблицы ступеней у клиента НЕТ намеренно —
-   заведи он копию, она разошлась бы с сервером при первой же правке порогов,
-   и человек увидел бы «Страж» там, где сервер считает его Ловчим.
-
-   Порог подписан числом всегда. Ступень меряется отжиманиями за минуту, а в
-   приложении четыре упражнения — без явной подписи человек с сильным прессом
-   не поймёт, почему он «Тень». */
-function arenaTierHTML(t){
-  if(!t) return '';
-
-  /* НИ ЗАХОДОВ, НИ ОТВЕТА — спрашиваем, вместо того чтобы показывать
-     «Безымянный».
-
-     Показать ступень тут было бы формально верно и по существу вредно:
-     человек ещё ничего не сделал, а его уже как-то назвали, причём хуже
-     всех. Вопрос вместо приговора, и заодно первый бой не сведёт его с
-     Монархом. */
-  if(!t.best && !t.seeded){
-    /* Окно Системы, а не форма: вопрос задаёт Система, и выглядеть он должен
-       как её сообщение. Подсказки «какая выйдет ступень» здесь нет намеренно —
-       таблица ступеней живёт только на сервере (см. выше). */
-    return `<div class="ar-sysw">
-      <div class="ar-syst"><i>!</i>СИСТЕМА</div>
-      <div class="ar-sysq">Охотник впервые входит на Арену.<br>Система должна знать твою силу.<br><b>Сколько отжиманий за минуту?</b></div>
-      <div class="ar-sysin">
-        <input id="arSeed" type="number" inputmode="numeric" min="0" max="90" placeholder="20"
-          onkeydown="if(event.key==='Enter'){this.blur();submitArenaSeed()}">
-        <span>повт.</span>
-      </div>
-      <button class="ar-sysbtn" ${S.duelSeeding?'disabled':''} onclick="submitArenaSeed()">${S.duelSeeding?'[ … ]':'[ ПРИНЯТЬ ]'}</button>
-      <div class="ar-syshint">Нужно только для первого соперника. Дальше ступень посчитается по твоим боям.</div>
-    </div>`;
+   Режим (30 секунд или минута) — выбор человека, а не состояние сервера:
+   у каждого режима своё ELO, свой значок и свой лимит, а переключатель
+   просто показывает другой «счёт». Запоминаем выбор в браузере, чтобы
+   открыть Арену там же, где ушёл. */
+function duelModeNow(){ return S.duelMode === 30 ? 30 : 60; }
+(function(){
+  try{ const v = Number(localStorage.getItem('vrataDuelMode')); if(v === 30 || v === 60) S.duelMode = v; }catch(e){}
+})();
+function setDuelMode(m){
+  m = m === 30 ? 30 : 60;
+  if(duelModeNow() === m && S.duelState && S.duelState.mode === m){ return; }
+  S.duelMode = m;
+  try{ localStorage.setItem('vrataDuelMode', String(m)); }catch(e){}
+  render();
+  loadDuelState();
+}
+function duelModeTitle(m){ return m === 30 ? '30 сек' : '1 мин'; }
+function duelModeBest(m){ return m === 30 ? 'Лучшие 30 сек' : 'Лучшая минута'; }
+function fmtSigned(n){ n = Math.round(Number(n) || 0); return n > 0 ? '+' + n : (n < 0 ? '−' + Math.abs(n) : '±0'); }
+function fmtClock(s){ s = Math.max(0, Math.round(s)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }
+function parseDuelGhost(st){
+  if(st && st.ghost && typeof st.ghost.timeline === 'string'){
+    st.ghost.timeline = st.ghost.timeline ? st.ghost.timeline.split(',').map(Number) : [];
   }
+  return st;
+}
 
-  /* Полоса до следующей ступени считается в ПОВТОРАХ, а не в очках: ступень
-     двигают повторы, и показывать здесь очки значило бы обещать не тот путь.
-     У верхней ступени следующей нет — полосы тоже. */
-  const bar = t.next ? (() => {
-    const span = Math.max(1, t.next.from - t.from);
-    const done = Math.max(0, Math.min(span, (t.best || 0) - t.from));
-    const left = Math.max(0, t.next.from - (t.best || 0));
-    return `<div class="ar-bar"><i style="width:${Math.round(done / span * 100)}%"></i></div>
-      <div class="ar-next">До ступени «${escapeHtml(t.next.name)}» ещё ${left} ${guildPlural(left,['повтор','повтора','повторов'])}</div>`;
-  })() : `<div class="ar-next">Выше подниматься некуда.</div>`;
-
-  /* «Записано с твоих слов» — честная пометка, пока настоящего захода нет.
-     Без неё человек решит, что ступень заслужена, и удивится, когда после
-     первого боя она изменится. */
-  const seeded = t.seeded
-    ? `<div class="ar-note">Ступень пока по твоим словам — после первого боя посчитаем по-настоящему.</div>` : '';
-
-  /* Взятая вершина показывается, только если она ВЫШЕ текущей: иначе строка
-     «вершина: Тень» у Тени выглядит как насмешка. */
-  const peak = (t.peak && t.peak !== t.id)
-    ? `<div class="ar-peak">Взятая высота: ${escapeHtml(t.peakName)} · ниже её очки не опускаются</div>` : '';
-
-  /* Медаль ступени. Ключ приходит с сервера — своей таблицы ступеней у клиента
-     нет и здесь: в ICON_IMAGES лежат картинки под теми же идентификаторами,
-     что и в ARENA_TIERS, и связывает их сервер, а не копия списка в разметке.
-     Нет картинки под ключом — блок просто соберётся без неё. */
-  const medal = icon('rank_' + String(t.id || ''), 96);
-
-  return `<div class="ar-tier">
-    <div class="ar-top">
-      <span class="ar-tag">СТУПЕНЬ</span>
-      <span class="ar-thr">от ${t.from} ${escapeHtml(t.exercise || '')}</span>
+/* ПЕРВЫЙ ВХОД: вопрос о силе. Ответ задаёт стартовое ELO (20 → около 975,
+   40 → около 1300) — только чтобы первый соперник был по силам. Дальше ELO
+   двигают бои. */
+function arenaSeedHTML(){
+  return `<div class="ar-sysw">
+    <div class="ar-syst"><i>!</i>СИСТЕМА</div>
+    <div class="ar-sysq">Охотник впервые входит на Арену.<br>Система должна знать твою силу.<br><b>Сколько отжиманий за минуту?</b></div>
+    <div class="ar-sysin">
+      <input id="arSeed" type="number" inputmode="numeric" min="0" max="90" placeholder="20"
+        onkeydown="if(event.key==='Enter'){this.blur();submitArenaSeed()}">
+      <span>повт.</span>
     </div>
-    <div class="ar-body">
-      ${medal ? `<div class="ar-medal">${medal}</div>` : ''}
-      <div class="ar-info">
-        <div class="ar-name">${escapeHtml(t.name)}</div>
-        ${bar}
-      </div>
-    </div>
-    ${peak}
-    ${seeded}
+    <button class="ar-sysbtn" ${S.duelSeeding?'disabled':''} onclick="submitArenaSeed()">${S.duelSeeding?'[ … ]':'[ ПРИНЯТЬ ]'}</button>
+    <div class="ar-syshint">Нужно только для первого соперника. Дальше ступень посчитается по твоим боям.</div>
   </div>`;
 }
 
+/* Значок, ELO и полоса до следующей ступени. Пороги приходят с сервера —
+   своей таблицы ступеней у клиента нет: заведи он копию, она разошлась бы с
+   сервером при первой правке. */
+function aeTierHTML(st){
+  const t = st.tier, e = st.elo;
+  const medal = icon('rank_' + String(t.id || ''), 96);
+  let bar = '', scale = '';
+  if(t.next){
+    const span = Math.max(1, t.next.from - t.from);
+    const pct = Math.max(0, Math.min(100, (e.value - t.from) / span * 100));
+    const left = Math.max(0, t.next.from - e.value);
+    bar = `<div class="ae-pbar"><i style="width:${pct}%"></i><em style="left:${pct}%"></em></div>`;
+    scale = `<div class="ae-scale"><span>${t.from}</span><span>${
+      e.protected ? 'ниже порога · защита' :
+      (e.needGames ? `ещё ${e.needGames} ${pluralRuClient(e.needGames,['бой','боя','боёв'])}` : `до «${escapeHtml(t.next.name)}» ${left}`)
+    }</span><span>${t.next.from}</span></div>`;
+  } else {
+    bar = `<div class="ae-pbar"><i style="width:100%"></i></div>`;
+    scale = `<div class="ae-scale"><span>${t.from}</span><span>вершина Арены</span><span></span></div>`;
+  }
+  const notes = [];
+  if(t.seeded) notes.push('ELO пока по твоим словам — после первых боёв уточнится.');
+  else if(e.games === 0) notes.push('Боёв в этом режиме ещё не было — первые бои уточнят ELO.');
+  else if(e.calibLeft > 0 && e.games > 0) notes.push(`Калибровка: ещё <b>${e.calibLeft}</b> ${pluralRuClient(e.calibLeft,['бой','боя','боёв'])} — ELO меняется крупными шагами.`);
+  if(e.protected) notes.push(`Ты ниже порога «${escapeHtml(t.name)}», но значок держит защита — до <b>${e.holdTo}</b> ELO.`);
+  if(e.needGames) notes.push(`ELO уже Монарха. Значок дают после <b>40</b> рейтинговых боёв в этом режиме — осталось ${e.needGames}.`);
+  if(e.gainLeft <= 0) notes.push(`Потолок на сегодня взят (+${e.cap}). Бои идут, но ELO вырастет только завтра.`);
+  return `<div class="ae-tier">
+      ${medal ? `<div class="md">${medal}</div>` : ''}
+      <div style="flex:1;min-width:0">
+        <div class="ae-tk">СТУПЕНЬ · ${duelModeTitle(st.mode).toUpperCase()}</div>
+        <div class="ae-tn">${escapeHtml(t.name)}</div>
+        <div class="ae-elo">${e.value}<span>ELO</span></div>
+      </div>
+    </div>
+    ${bar}${scale}
+    ${notes.map(n=>`<div class="ae-note">${n}</div>`).join('')}`;
+}
+
+function aeOppHTML(st){
+  const g = st.ghost;
+  if(!g){
+    return `<div class="ae-lbl">Соперник</div>
+      <div class="ae-opp"><div style="flex:1">
+        <div class="nm">Соперника нет</div>
+        <div class="sb">Первый заход задаёт эталон. Чужие записи в этом режиме появятся — подберём соперника по ELO.</div>
+      </div></div>`;
+  }
+  const self = st.oppKind === 'self';
+  const look = self ? (Items.equip || {}) : g;
+  const av = avatarBadge({ size:56, avatar: look.avatar, frame: look.frame, aura: look.aura,
+                           name: self ? S.ans.name : g.name });
+  const name = self ? 'Твой рекорд' : escapeHtml(g.name || 'Охотник');
+  const sub = self
+    ? `${g.reps} за ${st.mode === 30 ? '30 сек' : 'минуту'} · ${duelAgoText(g.createdAt)}`
+    : `${escapeHtml(g.tier || '')} · ${g.elo} ELO · ${duelModeBest(st.mode).toLowerCase()} — ${g.reps}`;
+  const label = st.oppKind === 'challenge' ? 'Вызов друга · ELO не меняется'
+    : self ? 'Свой рекорд · ELO не меняется'
+    : 'Соперник · подобран по ELO';
+  const acts = [];
+  if(st.rivalsAvailable && st.oppKind !== 'challenge'){
+    acts.push(`<button onclick="findDuelOpponent()" ${S.duelFinding?'disabled':''}>${S.duelFinding ? 'Ищу…' : (st.oppKind==='rival' ? 'Другой соперник' : 'Найти соперника')}</button>`);
+  }
+  if((st.oppKind === 'rival' || st.oppKind === 'challenge') && g.chatId){
+    acts.push(`<button onclick="openOtherProfile('${String(g.chatId).replace(/[^0-9-]/g,'')}')">Профиль</button>`);
+  }
+  return `<div class="ae-lbl">${label}</div>
+    <div class="ae-opp">
+      <div class="av${self?' self':''}">${av}</div>
+      <div style="flex:1;min-width:0">
+        <div class="nm">${(!self && g.weapon) ? `<span style="margin-right:5px;vertical-align:-3px;display:inline-block">${itemIcon(g.weapon,16)}</span>` : ''}${name}</div>
+        <div class="sb">${sub}</div>
+        ${st.oppKind === 'challenge' ? `<div class="sb">Тебя вызвали по ссылке. Ответишь — вызвавший узнает результат.</div>` : ''}
+      </div>
+    </div>
+    ${acts.length ? `<div class="ae-opp-acts">${acts.join('')}</div>` : ''}
+    ${st.odds ? `<div class="ae-odds"><span>Победа <b class="ae-grn">${fmtSigned(st.odds.win)}</b></span><span>Ничья <b>${fmtSigned(st.odds.draw)}</b></span><span>Поражение <b class="ae-red">${fmtSigned(st.odds.loss)}</b></span></div>` : ''}`;
+}
+
 function rDuelHome(){
-  const st = S.duelState;
-  const loading = S.duelLoading && !st;
+  const mode = duelModeNow();
+  const st0 = S.duelState;
+  const st = (st0 && st0.mode === mode) ? st0 : null;
+  /* Ответ другого режима или ещё не пришёл — грузим; ошибка — говорим прямо,
+     а не крутим «Загружаю…» вечно. */
+  const loading = !st && !S.duelError;
   const ratedLeft = st ? st.ratedLeft : 0;
-  const trainLeft = st ? st.trainLeft : 0;         // -1 означает «без ограничения»
+  const trainLeft = st ? st.trainLeft : 0;        // -1 означает «без ограничения»
   const canRated = ratedLeft > 0;
   const canTrain = trainLeft !== 0;
+  /* Ответ на вызов друга тратит свою норму (5 в день), а не рейтинговые и
+     тренировочные — поэтому и кнопка у него своя, иначе исчерпанный лимит
+     прятал бы бой, который сервер разрешает. */
+  const canChal = !!st && st.oppKind === 'challenge' && st.chalLeft > 0;
   const resetTxt = st && st.resetAt ? duelResetText(st.resetAt) : '';
+  const modeSw = `<div class="ae-modesw">${[30,60].map(m=>`<button class="${m===mode?'on':''}" onclick="setDuelMode(${m})"><b>${m===30?'30 СЕК':'1 МИН'}</b><span>${m===30?'рывок':'выносливость'}</span></button>`).join('')}</div>`;
   h(`<div class="screen">
     <div class="hdr" style="width:100%">
       <h2 style="margin:0">Арена теней</h2>
       ${profileIconHTML()}
     </div>
+    ${modeSw}
 
     ${loading ? `<div class="sub" style="margin-top:40px">Загружаю…</div>` : ''}
-    ${(!loading && S.duelError && !st) ? `<div class="sub" style="margin-top:40px">Нет связи с Системой. Потяни вниз или зайди позже.</div>` : ''}
+    ${(!loading && S.duelError && !st) ? `<div class="sub" style="margin-top:40px">Нет связи с Системой. Зайди чуть позже.</div>` : ''}
 
     ${st ? `
-    ${arenaTierHTML(st.tier)}
-
-    <div class="duel-hero">
-      <div class="duel-hero-num">${st.best7 || '—'}</div>
-      <div class="duel-hero-cap">лучшая минута за 7 дней</div>
+    ${st.tier.unseeded ? arenaSeedHTML() : aeTierHTML(st)}
+    ${/* Пока человек не ответил, сколько может, — ни соперника, ни боя: ответ
+          и нужен ровно для того, чтобы первый соперник был по силам. */ ''}
+    ${st.tier.unseeded ? '' : `
+    <div class="ae-tri">
+      <div><b class="ae-grn">${st.wins}</b><span>побед</span></div>
+      <div><b class="ae-red">${st.losses}</b><span>поражений</span></div>
+      <div><b>${st.elo.peak}</b><span>лучшее ELO</span></div>
     </div>
 
-    <div class="duel-stats">
-      <div class="duel-stat"><div class="v">${(st.tier && st.tier.points) || 0}</div><div class="k">очки</div></div>
-      <div class="duel-stat"><div class="v">${st.wins}</div><div class="k">побед</div></div>
-      <div class="duel-stat"><div class="v">${st.losses}</div><div class="k">поражений</div></div>
-    </div>
+    ${aeOppHTML(st)}
 
-    <div class="duel-limits">
-      <div class="duel-limit-row">
-        <span>Рейтинговых дуэлей</span>
-        <b class="${canRated?'ok':'off'}">${ratedLeft}</b>
-      </div>
-      <div class="duel-limit-row">
-        <span>Тренировочных</span>
-        <b class="${canTrain?'ok':'off'}">${trainLeft < 0 ? '∞' : trainLeft}</b>
-      </div>
-      ${resetTxt ? `<div class="duel-limit-note">${resetTxt}</div>` : ''}
-    </div>
-
-    ${st.oppKind === 'challenge'
-      ? `<div class="duel-limit-note" style="text-align:center;margin:-4px 0 10px">
-           Дружеский бой · рейтинг не меняется
-         </div>`
-      : ''}
-
-    <div class="duel-opponent ${(st.oppKind==='rival'||st.oppKind==='challenge')?'rival':''}">
-      ${st.ghost
-        ? `<div class="duel-opp-tag">СОПЕРНИК</div>
-           <div class="duel-opp-name">${(st.oppKind==='rival' && st.ghost.weapon)
-               ? `<span class="lb-weapon rank-${(itemDef(st.ghost.weapon)||{rank:'E'}).rank}" style="margin-right:6px">${itemIcon(st.ghost.weapon,18)}</span>` : ''}${st.oppKind==='rival' ? escapeHtml(st.ghost.name||'Охотник') : 'Твоя тень'}</div>
-           ${/* Ступень соперника рядом с его результатом. Без неё человек не
-                 понимает, откуда взялся именно этот противник, — а подбор
-                 теперь идёт по ступени, и правило стоит показать. */ ''}
-           <div class="duel-opp-sub">${st.ghost.reps} ${pluralRuClient(st.ghost.reps,['повторение','повторения','повторений'])}${
-             st.ghost.tier ? ` · ${escapeHtml(st.ghost.tier)}` : ''} · ${duelAgoText(st.ghost.createdAt)}</div>`
-        : `<div class="duel-opp-tag">СОПЕРНИКА НЕТ</div>
-           <div class="duel-opp-sub">Первый заход задаёт эталон. Дальше будешь бежать против него.</div>`}
-      ${(st.rivalsAvailable && st.oppKind !== 'challenge')
-        ? `<button class="duel-find" onclick="findDuelOpponent()" ${S.duelFinding?'disabled':''}>${
-            S.duelFinding ? 'Ищу…' : (st.oppKind==='rival' ? 'Другой соперник' : 'Найти соперника')}</button>`
-        : ''}
-      ${/* Сменить соперника, пришедшего по вызову, нельзя: тебя позвал
-            конкретный человек, и подмена его на подобранного незнакомца
-            превратила бы вызов в обычную дуэль. */ ''}
-      ${st.oppKind === 'challenge'
-        ? `<div class="duel-opp-note">Тебя вызвали по ссылке. Ответишь — вызвавший узнает результат.</div>`
-        : ''}
-      ${(st.oppKind === 'rival' && st.ghost && st.ghost.chatId)
-        ? `<button class="duel-find" style="margin-top:8px" onclick="openOtherProfile('${String(st.ghost.chatId)}')">Профиль соперника</button>`
-        : ''}
-      ${st.oppKind === 'rival'
-        ? `<div class="duel-opp-note">Соперника можно сменить сколько угодно раз или выбрать самому — «Рейтинг» → вкладка «Арена», тап по строке.</div>`
-        : ''}
+    <div class="ae-limits">
+      Рейтинговых сегодня: <b>${ratedLeft}</b> из ${st.ratedMax} · тренировочных: <b>${trainLeft < 0 ? '∞' : trainLeft}</b>${resetTxt ? `<br>${resetTxt}` : ''}
     </div>
 
     <div class="bottom" style="width:100%">
-      ${canRated
-        ? `<button class="btn" onclick="startDuel(true)">Начать дуэль</button>`
+      ${canChal
+        ? `<button class="btn" onclick="startDuel(true)">Ответить на вызов · ${duelModeTitle(mode)}</button>`
+        : canRated
+        ? `<button class="btn" onclick="startDuel(true)">Начать дуэль · ${duelModeTitle(mode)}</button>`
         : canTrain
           ? `<button class="btn ghost" onclick="startDuel(false)">Тренировочный заход</button>`
           : `<button class="btn" disabled style="opacity:.45">На сегодня всё</button>`}
-      ${(canRated && canTrain) ? `<button class="gp-btn2" onclick="startDuel(false)">Тренировочный заход</button>` : ''}
-      ${/* Вызов бросается ЛУЧШИМ заходом недели, поэтому кнопка нужна только
-            тому, у кого такой заход есть. Стоит она внизу, рядом с началом
-            боя: вызвать хочется сразу после хорошего результата. */ ''}
+      ${(!canChal && canRated && canTrain) ? `<button class="gp-btn2" onclick="startDuel(false)">Тренировочный заход</button>` : ''}
       ${(st.best7 > 0 && st.oppKind !== 'challenge')
-        ? `<button class="gp-btn2" onclick="makeDuelChallenge()">Бросить вызов другу</button>`
-        : ''}
-      ${(!canRated && !canTrain && !isSubActive()) ? `<div class="sub" style="margin-top:10px;font-size:12px">По «Контракту Охотника» — 6 рейтинговых в день и тренировочные без ограничения.</div>` : ''}
-    </div>` : ''}
+        ? `<button class="gp-btn2" onclick="makeDuelChallenge()">Бросить вызов другу</button>` : ''}
+      ${(!canRated && !canTrain && !isSubActive()) ? `<div class="sub" style="margin-top:10px;font-size:12px">По «Контракту Охотника» — 6 рейтинговых в день в каждом режиме и тренировочные без ограничения.</div>` : ''}
+    </div>`}` : ''}
     <div style="flex:1"></div>
     ${navBar('duel')}
   </div>`);
@@ -11835,65 +11989,58 @@ function duelAgoText(iso){
 
 function rDuel(){
   const d = S.duel;
-  if(!d){ go('map'); return; }
+  if(!d){ go('duelHome'); return; }
   const camInner = Cam.error
     ? `<div class="cam-fallback">${escapeHtml(Cam.error)}
         <div class="sub" style="margin-top:8px;font-size:12px">Дуэль засчитывает только повторы, распознанные камерой — без неё бой не пойдёт.</div>
         <button class="btn ghost" style="margin-top:12px;padding:8px 18px" onclick="retryCamera()">Попробовать снова</button>
       </div>`
     : `<video id="raidVideo" autoplay playsinline muted></video><canvas id="raidCanvas"></canvas><div class="cam-status" id="camStatus">Включаю сканер Системы…</div>`;
-  // Над счётчиком — имя того, с кем дерёшься. Чужой соперник должен быть
-  // назван: безличный «призрак» не создаёт ощущения, ради которого всё это.
-  const ghostName = !d.ghost ? 'НЕТ СОПЕРНИКА'
-    : (d.ghost.name ? escapeHtml(String(d.ghost.name).toUpperCase()).slice(0,14) : 'ТВОЙ РЕКОРД');
+  /* «КОМИКС VS»: раскол по диагонали, лица, огромный счёт, таймер в ромбе.
+     Под именами — ступень и ELO: человек видит, с кем дерётся, и почему
+     именно с ним. Счёт крупный намеренно: телефон лежит на полу, читать
+     приходится на вытянутых руках. */
+  const st = S.duelState || {};
+  const ghostName = !d.ghost ? 'Нет соперника'
+    : (d.ghost.name ? String(d.ghost.name) : 'Твой рекорд');
+  const myLine = st.tier && st.elo ? `${st.tier.name} · ${st.elo.value}` : '';
+  const opLine = d.ghost && d.ghost.tier ? `${d.ghost.tier}${d.ghost.elo ? ' · ' + d.ghost.elo : ''}` : '';
+  const ghostLook = d.ghost || {};
   h(`<div class="screen raid-fullbleed">
     <div class="cam-wrap" id="camWrap">${camInner}
       ${(d.phase !== 'fight' && !Cam.error) ? duelCalibHTML(d) : ''}
     </div>
-    <button class="raid-back" onclick="abortDuel()">‹</button>
 
-    ${/* ЛИЦО С ОБЕИХ СТОРОН. Раньше у своей стороны была только надпись «ТЫ»,
-          и рядом с живым соперником она выглядела безликой колонкой. Половина
-          смысла снаряжения в том, чтобы его видел не только ты, а вторая — в
-          том, чтобы ты видел его сам, и как раз её тут не было. */ ''}
-    <div class="duel-hud">
-    <div class="duel-top">
-      <div class="duel-side me">
-        ${avatarBadge({ size:50,
-          avatar: Items.equip && Items.equip.avatar,
-          frame:  Items.equip && Items.equip.frame,
-          aura:   Items.equip && Items.equip.aura,
-          name:   S.ans.name, cls:'duel-face' })}
-        <div class="duel-side-tag">ТЫ</div>
-        <div class="duel-side-num" id="duelMyReps">${d.reps}</div>
-      </div>
-      <div class="duel-timer" id="duelTimer">0:${String(DUEL_SECONDS).padStart(2,'0')}</div>
-      <div class="duel-side ghost">
-        ${d.ghost ? avatarBadge({ size:50,
-          avatar: d.ghost.avatar, frame: d.ghost.frame, aura: d.ghost.aura,
-          name: d.ghost.name, cls:'duel-face' }) : ''}
-        <div class="duel-side-tag">${d.ghost && d.ghost.weapon
-          ? `<span style="margin-right:4px;vertical-align:-3px;display:inline-block">${itemIcon(d.ghost.weapon,14)}</span>` : ''}${ghostName}</div>
-        <div class="duel-side-num" id="duelGhostReps">${d.ghost ? d.ghostReps : '—'}</div>
+    <div class="ae-vs">
+      <div class="L"></div><div class="R"></div><div class="dt"></div><div class="ln"></div>
+      <div class="in">
+        <div class="ae-av" style="left:14px;top:14px">${avatarBadge({ size:62,
+          avatar: Items.equip && Items.equip.avatar, frame: Items.equip && Items.equip.frame,
+          aura: Items.equip && Items.equip.aura, name: S.ans.name })}</div>
+        <div class="nm" style="left:14px;top:92px">Ты</div>
+        ${myLine ? `<div class="nm e" style="left:14px;top:109px">${escapeHtml(myLine)}</div>` : ''}
+        <div class="sc" style="left:14px;top:134px" id="duelMyReps">${d.reps}</div>
+
+        ${d.ghost ? `<div class="ae-av op" style="right:14px;top:148px">${avatarBadge({ size:62,
+          avatar: ghostLook.avatar, frame: ghostLook.frame, aura: ghostLook.aura, name: d.ghost.name || S.ans.name })}</div>` : ''}
+        <div class="nm op" style="right:14px;top:106px">${escapeHtml(ghostName)}</div>
+        ${opLine ? `<div class="nm e op" style="right:14px;top:123px">${escapeHtml(opLine)}</div>` : ''}
+        <div class="sc op" style="right:14px;top:24px" id="duelGhostReps">${d.ghost ? d.ghostReps : '—'}</div>
+
+        <div class="ae-dia" id="duelDia"><span id="duelTimer">${fmtClock(d.secs)}</span></div>
+        ${d.ghost ? `<div class="bt"><i id="duelBarMine" style="width:50%"></i></div>` : ''}
       </div>
     </div>
-
-    ${d.ghost ? `<div class="duel-bar" id="duelBar">
-      <i class="mine" id="duelBarMine" style="width:50%"></i>
-      <i class="theirs" id="duelBarTheirs" style="width:50%"></i>
-    </div>` : ''}
-    </div>
+    <div class="ae-lead"><span class="ae-stamp" id="duelStamp"></span></div>
 
     <div class="duel-bottom">
-      <div class="duel-hint" id="duelHint">${d.phase==='fight' ? 'Отжимайся!' : 'Встань в упор — минута начнётся, когда Система тебя увидит'}</div>
-      <!-- Стрелка «назад» в углу — маленький безымянный кружок поверх видео;
-           с пола, между повторами, его не найти. Во время боя нужен явный,
-           подписанный выход. -->
+      <div class="duel-hint" id="duelHint">${d.phase==='fight' ? 'Отжимайся!' : 'Встань в упор — бой начнётся, когда Система тебя увидит'}</div>
       <button class="duel-quit" onclick="abortDuel()">Прервать дуэль</button>
     </div>
   </div>`);
   attachCamRefs();
   if(!Cam.running && !Cam.error) startCameraWithIntro();
+  updateDuelDOM(0);
 }
 /* Оверлей калибровки и отсчёта. Проще, чем во вратах: там подсказки под три
    упражнения и разные ракурсы, здесь всегда отжимания. */
@@ -11928,44 +12075,36 @@ function updateDuelDOM(elapsedDs){
   if(gh && d.ghost) gh.textContent = d.ghostReps;
   const t = document.getElementById('duelTimer');
   if(t){
-    const left = Math.max(0, DUEL_SECONDS - Math.floor((elapsedDs||0)/10));
-    t.textContent = '0:' + String(left).padStart(2,'0');
-    t.classList.toggle('low', left <= 10);
+    const left = Math.max(0, d.secs - Math.floor((elapsedDs||0)/10));
+    t.textContent = fmtClock(left);
+    const dia = document.getElementById('duelDia');
+    if(dia) dia.classList.toggle('low', d.phase === 'fight' && left <= 10);
   }
-  // Кто ведёт — подсвечиваем, чтобы это читалось боковым зрением с пола.
-  const meBox = document.querySelector('.duel-side.me');
-  const ghBox = document.querySelector('.duel-side.ghost');
-  const behind = !!d.ghost && d.ghostReps > d.reps;
-  if(meBox && ghBox && d.ghost){
-    meBox.classList.toggle('lead', d.reps > d.ghostReps);
-    ghBox.classList.toggle('lead', behind);
-    // Красный переносим и на счётчик соперника: если краснеет только полоса,
-    // а цифра рядом остаётся фиолетовой, получаются два разных сигнала об
-    // одном и том же событии.
-    ghBox.classList.toggle('behind', behind);
+  /* Штамп — только слово, без чисел: «на сколько» и так видно по счёту, а
+     слово считывается боковым зрением с пола. */
+  const stamp = document.getElementById('duelStamp');
+  if(stamp){
+    if(!d.ghost || d.phase !== 'fight'){ stamp.textContent = ''; }
+    else {
+      const lead = d.reps - d.ghostReps;
+      stamp.textContent = lead > 0 ? 'Лидируешь' : (lead < 0 ? 'Отстаёшь' : 'Ровно');
+      stamp.style.color = lead > 0 ? 'var(--ok)' : (lead < 0 ? 'var(--danger)' : 'var(--text)');
+    }
   }
   updateDuelBar();
 }
-/* Положение шва на канате. DUEL_BAR_MAX — отрыв, при котором полоса упирается
-   в край. При типичном результате 20–45 повторов за минуту разрыв в 8 ощутим,
-   но отыгрываем; поставить больше — полоса почти всегда стояла бы посередине
-   и перестала бы что-либо значить.
-   Края намеренно недожаты (42%, а не 50%): даже при разгроме видна полоска
-   чужого цвета. Заливка целиком читалась бы как «всё кончено», и человек
-   бросал бы на сороковой секунде вместо того, чтобы тянуть канат. */
+/* Положение шва на полосе под расколом. DUEL_BAR_MAX — отрыв, при котором
+   полоса упирается в край; края недожаты, чтобы при разгроме оставалась
+   полоска чужого цвета и человек не бросал раньше времени. */
 const DUEL_BAR_MAX = 8;
 const DUEL_BAR_SWING = 42;
 function updateDuelBar(){
   const d = S.duel; if(!d || !d.ghost) return;
   const mine = document.getElementById('duelBarMine');
-  const theirs = document.getElementById('duelBarTheirs');
-  if(!mine || !theirs) return;
+  if(!mine) return;
   const lead = d.reps - d.ghostReps;
   const k = Math.max(-1, Math.min(1, lead / DUEL_BAR_MAX));
-  const pct = 50 + k * DUEL_BAR_SWING;
-  mine.style.width = pct + '%';
-  theirs.style.width = (100 - pct) + '%';
-  theirs.classList.toggle('ahead', lead < 0);
+  mine.style.width = (50 + k * DUEL_BAR_SWING) + '%';
 }
 /* Досрочный выход из боя.
    Первые DUEL_FREE_ABORT_S секунд — бесплатно: технический сбой почти всегда
@@ -11981,7 +12120,12 @@ function abortDuel(){
   const d = S.duel;
   const elapsedS = (d && d.phase === 'fight') ? (performance.now() - d.startedAt) / 1000 : 0;
   if(elapsedS < DUEL_FREE_ABORT_S){ doAbortDuel(false); return; }
-  sysConfirm('Выйти из дуэли? Попытка будет засчитана, результат не сохранится.', ()=>doAbortDuel(true));
+  /* Пока окно открыто, время боя идёт. Если бой успел кончиться, «Да»
+     ничего не должно ломать: результат уже отправлен, а окно убирает
+     finishDuel. Проверяем, что это всё ещё тот же бой. */
+  const same = S.duel;
+  S._duelAbortClose = sysConfirm('Выйти из дуэли? Попытка будет засчитана, результат не сохранится.',
+    ()=>{ S._duelAbortClose = null; if(S.duel === same && S.screen === 'duel') doAbortDuel(true); });
 }
 function doAbortDuel(spendAttempt){
   const d = S.duel;
@@ -11994,11 +12138,11 @@ function doAbortDuel(spendAttempt){
       fetch(DUEL_API_URL, {
         method:'POST',
         headers:{'Content-Type':'application/json', 'X-Init-Data':TG.initData},
-        body: JSON.stringify({ name:S.ans.name, reps:0, timeline:'', rated:true, aborted:true }),
-      }).then(r=>r.json()).then(j=>{ if(j && j.state) S.duelState = j.state; }).catch(()=>{});
+        body: JSON.stringify({ name:S.ans.name, reps:0, timeline:'', rated:true, aborted:true, mode:d.mode }),
+      }).then(r=>r.json()).then(j=>{ if(j && j.state) S.duelState = parseDuelGhost(j.state); }).catch(()=>{});
     }catch(e){}
   }
-  go('map');
+  openDuelHome();
 }
 function stopDuelTimers(){
   clearInterval(S._duelCountT); clearInterval(S._duelTickT);
@@ -12011,9 +12155,12 @@ function stopDuelTimers(){
 function finishDuel(){
   const d = S.duel; if(!d) return;
   stopDuelTimers();
+  if(S._duelAbortClose){ try{ S._duelAbortClose(); }catch(e){} S._duelAbortClose = null; }
   d.phase = 'done';
   if(S.settings.vibration) hapticImpact('heavy');
-  S.duelResult = { pending:true, reps:d.reps, ghostReps:d.ghost ? d.ghost.reps : null };
+  S.duelResult = { pending:true, mode:d.mode, reps:d.reps, ghostReps:d.ghost ? d.ghost.reps : null,
+    oppKind: S.duelState && S.duelState.oppKind,
+    ghost: d.ghost ? { name:d.ghost.name, avatar:d.ghost.avatar, frame:d.ghost.frame, aura:d.ghost.aura } : null };
   go('duelResult');
   if(!TG || !TG.initData){
     S.duelResult = { ...S.duelResult, pending:false, error:'Результат сохраняется только внутри Telegram' };
@@ -12024,7 +12171,7 @@ function finishDuel(){
     method:'POST',
     headers:{'Content-Type':'application/json', 'X-Init-Data':TG.initData},
     body: JSON.stringify({
-      name: S.ans.name, reps: d.reps,
+      name: S.ans.name, reps: d.reps, mode: d.mode,
       timeline: d.timeline.join(','), rated: d.rated,
     }),
   })
@@ -12034,19 +12181,12 @@ function finishDuel(){
       S.duelResult = { ...S.duelResult, pending:false,
         error: j && j.error === 'limit' ? 'Дуэли на сегодня закончились' : 'Не удалось сохранить результат' };
     } else {
-      S.duelState = j.state || S.duelState;
-      /* СТУПЕНЬ И ОЧКИ ПЕРЕНОСЯТСЯ СЮДА ЯВНО.
-         Список полей — перечисление, а не копия объекта, и в этом была ошибка:
-         переработка арены добавила в ответ points, pointsDelta, tier, tierName
-         и tierUp, а сюда их дописать забыли. Экран итога читал r.tierName,
-         получал undefined и после КАЖДОГО рейтингового боя писал «очки не
-         изменились», а повышение ступени не объявлялось вообще. Сервер при
-         этом считал всё правильно — расхождение было только на экране, и
-         поэтому не падало, не логировалось и не ловилось ничем. */
-      S.duelResult = { ...S.duelResult, pending:false, outcome:j.outcome, delta:j.delta,
-        rating:j.rating, rated:j.rated, ghostReps:j.ghostReps, oppName:j.oppName,
-        points:j.points, pointsDelta:j.pointsDelta,
-        tier:j.tier, tierName:j.tierName, tierPeak:j.tierPeak, tierUp:j.tierUp };
+      S.duelState = j.state ? parseDuelGhost(j.state) : S.duelState;
+      /* Ответ сервера переносим ЦЕЛИКОМ, а не перечнем полей: перечень уже
+         однажды отстал от сервера, и экран итога молча показывал «очки не
+         изменились» после каждого боя. */
+      const res = { ...j }; delete res.state;
+      S.duelResult = { ...S.duelResult, ...res, pending:false };
     }
     S.duel = null;
     render();
@@ -12057,51 +12197,123 @@ function finishDuel(){
     render();
   });
 }
-/* Экран итога. На этом шаге он намеренно простой — оформление и разбор боя
-   доделываются вместе с экраном режима. */
+/* ИТОГ БОЯ. Главное на экране — ELO: было → стало и крупно сколько. Полоса
+   под ним показывает, что это значит для ступени: новый кусок подсвечен,
+   потерянный заштрихован. Повышение объявляет Система отдельным окном
+   поверх итога. */
+function aeResultBarHTML(r){
+  const t = r.tier; if(!t) return '';
+  if(!t.next){
+    return `<div class="ae-pad"><div class="ae-pbar"><i style="width:100%"></i></div>
+      <div class="ae-scale"><span>${escapeHtml(t.name)}</span><span>вершина Арены</span><span></span></div></div>`;
+  }
+  const span = Math.max(1, t.next.from - t.from);
+  const p = v => Math.max(0, Math.min(100, (v - t.from) / span * 100));
+  const now = p(r.elo), was = p(r.eloBefore);
+  let extra = '';
+  if(r.eloDelta > 0 && !r.tierUp) extra = `<b style="left:${was}%;width:${Math.max(0, now - was)}%"></b>`;
+  if(r.eloDelta < 0 && !r.tierDown) extra = `<u style="left:${now}%;width:${Math.max(0, was - now)}%"></u>`;
+  const base = (r.eloDelta > 0 && !r.tierUp) ? was : now;
+  const left = Math.max(0, t.next.from - r.elo);
+  return `<div class="ae-pad"><div class="ae-pbar"><i style="width:${base}%"></i>${extra}</div>
+    <div class="ae-scale"><span>${escapeHtml(t.name)}</span><span>${
+      r.protected ? 'ниже порога · защита' :
+      (r.needGames ? `ещё ${r.needGames} ${pluralRuClient(r.needGames,['бой','боя','боёв'])}` : `до «${escapeHtml(t.next.name)}» ${left}`)
+    }</span><span>${escapeHtml(t.next.name)}</span></div></div>`;
+}
+
 function rDuelResult(){
   const r = S.duelResult || {};
-  const title = r.pending ? 'Минута окончена'
-    : r.error ? 'Результат не засчитан'
-    : r.outcome === 'win' ? 'ПОБЕДА'
-    : r.outcome === 'loss' ? 'ПОРАЖЕНИЕ'
-    : r.outcome === 'draw' ? 'НИЧЬЯ'
-    : 'ЗАХОД ЗАСЧИТАН';
-  h(`<div class="screen reveal">
-    <div class="syswin" style="width:100%"><div class="sys-tag"><span class="bang">!</span> ДУЭЛЬ</div>
-      <div style="font-size:15px">${escapeHtml(title)}</div>
-    </div>
-    <div class="duel-result-nums">
-      <div><div class="duel-side-tag">ТЫ</div><div class="duel-result-num">${r.reps ?? 0}</div></div>
-      <div class="duel-result-vs">против</div>
-      <div><div class="duel-side-tag">${r.oppName ? escapeHtml(String(r.oppName).toUpperCase()).slice(0,14) : 'ТЕНЬ'}</div><div class="duel-result-num ghost">${r.ghostReps ?? '—'}</div></div>
-    </div>
-    ${r.pending ? `<div class="sub">Сохраняю результат…</div>` : ''}
-    ${r.error ? `<div class="sub" style="color:var(--danger)">${escapeHtml(r.error)}</div>` : ''}
-    ${/* ИТОГ НАЗЫВАЕТ ДВЕ ВЕЛИЧИНЫ ОТДЕЛЬНО, и это не многословие.
+  const mode = r.mode === 30 ? 30 : 60;
+  const out = r.pending ? '' : r.error ? '' : r.outcome;
+  const stampTxt = r.pending ? '' : r.error ? 'Не засчитано'
+    : out === 'win' ? 'Победа' : out === 'loss' ? 'Поражение' : out === 'draw' ? 'Ничья' : 'Засчитано';
+  const stampCol = out === 'win' ? 'var(--mana)' : (out === 'loss' || r.error) ? 'var(--danger)' : 'var(--text)';
+  const lost = out === 'loss';
+  const me = Items.equip || {};
+  const g = r.ghost || null;
+  const oppName = r.oppName || (g && g.name) || (g ? 'Твой рекорд' : 'Тень');
+  const vs = `<div class="ae-vs2${lost?' lost':''}"><div class="L"></div><div class="R"></div><div class="ln"></div>
+      <div class="pa${lost?' dim':''}" style="left:16px;top:14px">${avatarBadge({ size:88, avatar:me.avatar, frame:me.frame, aura:me.aura, name:S.ans.name })}</div>
+      <div class="nm" style="left:16px;top:118px;${lost?'color:var(--muted)':''}">Ты</div>
+      <div class="sc" style="left:16px;top:160px;${lost?'color:var(--muted)':''}">${r.reps ?? 0}</div>
+      <div class="pa op${out==='win'?' dim':''}" style="right:16px;top:104px">${avatarBadge({ size:88,
+        avatar: g ? (g.avatar || (r.oppKind==='self' ? me.avatar : null)) : null,
+        frame: g ? (g.frame || (r.oppKind==='self' ? me.frame : null)) : null,
+        aura: g ? g.aura : null, name: oppName })}</div>
+      <div class="nm" style="right:16px;top:206px;text-align:right;${out==='win'?'color:var(--muted)':''}">${escapeHtml(oppName)}</div>
+      <div class="sc" style="right:16px;top:20px;${out==='win'?'color:var(--muted)':''}">${r.ghostReps ?? '—'}</div>
+      ${stampTxt ? `<div class="ae-big" style="color:${stampCol};border-color:${stampCol}">${escapeHtml(stampTxt)}</div>` : ''}
+    </div>`;
 
-          Ступень и очки живут по разным правилам: ступень двигают собственные
-          повторы, очки — исход боя. Слей их в одну строку — и человек решит,
-          что победами можно поднять ступень, то есть ровно то, от чего мы
-          уходили. Поэтому «Ловчий · +18», а не одно число. */ ''}
-    ${(!r.pending && !r.error) ? `<div class="sub" style="font-size:14px">
-      ${r.rated
-        ? `${r.tierName ? `<b>${escapeHtml(r.tierName)}</b> · ` : ''}${
-            typeof r.pointsDelta === 'number'
-              ? `${r.pointsDelta > 0 ? '+' + r.pointsDelta : r.pointsDelta} → <b class="gold">${r.points}</b> очк.`
-              : 'очки не изменились'}`
-        : 'Тренировочный заход — ступень и очки не меняются'}
-    </div>` : ''}
-    ${/* Медаль показывается ТОЛЬКО при повышении. В обычной строке итога её
-          нет намеренно: там она мелькала бы после каждого боя и перестала бы
-          что-либо значить, а повышение случается раз в недели. */ ''}
-    ${(!r.pending && !r.error && r.rated && r.tierUp)
-      ? `<div class="sub" style="font-size:14px;color:var(--gold)"><span class="ar-up-medal">${icon('rank_' + String(r.tier || ''), 40)}</span>Новая ступень: ${escapeHtml(r.tierName)}</div>` : ''}
-    <div class="bottom" style="width:100%">
-      <button class="btn" onclick="openDuelHome()">Ещё раз</button>
-      <button class="gp-btn2" onclick="go('map')">К карте</button>
-    </div>
+  let body = '';
+  if(r.pending){
+    body = `<div class="sub" style="margin-top:16px">Сохраняю результат…</div>`;
+  } else if(r.error){
+    body = `<div class="sub" style="margin-top:16px;color:var(--danger)">${escapeHtml(r.error)}</div>`;
+  } else {
+    const dCls = r.eloDelta > 0 ? 'ae-grn' : (r.eloDelta < 0 ? 'ae-red' : '');
+    const why = r.challenge ? 'Дружеский бой — ELO не меняется.'
+      : !r.rated ? 'Тренировочный заход — ELO не меняется.'
+      : r.aborted ? 'Бой прерван — попытка списана.'
+      : !r.eloRated ? 'Бой со своим рекордом — ELO не меняется. Найди соперника, чтобы подниматься.'
+      : '';
+    body = (r.eloRated
+      ? `<div class="ae-elobox"><div class="fr">${r.eloBefore}</div><div class="ar">→</div><div class="to">${r.elo}</div><div class="dl ${dCls}">${fmtSigned(r.eloDelta)}<small>ELO</small></div></div>
+         ${aeResultBarHTML(r)}`
+      : `<div class="ae-note" style="padding:12px 16px 0;box-sizing:border-box">${why}</div>`);
+    const rows = [];
+    if(!r.aborted){
+      const better = r.bestBefore > 0 && (r.reps || 0) > r.bestBefore;
+      rows.push(`<div><span>${duelModeBest(mode)}</span><b>${Math.max(r.reps || 0, r.bestBefore || 0)}${better ? ` <small>было ${r.bestBefore}</small>` : ''}</b></div>`);
+    }
+    if(r.eloRated && r.streak >= 2) rows.push(`<div><span>Победы подряд</span><b>${r.streak}</b></div>`);
+    if(r.eloRated && r.eloCapped) rows.push(`<div><span>Потолок дня взят</span><b>+50</b></div>`);
+    if(r.eloRated && r.calibLeft > 0) rows.push(`<div><span>Калибровка</span><b>ещё ${r.calibLeft}</b></div>`);
+    if(rows.length) body += `<div class="ae-list">${rows.join('')}</div>`;
+    if(r.eloRated && r.protected && r.tier){
+      const spare = Math.max(0, r.elo - r.holdTo);
+      body += `<div class="ae-shield"><div class="ic">!</div><div><b>Ступень удержана</b><span>Ты ниже порога «${escapeHtml(r.tier.name)}», но защита держит значок до ${r.holdTo} ELO. Ещё ${spare} в запасе.</span></div></div>`;
+    }
+    if(r.eloRated && r.tierDown && r.tier){
+      body += `<div class="ae-shield lostt"><div class="ic">!</div><div><b>Ступень потеряна</b><span>Защита кончилась — теперь «${escapeHtml(r.tier.name)}». Вернуть значок можно победами.</span></div></div>`;
+    }
+  }
+  const st = S.duelState;
+  const again = (st && st.mode === mode && st.ratedLeft > 0 && st.ghost && !st.tier.unseeded)
+    ? `startDuel(true)` : `openDuelHome()`;
+  const upWin = (!r.pending && !r.error && r.tierUp && !r.tierAck && r.tier) ? aeTierUpHTML(r) : '';
+  h(`<div class="screen reveal ae-res">
+    <div class="ae-rhd">Дуэль · ${duelModeTitle(mode)}</div>
+    ${vs}
+    ${body}
+    <div style="flex:1"></div>
+    ${r.pending ? '' : `<div class="ae-two">
+      <button class="btn ghost" onclick="openDuelHome()">К арене</button>
+      <button class="btn" onclick="${again}">Ещё бой</button>
+    </div>`}
+    ${upWin}
   </div>`);
+}
+/* Новая ступень — окно Системы: медаль во вспышке, название, порог
+   следующей и до какого ELO держится защита. Золото, потому что объявляет
+   Система. */
+function aeTierUpHTML(r){
+  const t = r.tier;
+  return `<div class="ae-veil"><div class="syswin ae-up">
+    <div class="sys-tag"><span class="bang">!</span> НОВАЯ СТУПЕНЬ</div>
+    <div class="ae-medal"><div class="burst"></div>${icon('rank_' + String(t.id || ''), 150)}</div>
+    <h4>${escapeHtml(t.name)}</h4>
+    <div class="ae-up-sub">${r.tierBefore ? `Ты поднялся с «${escapeHtml(r.tierBefore.name)}». ` : ''}${r.mode === 30 ? '30 секунд' : 'Минута'} · ${r.elo} ELO</div>
+    <div class="ae-rule"></div>
+    ${t.next ? `<div class="ae-rw"><span>Следующая ступень</span><b>${escapeHtml(t.next.name)} · ${t.next.from}</b></div>` : `<div class="ae-rw"><span>Выше подниматься некуда</span><b>Вершина</b></div>`}
+    <div class="ae-rw"><span>Защита ступени</span><b>до ${t.from - 50}</b></div>
+    <button class="ae-ok" onclick="ackTierUp()">Принять</button>
+  </div></div>`;
+}
+function ackTierUp(){
+  if(S.duelResult) S.duelResult.tierAck = true;
+  render();
 }
 /* Вход в режим: обновляем состояние с сервера при каждом открытии — лимиты и
    рейтинг могли измениться на другом устройстве или после прошлого захода. */
