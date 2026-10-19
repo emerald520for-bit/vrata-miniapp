@@ -2033,27 +2033,29 @@ input.field:focus{border-color:var(--mana);box-shadow:none}
 .ae-limits b{color:var(--text);font-family:Oswald,'Arial Narrow',sans-serif;font-size:14px}
 
 /* бой: «Комикс VS» */
-.ae-vs{position:absolute;left:0;right:0;top:0;height:calc(236px + var(--sa-top));z-index:5;overflow:hidden;pointer-events:none}
-.ae-vs .L{position:absolute;inset:0;background:#1b1736;clip-path:polygon(0 0,58% 0,42% 100%,0 100%)}
-.ae-vs .R{position:absolute;inset:0;background:#2a1418;clip-path:polygon(58% 0,100% 0,100% 100%,42% 100%)}
-.ae-vs .ln{position:absolute;inset:0;background:var(--text);clip-path:polygon(57% 0,59% 0,43% 100%,41% 100%)}
+.ae-vs{position:absolute;left:0;right:0;top:0;height:calc(112px + var(--sa-top));z-index:5;overflow:hidden;pointer-events:none}
+.ae-vs .L{position:absolute;inset:0;background:#1b1736;clip-path:polygon(0 0,56% 0,44% 100%,0 100%)}
+.ae-vs .R{position:absolute;inset:0;background:#2a1418;clip-path:polygon(56% 0,100% 0,100% 100%,44% 100%)}
+.ae-vs .ln{position:absolute;inset:0;background:var(--text);clip-path:polygon(55.3% 0,56.7% 0,44.7% 100%,43.3% 100%)}
 .ae-vs .dt{position:absolute;inset:0;background-image:radial-gradient(rgba(255,255,255,.07) 1px,transparent 1.3px);background-size:5px 5px}
-.ae-vs .in{position:absolute;left:0;right:0;bottom:0;height:236px}
-.ae-av{position:absolute;width:70px;height:70px;padding:3px;background:var(--mana);display:flex;align-items:center;justify-content:center;box-sizing:border-box}
+.ae-vs .in{position:absolute;left:0;right:0;bottom:0;height:112px}
+.ae-av{position:absolute;top:12px;width:44px;height:44px;padding:2px;background:var(--mana);display:flex;align-items:center;justify-content:center;box-sizing:border-box}
 .ae-av.op{background:var(--danger)}
-.ae-vs .nm{position:absolute;font-family:Oswald,'Arial Narrow',sans-serif;font-size:13px;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap;max-width:calc(50% - 62px);overflow:hidden;text-overflow:ellipsis}
-.ae-vs .nm.e{font-size:11px;color:#b9a8ff;letter-spacing:.04em}
+.ae-vs .nm{position:absolute;font-family:Oswald,'Arial Narrow',sans-serif;font-size:12px;letter-spacing:.05em;text-transform:uppercase;white-space:nowrap;max-width:calc(50% - 44px);overflow:hidden;text-overflow:ellipsis}
+.ae-vs .nm.e{font-size:10px;color:#b9a8ff;letter-spacing:.04em}
 .ae-vs .nm.op{color:#e7b3b5;text-align:right}
 .ae-vs .nm.e.op{color:#c99}
-.ae-vs .sc{position:absolute;font-family:Oswald,'Arial Narrow',sans-serif;font-size:80px;font-weight:700;line-height:.85}
+.ae-vs .sc{position:absolute;top:8px;font-family:Oswald,'Arial Narrow',sans-serif;font-size:62px;font-weight:700;line-height:1}
 .ae-vs .sc.op{color:#e7b3b5}
-.ae-dia{position:absolute;left:50%;top:86px;width:68px;height:68px;margin-left:-34px;background:var(--text);transform:rotate(45deg);box-shadow:4px 4px 0 var(--mana);display:flex;align-items:center;justify-content:center}
-.ae-dia span{transform:rotate(-45deg);font-family:Oswald,'Arial Narrow',sans-serif;font-size:21px;font-weight:700;color:#0B0A10}
+.ae-dia{position:absolute;left:50%;top:30px;width:46px;height:46px;margin-left:-23px;background:var(--text);transform:rotate(45deg);box-shadow:3px 3px 0 var(--mana);display:flex;align-items:center;justify-content:center}
+.ae-dia span{transform:rotate(-45deg);font-family:Oswald,'Arial Narrow',sans-serif;font-size:15px;font-weight:700;color:#0B0A10}
 .ae-dia.low{background:var(--danger)}
 .ae-dia.low span{color:var(--text)}
-.ae-vs .bt{position:absolute;left:0;right:0;bottom:0;height:8px;background:var(--danger)}
+.ae-vs .bt{position:absolute;left:0;right:0;bottom:0;height:5px;background:var(--danger)}
 .ae-vs .bt i{position:absolute;left:0;top:0;bottom:0;width:50%;background:var(--mana);transition:width .35s ease}
-.ae-lead{position:absolute;left:0;right:0;top:calc(250px + var(--sa-top));text-align:center;z-index:5;pointer-events:none}
+.ae-lead{position:absolute;left:0;right:0;top:calc(124px + var(--sa-top));text-align:center;z-index:5;pointer-events:none}
+/* Подсказки калибровки поднимаем сразу под плашку: она стала вдвое ниже. */
+.ae-duel .raid-calib{padding-top:calc(150px + var(--sa-top))}
 .ae-stamp{display:inline-block;font-family:Oswald,'Arial Narrow',sans-serif;font-size:14px;letter-spacing:.12em;text-transform:uppercase;padding:3px 10px;border:2px solid currentColor;background:var(--void);transform:rotate(-5deg)}
 .ae-stamp:empty{display:none}
 
@@ -12006,7 +12008,7 @@ function rDuel(){
   const myLine = st.tier && st.elo ? `${st.tier.name} · ${st.elo.value}` : '';
   const opLine = d.ghost && d.ghost.tier ? `${d.ghost.tier}${d.ghost.elo ? ' · ' + d.ghost.elo : ''}` : '';
   const ghostLook = d.ghost || {};
-  h(`<div class="screen raid-fullbleed">
+  h(`<div class="screen raid-fullbleed ae-duel">
     <div class="cam-wrap" id="camWrap">${camInner}
       ${(d.phase !== 'fight' && !Cam.error) ? duelCalibHTML(d) : ''}
     </div>
@@ -12014,18 +12016,18 @@ function rDuel(){
     <div class="ae-vs">
       <div class="L"></div><div class="R"></div><div class="dt"></div><div class="ln"></div>
       <div class="in">
-        <div class="ae-av" style="left:14px;top:14px">${avatarBadge({ size:62,
+        <div class="ae-av" style="left:12px">${avatarBadge({ size:40,
           avatar: Items.equip && Items.equip.avatar, frame: Items.equip && Items.equip.frame,
           aura: Items.equip && Items.equip.aura, name: S.ans.name })}</div>
-        <div class="nm" style="left:14px;top:92px">Ты</div>
-        ${myLine ? `<div class="nm e" style="left:14px;top:109px">${escapeHtml(myLine)}</div>` : ''}
-        <div class="sc" style="left:14px;top:134px" id="duelMyReps">${d.reps}</div>
+        <div class="nm" style="left:12px;top:64px">Ты</div>
+        ${myLine ? `<div class="nm e" style="left:12px;top:81px">${escapeHtml(myLine)}</div>` : ''}
+        <div class="sc" style="left:64px" id="duelMyReps">${d.reps}</div>
 
-        ${d.ghost ? `<div class="ae-av op" style="right:14px;top:148px">${avatarBadge({ size:62,
-          avatar: ghostLook.avatar, frame: ghostLook.frame, aura: ghostLook.aura, name: d.ghost.name || S.ans.name })}</div>` : ''}
-        <div class="nm op" style="right:14px;top:106px">${escapeHtml(ghostName)}</div>
-        ${opLine ? `<div class="nm e op" style="right:14px;top:123px">${escapeHtml(opLine)}</div>` : ''}
-        <div class="sc op" style="right:14px;top:24px" id="duelGhostReps">${d.ghost ? d.ghostReps : '—'}</div>
+        ${d.ghost ? `<div class="ae-av op" style="right:12px">${avatarBadge({ size:40,
+          avatar: ghostLook.avatar, frame: ghostLook.frame, aura: ghostLook.aura, name: d.ghost.name || S.ans.name })}</div>
+        <div class="sc op" style="right:64px" id="duelGhostReps">${d.ghostReps}</div>` : ''}
+        <div class="nm op" style="right:12px;top:${d.ghost ? 64 : 34}px">${escapeHtml(ghostName)}</div>
+        ${opLine ? `<div class="nm e op" style="right:12px;top:81px">${escapeHtml(opLine)}</div>` : ''}
 
         <div class="ae-dia" id="duelDia"><span id="duelTimer">${fmtClock(d.secs)}</span></div>
         ${d.ghost ? `<div class="bt"><i id="duelBarMine" style="width:50%"></i></div>` : ''}
