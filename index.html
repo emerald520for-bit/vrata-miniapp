@@ -2105,6 +2105,9 @@ input.field:focus{border-color:var(--mana);box-shadow:none}
 .ae-ok{display:block;width:100%;margin-top:18px;padding:11px 0;text-align:center;font-family:Oswald,'Arial Narrow',sans-serif;font-size:14px;letter-spacing:.2em;text-transform:uppercase;color:#FBE7B5;border:1px solid rgba(233,184,97,.75);background:linear-gradient(180deg,rgba(233,184,97,.16),rgba(233,184,97,.04));cursor:pointer}
 .ae-av .av-badge,.ae-vs2 .pa .av-badge,.ae-opp .av .av-badge{display:block}
 .ae-av .av-stub,.ae-vs2 .pa .av-stub,.ae-opp .av .av-stub{background:#0B0A10!important;color:var(--text)!important;font-family:Oswald,'Arial Narrow',sans-serif;display:flex;align-items:center;justify-content:center}
+/* Метка бота-тени: рядом с ником всегда, чтобы никто не принял его за человека. */
+.ae-bot{display:inline-block;vertical-align:2px;margin-left:6px;padding:1px 5px 0;font-family:Oswald,'Arial Narrow',sans-serif;font-size:9.5px;letter-spacing:.14em;line-height:1.4;color:#0B0A10;background:var(--muted);text-transform:uppercase}
+.ae-vs .ae-bot{font-size:8.5px;margin-left:5px;vertical-align:1px}
 /* таблица Арены */
 .lb-elo-sub{font-size:11px;color:var(--muted);margin-top:2px}
 .lb-elo-md{display:inline-block;vertical-align:-5px;margin-right:4px}
@@ -11803,6 +11806,8 @@ function setDuelMode(m){
 }
 function duelModeTitle(m){ return m === 30 ? '30 сек' : '1 мин'; }
 function duelModeBest(m){ return m === 30 ? 'Лучшие 30 сек' : 'Лучшая минута'; }
+/* Бот-тень Арены: ник в стиле охотника и обязательная метка «ТЕНЬ». */
+function aeBotTag(isBot){ return isBot ? '<span class="ae-bot">Тень</span>' : ''; }
 function fmtSigned(n){ n = Math.round(Number(n) || 0); return n > 0 ? '+' + n : (n < 0 ? '−' + Math.abs(n) : '±0'); }
 function fmtClock(s){ s = Math.max(0, Math.round(s)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }
 function parseDuelGhost(st){
@@ -11881,18 +11886,19 @@ function aeOppHTML(st){
   const look = self ? (Items.equip || {}) : g;
   const av = avatarBadge({ size:56, avatar: look.avatar, frame: look.frame, aura: look.aura,
                            name: self ? S.ans.name : g.name });
-  const name = self ? 'Твой рекорд' : escapeHtml(g.name || 'Охотник');
+  const name = self ? 'Твой рекорд' : escapeHtml(g.name || 'Охотник') + aeBotTag(g.bot);
   const sub = self
     ? `${g.reps} за ${st.mode === 30 ? '30 сек' : 'минуту'} · ${duelAgoText(g.createdAt)}`
     : `${escapeHtml(g.tier || '')} · ${g.elo} ELO · ${duelModeBest(st.mode).toLowerCase()} — ${g.reps}`;
   const label = st.oppKind === 'challenge' ? 'Вызов друга · ELO не меняется'
     : self ? 'Свой рекорд · ELO не меняется'
+    : g.bot ? 'Соперник · тень Арены'
     : 'Соперник · подобран по ELO';
   const acts = [];
   if(st.rivalsAvailable && st.oppKind !== 'challenge'){
     acts.push(`<button onclick="findDuelOpponent()" ${S.duelFinding?'disabled':''}>${S.duelFinding ? 'Ищу…' : (st.oppKind==='rival' ? 'Другой соперник' : 'Найти соперника')}</button>`);
   }
-  if((st.oppKind === 'rival' || st.oppKind === 'challenge') && g.chatId){
+  if((st.oppKind === 'rival' || st.oppKind === 'challenge') && g.chatId && !g.bot){
     acts.push(`<button onclick="openOtherProfile('${String(g.chatId).replace(/[^0-9-]/g,'')}')">Профиль</button>`);
   }
   return `<div class="ae-lbl">${label}</div>
@@ -12026,7 +12032,7 @@ function rDuel(){
         ${d.ghost ? `<div class="ae-av op" style="right:12px">${avatarBadge({ size:40,
           avatar: ghostLook.avatar, frame: ghostLook.frame, aura: ghostLook.aura, name: d.ghost.name || S.ans.name })}</div>
         <div class="sc op" style="right:64px" id="duelGhostReps">${d.ghostReps}</div>` : ''}
-        <div class="nm op" style="right:12px;top:${d.ghost ? 64 : 34}px">${escapeHtml(ghostName)}</div>
+        <div class="nm op" style="right:12px;top:${d.ghost ? 64 : 34}px">${(d.ghost && d.ghost.bot) ? aeBotTag(true) + ' ' : ''}${escapeHtml(ghostName)}</div>
         ${opLine ? `<div class="nm e op" style="right:12px;top:81px">${escapeHtml(opLine)}</div>` : ''}
 
         <div class="ae-dia" id="duelDia"><span id="duelTimer">${fmtClock(d.secs)}</span></div>
@@ -12162,7 +12168,7 @@ function finishDuel(){
   if(S.settings.vibration) hapticImpact('heavy');
   S.duelResult = { pending:true, mode:d.mode, reps:d.reps, ghostReps:d.ghost ? d.ghost.reps : null,
     oppKind: S.duelState && S.duelState.oppKind,
-    ghost: d.ghost ? { name:d.ghost.name, avatar:d.ghost.avatar, frame:d.ghost.frame, aura:d.ghost.aura } : null };
+    ghost: d.ghost ? { name:d.ghost.name, avatar:d.ghost.avatar, frame:d.ghost.frame, aura:d.ghost.aura, bot:!!d.ghost.bot } : null };
   go('duelResult');
   if(!TG || !TG.initData){
     S.duelResult = { ...S.duelResult, pending:false, error:'Результат сохраняется только внутри Telegram' };
@@ -12234,7 +12240,8 @@ function rDuelResult(){
   const lost = out === 'loss';
   const me = Items.equip || {};
   const g = r.ghost || null;
-  const oppName = r.oppName || (g && g.name) || (g ? 'Твой рекорд' : 'Тень');
+  const oppName = r.oppName || (g && g.name) || (g ? 'Твой рекорд' : 'Соперник');
+  const oppBot = !!(r.oppBot || (g && g.bot));
   const vs = `<div class="ae-vs2${lost?' lost':''}"><div class="L"></div><div class="R"></div><div class="ln"></div>
       <div class="pa${lost?' dim':''}" style="left:16px;top:14px">${avatarBadge({ size:88, avatar:me.avatar, frame:me.frame, aura:me.aura, name:S.ans.name })}</div>
       <div class="nm" style="left:16px;top:118px;${lost?'color:var(--muted)':''}">Ты</div>
@@ -12243,7 +12250,7 @@ function rDuelResult(){
         avatar: g ? (g.avatar || (r.oppKind==='self' ? me.avatar : null)) : null,
         frame: g ? (g.frame || (r.oppKind==='self' ? me.frame : null)) : null,
         aura: g ? g.aura : null, name: oppName })}</div>
-      <div class="nm" style="right:16px;top:206px;text-align:right;${out==='win'?'color:var(--muted)':''}">${escapeHtml(oppName)}</div>
+      <div class="nm" style="right:16px;top:206px;text-align:right;${out==='win'?'color:var(--muted)':''}">${oppBot ? aeBotTag(true) + ' ' : ''}${escapeHtml(oppName)}</div>
       <div class="sc" style="right:16px;top:20px;${out==='win'?'color:var(--muted)':''}">${r.ghostReps ?? '—'}</div>
       ${stampTxt ? `<div class="ae-big" style="color:${stampCol};border-color:${stampCol}">${escapeHtml(stampTxt)}</div>` : ''}
     </div>`;
