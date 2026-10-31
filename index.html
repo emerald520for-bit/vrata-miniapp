@@ -2112,6 +2112,23 @@ input.field:focus{border-color:var(--mana);box-shadow:none}
 .lb-elo-sub{font-size:11px;color:var(--muted);margin-top:2px}
 .lb-elo-md{display:inline-block;vertical-align:-5px;margin-right:4px}
 .lb-elo-md img{width:20px;height:20px;vertical-align:0!important}
+
+/* Подсказка тому, чьи повторы камера не засчитывает. Крупно и над счётчиком:
+   человек в упоре на полу, мелкую строку статуса он не прочтёт. */
+.rep-coach{position:absolute;left:14px;right:14px;bottom:calc(196px + var(--sa-bottom));z-index:6;
+  background:rgba(11,10,16,.92);border:2px solid var(--mana);padding:12px 14px;pointer-events:none;display:none}
+.rep-coach.show{display:block}
+.rep-coach.manual{border-color:var(--gold)}
+.rep-coach-t{font-family:Oswald,'Arial Narrow',sans-serif;font-size:19px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;line-height:1.15}
+.rep-coach.manual .rep-coach-t{color:var(--gold)}
+.rep-coach-b{font-size:13px;line-height:1.45;color:#cfcbda;margin-top:5px}
+.rep-coach-g{position:relative;height:10px;margin-top:10px;background:var(--panel-2);border:2px solid var(--line)}
+.rep-coach-g i{position:absolute;left:0;top:0;bottom:0;background:var(--mana);transition:width .15s linear}
+.rep-coach-g em{position:absolute;right:-2px;top:-6px;bottom:-6px;width:3px;background:var(--ok)}
+.rep-coach-n{display:flex;justify-content:space-between;font-family:Oswald,'Arial Narrow',sans-serif;font-size:12px;color:var(--muted);margin-top:4px;letter-spacing:.04em}
+.rep-coach-n b{color:var(--text);font-weight:600}
+@keyframes manualPulse{0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(233,184,97,.6)}50%{transform:scale(1.12);box-shadow:0 0 0 10px rgba(233,184,97,0)}}
+.raid-side-btn.manual.pulse{animation:manualPulse 1.1s ease-in-out infinite;border-color:var(--gold);color:#0B0A10;background:var(--gold)}
 </style>
 </head>
 <body>
@@ -2596,24 +2613,41 @@ function checkSubscription(){
     SubCheck.done = true; SubCheck.ok = false; SubCheck.reason = 'no-telegram';
     return;
   }
-  fetch(ME_API_URL, { headers:{ 'X-Init-Data':TG.initData } })
-    .then(r=>{ if(!r.ok){ const e = new Error('bad response'); e.status = r.status; throw e; } return r.json(); })
-    .then(data=>{
-      SubCheck.done = true; SubCheck.ok = true; SubCheck.reason = null;
-      setSubFromServer(data);
-      announceContractTitles();
-      saveState();
-      render();
-    })
-    .catch(err=>{
-      /* Кэш намеренно НЕ трогаем: у подписчика с пропавшей сетью врата
-         остаются открытыми (см. isSubActive и запас в трое суток). Меняется
-         только то, что человек об этом узнает. */
-      SubCheck.done = true; SubCheck.ok = false;
-      SubCheck.reason = (err && err.status) ? ('http-' + err.status) : 'network';
-      trackEvent('me_fail', SubCheck.reason);
-      render();
-    });
+  /* ТРИ ПОПЫТКИ, А НЕ ОДНА.
+     Сервер живёт на Cloudflare, а российские провайдеры с лета 2025 рвут
+     соединения с ним. Сбой одной попытки — частое и короткое явление: само
+     событие me_fail при этом до сервера доходило, то есть через мгновение
+     связь была. Одна попытка превращала короткий обрыв в «контракт не
+     проверен», а для неоплатившего — в стену без объяснений.
+     Повторяем при обрыве сети и при ответах 5xx; при 4xx нет смысла —
+     сервер ответил, и ответ не изменится. Удачу со 2-й или 3-й попытки
+     отмечаем отдельным событием: так видно, скольких людей спасли повторы. */
+  const delays = [1000, 3000];
+  const attempt = (n)=>{
+    fetch(ME_API_URL, { headers:{ 'X-Init-Data':TG.initData } })
+      .then(r=>{ if(!r.ok){ const e = new Error('bad response'); e.status = r.status; throw e; } return r.json(); })
+      .then(data=>{
+        SubCheck.done = true; SubCheck.ok = true; SubCheck.reason = null;
+        if(n > 0) trackEvent('me_retry_ok', String(n + 1));
+        setSubFromServer(data);
+        announceContractTitles();
+        saveState();
+        render();
+      })
+      .catch(err=>{
+        const status = err && err.status;
+        const retryable = !status || status >= 500;
+        if(retryable && n < delays.length){ setTimeout(()=>attempt(n + 1), delays[n]); return; }
+        /* Кэш намеренно НЕ трогаем: у подписчика с пропавшей сетью врата
+           остаются открытыми (см. isSubActive и запас в трое суток). Меняется
+           только то, что человек об этом узнает. */
+        SubCheck.done = true; SubCheck.ok = false;
+        SubCheck.reason = status ? ('http-' + status) : 'network';
+        trackEvent('me_fail', SubCheck.reason);
+        render();
+      });
+  };
+  attempt(0);
 }
 
 /* Предупреждение о непроверенном статусе. Показывается ТОЛЬКО там, где
@@ -3238,16 +3272,26 @@ function rollDropFor(mob, gate){
 /* Исход захода: победа и отступление закрепляют добычу, смерть стирает.
    Вызывается ровно один раз на заход. keepalive нужен потому, что часть
    вызовов приходится на момент ухода с экрана. */
-function endRaidItems(kept){
+/* Исход захода уходит на сервер ВСЕГДА, а не только когда была добыча:
+   по этим записям собираются «Итоги недели» в канале — сколько врат закрыто,
+   кто погиб и от какого монстра. outcome — 'win' | 'death' | 'retreat'. */
+function endRaidItems(kept, outcome){
   if(!TG || !TG.initData || !rankChatId()) return;
   const r = S.raid;
-  if(!r || !r.loot || !r.loot.length) return;   // добычи не было — и говорить не о чем
+  if(!r) return;
+  const hadLoot = !!(r.loot && r.loot.length);
+  const killed = outcome === 'win' ? (r.mobs ? r.mobs.length : 0) : (Number(r.idx) || 0);
+  const killerMob = outcome === 'death' && r.mobs ? r.mobs[r.idx] : null;
   try{
     fetch(RAID_END_API_URL, {
       method:'POST', keepalive:true,
       headers:{ 'Content-Type':'application/json', 'X-Init-Data':TG.initData },
-      body: JSON.stringify({ kept: !!kept }),
-    }).then(()=>{ if(kept) loadItems(true); }).catch(()=>{});
+      body: JSON.stringify({
+        kept: !!kept, loot: hadLoot, outcome: outcome || (kept ? 'win' : 'death'),
+        gate: gateTag(r.gate), kills: killed,
+        killer: killerMob ? String(killerMob.kind || '') + '|' + String(killerMob.name || '') : '',
+      }),
+    }).then(()=>{ if(kept && hadLoot) loadItems(true); }).catch(()=>{});
   }catch(e){}
   if(!kept) r.loot = [];
 }
@@ -5851,6 +5895,28 @@ function paywallHint(where){
 /* from — откуда открыли: 'lock' (тап в закрытые врата), 'map' (полоса на
    карте), 'exam' (экран победы над экзаменом), 'profile'. Метка нужна, чтобы
    после правки было видно НЕ только «стало больше», но и за счёт чего. */
+/* Оплата прямо со стены, без промежуточного окна. Дальше всё как после
+   «Оформить» в окне: метка намерения, внешняя страница оплаты и окно
+   проверки, которое само ловит появившийся контракт. */
+function payFromWall(){
+  if(paywallWrap) return;
+  const url = paymentUrlForCurrentUser();
+  if(!url){ showToast('Открой мини-апп внутри Telegram, чтобы оформить подписку'); return; }
+  paywallFrom = 'trial';
+  trackEvent('paywall_click', 'trial');
+  S.payIntent = { from: 'trial', at: Date.now() };
+  saveState();
+  modalOpenCount++;
+  paywallWrap = document.createElement('div');
+  paywallWrap.style.cssText = 'position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;background:rgba(2,3,10,.72);padding:24px';
+  paywallWrap.innerHTML = paywallCheckingHTML();
+  paywallWrap.addEventListener('click', e=>{ if(e.target===paywallWrap) closePaywallModal(); });
+  document.body.appendChild(paywallWrap);
+  wirePaywallStage();
+  openExternalLink(url);
+  paywallPollDeadline = Date.now() + 3*60000;
+  paywallPollT = setTimeout(paywallPoll, 4000);
+}
 function showPaywallModal(from){
   if(paywallWrap) return; // уже открыта
   /* Событие ПОСЛЕ проверки, а не до: повторный вызов при уже открытом окне
@@ -6420,9 +6486,16 @@ function trialWallHTML(){
       <div><b>${(S.titles||[]).length}</b><span>титулов</span></div>
     </div>
     <div class="trial-wall-b">Дальше — ещё <b class="gold">${n} ${pluralGatesRu(n)}</b> ранга E, потом ранги D, C, B и A. Прогресс сохранён, он никуда не денется.</div>
-    <button class="btn" style="width:100%" onclick="showPaywallModal('trial')">Заключить контракт · ${SUBSCRIPTION_PRICE_RUB} ₽</button>
-    <div class="trial-wall-sub">30 дней, без автопродления</div>
+    ${/* СТЕНА В ОДИН ШАГ. Раньше кнопка здесь открывала окно с тем же
+          предложением, и уже в нём было «Оформить» — два нажатия до оплаты,
+          и на каждом отваливалась своя доля. Теперь всё, что было в окне
+          (что даёт контракт, цена, условия), стоит прямо на стене, а кнопка
+          сразу ведёт на оплату. */ ''}
+    <div class="trial-wall-b" style="margin-top:0">${paywallWhatYouGetHTML()}</div>
     ${subCheckWarningHTML()}
+    <button class="btn" style="width:100%" onclick="payFromWall()">Оформить за ${SUBSCRIPTION_PRICE_RUB} ₽</button>
+    <div class="trial-wall-sub">30 дней, без автопродления · картой или через СБП на защищённой странице Prodamus</div>
+    <div class="trial-wall-sub"><a href="oferta.html" target="_blank" rel="noopener" style="color:var(--muted);text-decoration:underline">Оферта</a> · <a href="privacy.html" target="_blank" rel="noopener" style="color:var(--muted);text-decoration:underline">Политика конфиденциальности</a></div>
   </div>`;
 }
 function mapOfferHTML(){
@@ -7962,7 +8035,7 @@ function stopCamera(){
      недодержанные полсекунды из планки перетекли бы в следующий трек, а при
      возврате в планку подарили бы секунду, которой не было. */
   Cam._plankHeldMs = 0; Cam._plankLastAt = null; Cam._plankSagSince = 0; Cam._plankOk = null;
-  Cam._poseSince = null; Cam.uncountedSwings = 0; Cam._swExtreme = null; Cam._swPhase = 'up'; Cam.repStuckSent = null;
+  Cam._poseSince = null; Cam.uncountedSwings = 0; Cam._swExtreme = null; Cam._swPhase = 'up'; Cam.repStuckSent = null; Cam.coachOff = false;
   Cam.depthBaseline = null; Cam.depthDisplaced = false;
   Cam.smoothPts = {}; Cam.lastKeypoints = null; Cam.lastExercise = null;
   /* Замер частоты — состояние ОДНОГО захода. Не обнули мы его здесь, следующий
@@ -8705,7 +8778,7 @@ function camLoop(){
       Cam.curExercise = ex;
       Cam.armState = 'up'; Cam.downStreak = 0; Cam.upStreak = 0; Cam.emaAngle = null;
       Cam.downSince = 0; Cam.upSince = 0; Cam._angleAt = 0;
-      Cam._poseSince = null; Cam.uncountedSwings = 0; Cam._swExtreme = null; Cam._swPhase = 'up'; Cam.repStuckSent = null;
+      Cam._poseSince = null; Cam.uncountedSwings = 0; Cam._swExtreme = null; Cam._swPhase = 'up'; Cam.repStuckSent = null; Cam.coachOff = false;
       Cam.depthBaseline = null; Cam.depthDisplaced = false;
       // Скелет меняет набор суставов — прежние скорости относятся к другому
       // движению и другой позе, экстраполировать по ним нельзя.
@@ -8961,6 +9034,7 @@ function maybeShowRepStuckHint(){
 
   if(hard){
     setCamStatus('Не засчитывает? Считай кнопкой + справа');
+    repCoachShow('manual', ex, now, th);
     return;
   }
   if(step === 'idle'){
@@ -8968,6 +9042,54 @@ function maybeShowRepStuckHint(){
     return;
   }
   setCamStatus('Опускайся ниже: сейчас ' + now + '°, засчитываю от ' + th.down + '°');
+  repCoachShow('deeper', ex, now, th);
+}
+
+/* КРУПНАЯ ПОДСКАЗКА ВМЕСТО МЕЛКОЙ СТРОКИ.
+   В первых вратах половина вошедших двигается, а повторы не засчитываются,
+   и подсказка жила только в строке статуса внизу — человек в упоре её не
+   видит. Теперь две ступени:
+     deeper — после трёх незасчитанных качков: что сделать телом и шкала, на
+              которой видно, сколько не хватает до засчитанного повтора;
+     manual — после шести: кнопка «+» начинает пульсировать, и карточка
+              прямо говорит жать её на каждом повторе.
+   Карточка обновляется точечно, без перерисовки экрана: перерисовка
+   пересоздала бы видео, и распознавание сорвалось бы. Прячется при первом
+   засчитанном повторе или нажатии «+». Планки не касается: там нет качков. */
+const REP_COACH_TEXT = {
+  pushup: 'Грудь почти к полу — локти сгибаются до прямого угла. Телефон на полу, верх тела в кадре.',
+  squat:  'Садись глубже — бёдра до параллели с полом. Всё тело от головы до стоп в кадре.',
+  situp:  'Поднимайся выше — корпус к коленям. Телефон сбоку, видно от плеч до колен.',
+};
+function repCoachShow(kind, ex, angle, th){
+  const el = document.getElementById('repCoach');
+  if(!el || isHoldExercise(ex) || Cam.coachOff) return;
+  if(el.dataset.kind !== kind){
+    el.dataset.kind = kind;
+    el.className = 'rep-coach show' + (kind === 'manual' ? ' manual' : '');
+    el.innerHTML = kind === 'manual'
+      ? `<div class="rep-coach-t">Камера не засчитывает?</div>
+         <div class="rep-coach-b">Жми <b style="color:var(--gold)">+</b> справа на каждом повторе — урон пойдёт так же. ${escapeHtml(REP_COACH_TEXT[ex] || '')}</div>`
+      : `<div class="rep-coach-t">Опускайся ниже</div>
+         <div class="rep-coach-b">${escapeHtml(REP_COACH_TEXT[ex] || '')}</div>
+         <div class="rep-coach-g"><i id="repCoachFill"></i><em></em></div>
+         <div class="rep-coach-n"><span>сейчас <b id="repCoachNow">—</b></span><span>засчитываю от <b>${th.down}°</b></span></div>`;
+    const btn = document.querySelector('.raid-side-btn.manual');
+    if(btn) btn.classList.toggle('pulse', kind === 'manual');
+  }
+  if(kind === 'deeper'){
+    /* Шкала: от «рука прямая» (порог up) до «засчитано» (порог down). */
+    const span = Math.max(1, th.up - th.down);
+    const pct = Math.max(0, Math.min(100, (th.up - angle) / span * 100));
+    const f = document.getElementById('repCoachFill'); if(f) f.style.width = pct + '%';
+    const n = document.getElementById('repCoachNow'); if(n) n.textContent = angle + '°';
+  }
+}
+function repCoachHide(){
+  const el = document.getElementById('repCoach');
+  if(el){ el.className = 'rep-coach'; el.dataset.kind = ''; el.innerHTML = ''; }
+  const btn = document.querySelector('.raid-side-btn.manual');
+  if(btn) btn.classList.remove('pulse');
 }
 
 /* Если 3+ секунды подряд не удаётся распознать плечи/локти (человек вне кадра,
@@ -9023,6 +9145,10 @@ function manualPush(){
   const now = performance.now();
   if(now - manualPushLastAt < MANUAL_PUSH_COOLDOWN_MS) return;
   manualPushLastAt = now;
+  /* Нажал «+» — значит нашёл ручной счёт. Больше не подсказываем до конца
+     захода, иначе карточка всплывала бы на следующем же кадре. */
+  Cam.coachOff = true;
+  repCoachHide();
   markManualBtnCooling();
   /* В планке одно нажатие даёт MANUAL_HOLD_STEP_SEC секунд, а не одну.
      Ручной счёт — запасной выход для того, у кого распознавание не завелось, и
@@ -9363,7 +9489,7 @@ function playerDied(){
      должен показать поимённо, что именно потеряно. Молча стереть нельзя —
      правило перестанет читаться и будет выглядеть багом. */
   S.lostLoot = (r && r.loot) ? r.loot.slice(0, 8) : [];
-  endRaidItems(false);
+  endRaidItems(false, 'death');
   S.raid = null;
   /* Смерть забирает опыт и добычу, но НЕ повторы: они реальные и уже сделаны
      (см. комментарий выше про snapshot). Раньше их просто не отправляли, и
@@ -9863,7 +9989,7 @@ function retreatRaid(){
     // числом и вернётся при продолжении (см. startRaid()).
     if(r) writeRaidSave(r);
     // Отступление — законный выход, добыча закрепляется (в отличие от смерти).
-    endRaidItems(true);
+    endRaidItems(true, 'retreat');
     // "Разумное отступление" — отступление не проходит через экран победы,
     // поэтому новое достижение (если есть) объявляем через showToast().
     trackEvent('gate_lose', 'retreat', gateTag(r && r.gate));
@@ -9923,6 +10049,7 @@ function rRaid(){
         </div>
       </div>
     </div>
+    <div class="rep-coach" id="repCoach"></div>
     <div class="raid-counter-row">
       <div class="raid-side-col">
         <button class="raid-side-btn retreat" onclick="retreatRaid()" aria-label="Отступить">✕</button>
@@ -11347,7 +11474,7 @@ function winRaid(){
      показывает полоса на карте. */
   S.justFinishedFree = !wasReplay && g.stage === 'exam' && g.rank === 'E' && !isSubActive();
   S.wonLoot = (S.raid && S.raid.loot) ? S.raid.loot.slice(0, 12) : [];
-  endRaidItems(true);
+  endRaidItems(true, 'win');
   go('victory');
   /* Закрытые врата — самое ценное, что случается в игре, и терять их из-за
      десятисекундной склейки нельзя. go() уже вызвал saveState(), поэтому
@@ -11653,6 +11780,7 @@ function onCameraRep(){
      тому, у кого всё в порядке, просто первые движения были неуверенными. */
   Cam.uncountedSwings = 0;
   Cam.repStuckSent = null;
+  repCoachHide();
   if(S.screen === 'duel'){
     const d = S.duel;
     if(!d || d.phase !== 'fight') return;   // до старта и после финиша не считаем
@@ -12889,6 +13017,20 @@ function toggleSetting(key, btn){
   saveState();
   if(key==='notifications') syncReminder();
 }
+const CHANNEL_OPTOUT_URL = 'https://vrata-bot.emerald520for.workers.dev/api/channel-optout';
+function toggleChannelMention(btn){
+  if(!TG || !TG.initData){ showToast('Доступно только внутри Telegram'); return; }
+  const hide = !S.settings.channelHide;
+  S.settings.channelHide = hide;
+  const pill = btn && btn.querySelector('.toggle-pill');
+  if(pill){ pill.classList.toggle('on', !hide); pill.textContent = hide ? 'ВЫКЛ' : 'ВКЛ'; }
+  saveState();
+  fetch(CHANNEL_OPTOUT_URL, {
+    method:'POST', headers:{ 'Content-Type':'application/json', 'X-Init-Data':TG.initData },
+    body: JSON.stringify({ hide }),
+  }).then(r=>{ if(!r.ok) throw 0; showToast(hide ? 'Система не будет называть тебя в канале' : 'Ник снова может попасть в канал'); })
+    .catch(()=>{ S.settings.channelHide = !hide; saveState(); render(); showToast('Нет связи — настройка не сохранилась'); });
+}
 function setAnsAndRender(key,val,btn){
   S.ans[key]=val;
   if(btn){ btn.parentElement.querySelectorAll('.chip').forEach(c=>c.classList.remove('sel')); btn.classList.add('sel'); }
@@ -12938,6 +13080,12 @@ function rSettings(){
       <button class="toggle-row" onclick="toggleSetting('hints',this)">
         <span>Подсказки о находках и гильдиях</span>
         <span class="toggle-pill ${st.hints!==false?'on':''}">${st.hints!==false?'ВКЛ':'ВЫКЛ'}</span>
+      </button>
+      ${/* Канал проекта сам публикует итоги недели и сводки с никами
+            охотников. По умолчанию упоминать можно; выключить — здесь. */ ''}
+      <button class="toggle-row" onclick="toggleChannelMention(this)">
+        <span>Упоминать меня в канале проекта</span>
+        <span class="toggle-pill ${st.channelHide?'':'on'}">${st.channelHide?'ВЫКЛ':'ВКЛ'}</span>
       </button>
       <button class="toggle-row" onclick="S.prevScreen='settings';go('instructions')">
         <span>Инструкции</span>
