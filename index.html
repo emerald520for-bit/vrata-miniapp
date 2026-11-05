@@ -2357,6 +2357,34 @@ svg.abf-win-img{height:70%}
 .abf-cnt b{display:block;font-family:Oswald,sans-serif;font-size:32px;line-height:1.05}
 .abf-cnt span{font-size:10px;letter-spacing:.14em;color:#b8b2cc;text-transform:uppercase}
 
+/* выбор босса */
+.ab-arena{cursor:pointer}
+.ab-swap{position:absolute;left:8px;top:8px;z-index:2;font-family:Oswald,sans-serif;font-size:12px;letter-spacing:.06em;text-transform:uppercase;background:rgba(8,7,14,.82);border:2px solid var(--mana);color:var(--text);padding:4px 9px}
+.ab-sheet-bg{position:fixed;inset:0;z-index:50;background:rgba(2,3,10,.72);display:flex;align-items:flex-end;justify-content:center;animation:abFade .18s ease}
+@keyframes abFade{from{opacity:0}to{opacity:1}}
+.ab-sheet{width:100%;max-width:430px;max-height:82vh;display:flex;flex-direction:column;background:var(--void);border-top:2px solid var(--mana);padding:14px 12px calc(12px + var(--sa-bottom));animation:abUp .22s cubic-bezier(.2,.9,.3,1)}
+@keyframes abUp{from{transform:translateY(40px)}to{transform:translateY(0)}}
+.ab-sheet-hd{display:flex;justify-content:space-between;align-items:center;font-family:Oswald,sans-serif;font-size:20px;font-weight:600;text-transform:uppercase;letter-spacing:.06em}
+.ab-sheet-hd button{width:36px;height:36px;background:var(--panel);border:2px solid var(--line);color:var(--text);font-size:16px;cursor:pointer}
+.ab-sheet-sub{font-size:12px;color:var(--muted);margin:4px 0 10px}
+.ab-sheet-list{overflow-y:auto;display:flex;flex-direction:column;gap:5px;-webkit-overflow-scrolling:touch}
+.ab-pk{display:flex;align-items:center;gap:10px;width:100%;padding:6px 10px 6px 6px;background:var(--panel);border:2px solid var(--line);border-left-width:4px;color:var(--text);font-family:inherit;text-align:left;cursor:pointer;flex:none}
+.ab-pk.cur{border-color:var(--mana);background:#1c1832}
+.ab-pk.lk{opacity:.6;cursor:default}
+.ab-pk-n{width:20px;text-align:center;font-family:Oswald,sans-serif;font-size:15px;color:var(--muted);flex:none}
+.ab-pk-img{width:58px;height:58px;flex:none;overflow:hidden;display:flex;align-items:center;justify-content:center;background:#07060c}
+.ab-pk-img img{width:100%;height:100%;object-fit:contain}
+.ab-pk-img.lk svg{width:20px;height:20px}
+.ab-pk-tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+.ab-pk-tx b{font-family:Oswald,sans-serif;font-weight:500;font-size:14.5px;text-transform:uppercase;letter-spacing:.03em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ab-pk-tx small{font-size:10.5px;color:var(--muted)}
+.ab-pk-hp{height:5px;background:#1a0f12;position:relative}
+.ab-pk-hp i{position:absolute;left:0;top:0;bottom:0;background:var(--danger)}
+.ab-pk-r{flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:4px;font-family:Oswald,sans-serif;font-size:13px}
+.ab-pk-r em{font-style:normal;font-size:10px;letter-spacing:.1em;text-transform:uppercase;background:var(--mana);color:#0B0A10;padding:2px 6px}
+.ab-pk-r small{font-size:9px;color:var(--muted);letter-spacing:.1em}
+.ab-pk-r .ab-gemc{display:inline-flex;align-items:center;gap:4px}
+
 </style>
 </head>
 <body>
@@ -2962,6 +2990,41 @@ function abyssBuy(what){
     render({ keepScroll:true });
   }).catch(()=>{ AB.busy = false; sysNotice('Не удалось связаться с Системой. Попробуй ещё раз.'); });
 }
+/* Выбор босса: нижняя шторка со всеми двенадцатью. Открытые можно выбрать,
+   закрытые показывают, кого надо победить, чтобы открыть. Шторка числится
+   обычной модалкой (_modalEl), поэтому «Назад» в Telegram закрывает её. */
+function abyssBossPicker(){
+  const st = AB.st, cfg = AB.cfg;
+  if(!st || !cfg) return;
+  closeModal();
+  modalOpenCount++;
+  const wrap = document.createElement('div');
+  wrap.className = 'ab-sheet-bg';
+  wrap.innerHTML = `<div class="ab-sheet">
+    <div class="ab-sheet-hd"><span>Выбери босса</span><button onclick="closeModal()" aria-label="Закрыть">✕</button></div>
+    <div class="ab-sheet-sub">Открыто ${st.unlocked + 1} из ${cfg.bosses.length}. Урон по каждому боссу сохраняется отдельно.</div>
+    <div class="ab-sheet-list">${cfg.bosses.map((b, i)=>{
+      const open = i <= st.unlocked, cur = i === st.boss;
+      const left = Math.max(0, b.hp - (st.dmg[i] || 0));
+      if(!open) return `<div class="ab-pk lk"><span class="ab-pk-n">${i + 1}</span><span class="ab-pk-img lk">${AB_LOCK_SVG}</span>
+        <span class="ab-pk-tx"><b>· · ·</b><small>Победи «${escapeHtml(cfg.bosses[i - 1].name)}», чтобы открыть</small></span>
+        <span class="ab-pk-r"><small>HP</small>${abFmt(b.hp)}</span></div>`;
+      return `<button class="ab-pk ${cur ? 'cur' : ''}" onclick="closeModal();abyssPickBoss(${i})">
+        <span class="ab-pk-n">${i + 1}</span>
+        <span class="ab-pk-img" style="background:${abWorldBg(i)}">${abBossArt(i)}</span>
+        <span class="ab-pk-tx"><b>${escapeHtml(b.name)}</b>
+          <span class="ab-pk-hp"><i style="width:${left / b.hp * 100}%"></i></span>
+          <small>HP ${abFmt(left)} / ${abFmt(b.hp)}${st.kills[i] ? ' · побед ' + abFmt(st.kills[i]) : ''}</small></span>
+        <span class="ab-pk-r">${cur ? '<em>сейчас</em>' : ''}<span class="ab-gemc">${AB_GEM_SVG}${abFmt(b.reward)}</span></span>
+      </button>`;
+    }).join('')}</div>
+  </div>`;
+  document.body.appendChild(wrap);
+  _modalEl = wrap;
+  wrap.addEventListener('click', e=>{ if(e.target === wrap) closeModal(); });
+  const cur = wrap.querySelector('.ab-pk.cur');
+  if(cur) cur.scrollIntoView({ block:'center' });
+}
 function abyssPickBoss(i){
   if(AB.busy || !AB.st) return;
   if(i > AB.st.unlocked) return;
@@ -3048,7 +3111,8 @@ function rAbyssBoss(){
     <div class="ab-hp"><i style="width:${pct}%"></i><span>HP ${abFmt(left)} / ${abFmt(b.hp)}</span></div>
     <div class="ab-bname">${escapeHtml(b.name)}</div>
     <div class="ab-bsub">${escapeHtml(b.world)} · за победу ${abGems(b.reward)}${st.kills[i] ? ` · побед ${abFmt(st.kills[i])}` : ''}</div>
-    <div class="ab-arena" style="background:${abWorldBg(i)}">
+    <div class="ab-arena" style="background:${abWorldBg(i)}" onclick="abyssBossPicker()">
+      <span class="ab-swap">⇅ Сменить босса</span>
       ${abBossArt(i, 'ab-boss')}
     </div>
     ${nextOpen ? `<button class="ab-next" onclick="abyssPickBoss(${i + 1})"><span>Открыт босс ${i + 2}: ${escapeHtml(cfg.bosses[i + 1].name)}</span><span>›</span></button>` : ''}
